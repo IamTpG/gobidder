@@ -1,6 +1,7 @@
 {
   "name": "server",
   "version": "1.0.0",
+  "type": "module",
   "main": "index.js",
   "scripts": {
     "start": "node server.js",
@@ -11,6 +12,7 @@
   "license": "ISC",
   "dependencies": {
     "@prisma/client": "^6.18.0",
+    "@supabase/supabase-js": "^2.79.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.1.0"
