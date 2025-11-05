@@ -1,0 +1,17 @@
+{
+  "name": "gobidder",
+  "version": "1.0.0",
+  "private": true,
+  "description": "",
+  "scripts": {
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx,css,scss,html,json,md}": "prettier --write --ignore-unknown"
+  },
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.6",
+    "prettier": "^3.6.2"
+  }
+}
