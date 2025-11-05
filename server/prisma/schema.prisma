@@ -1,0 +1,320 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// 1. Cấu hình cơ bản
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL") // Lấy từ file .env
+}
+
+// 2. Định nghĩa các ENUM (Kiểu dữ liệu tùy chỉnh)
+
+enum UserRole {
+  Bidder // (1.6)
+  Seller // (2.6)
+  Admin // (4.0)
+}
+
+enum ProductStatus {
+  Pending // (3.1) Chờ duyệt
+  Active // (4.3) Đang đấu giá
+  Sold // (7) Đã bán
+  Expired // (6.1) Hết hạn (không ai mua)
+  Removed // (4.2) Bị gỡ
+}
+
+enum RequestStatus {
+  Pending // (2.6)
+  Approved // (4.3)
+  Rejected // (4.3)
+}
+
+enum RatingScore {
+  Positive // (2.5, 3.5)
+  Negative
+}
+
+enum TransactionStatus {
+  PendingPayment // (7 - Step 1) Chờ thanh toán
+  PendingShipping // (7 - Step 2) Chờ gửi hàng
+  PendingReceipt // (7 - Step 3) Chờ nhận hàng
+  Completed // (7 - Step 4) Hoàn tất
+  Cancelled // (7, 3.5) Đã hủy
+}
+
+// 3. Các Models (Bảng) chính
+
+// ===================================
+// NHÓM 1: NGƯỜI DÙNG & XÁC THỰC
+// ===================================
+
+model User {
+  id              Int      @id @default(autoincrement())
+  full_name       String
+  address         String?
+  email           String   @unique
+  password_hash   String? // (1.6) NULL nếu login bằng Google
+  google_id       String?  @unique // (5.1)
+  role            UserRole @default(Bidder)
+  is_email_verified Boolean  @default(false) // (1.6)
+
+  // (2.2, 2.5) Điểm đánh giá (tính toán từ bảng Rating)
+  rating_plus     Int      @default(0)
+  rating_minus    Int      @default(0)
+
+  created_at      DateTime @default(now())
+
+  // --- Quan hệ ---
+  upgrade_request       SellerUpgradeRequest? // (2.6) Yêu cầu nâng cấp (1-1)
+  
+  // (3.0) Quan hệ Seller
+  products_sold         Product[]     @relation("ProductsSold")
+  sold_transactions     Transaction[] @relation("SoldTransactions")
+
+  // (2.0) Quan hệ Bidder
+  products_bidding_on   Product[]     @relation("CurrentHighestBidder") // (2.5)
+  auto_bids             AutoBid[]     // (6.2) Lịch sử đặt giá TỐI ĐA
+  bid_histories         BidHistory[]  // (2.3) Lịch sử giá nhảy
+  watchlist_items       WatchList[]   // (2.1)
+  banned_from_products  BannedBidder[]// (3.3)
+  questions_asked       QnA[]         // (2.4)
+  won_transactions      Transaction[] @relation("WonTransactions") // (2.5)
+  
+  // (4.0) Quan hệ Admin
+  processed_requests    SellerUpgradeRequest[] @relation("AdminProcessor")
+
+  // (7) Quan hệ chung
+  ratings_given         Rating[]      @relation("RatingsGiven")
+  ratings_received      Rating[]      @relation("RatingsReceived")
+  messages_sent         ChatMessage[] @relation("MessagesSent")
+  messages_received     ChatMessage[] @relation("MessagesReceived")
+
+  @@index([email])
+}
+
+model Otp {
+  id         Int      @id @default(autoincrement())
+  email      String
+  code       String
+  expires_at DateTime // (1.6, 5.4) Dùng cho cả xác thực email và quên mật khẩu
+
+  @@index([email])
+}
+
+model SellerUpgradeRequest {
+  id           Int           @id @default(autoincrement())
+  user         User          @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user_id      Int           @unique // (2.6) Một user chỉ có 1 request
+  status       RequestStatus @default(Pending)
+  requested_at DateTime      @default(now())
+  
+  // (4.3) Admin xử lý
+  processed_by User?         @relation(name: "AdminProcessor", fields: [admin_id], references: [id])
+  admin_id     Int?
+}
+
+// ===================================
+// NHÓM 2: SẢN PHẨM & DANH MỤC
+// ===================================
+
+model Category {
+  id        Int       @id @default(autoincrement())
+  name      String
+  
+  // (1.1) Hỗ trợ 2 cấp
+  parent    Category? @relation(name: "ParentChild", fields: [parent_id], references: [id])
+  parent_id Int?
+  children  Category[] @relation(name: "ParentChild")
+
+  products  Product[]
+}
+
+model Product {
+  id            Int      @id @default(autoincrement())
+  name          String
+  description   String   @db.Text // (3.1) Hỗ trợ WYSIWYG
+  images        Json // (1.5, 3.1) Lưu dạng [url1, url2, url3...]
+  created_at    DateTime @default(now()) // (1.4.1) Ngày đăng
+  end_time      DateTime // (1.5) Thời điểm kết thúc
+  
+  // --- Thông tin giá (3.1) ---
+  start_price   BigInt // Dùng BigInt cho an toàn
+  step_price    BigInt
+  buy_now_price BigInt? // (1.4.1)
+  
+  // --- Trạng thái ---
+  auto_renew    Boolean       @default(false) // (3.1)
+  status        ProductStatus @default(Pending)
+
+  // --- Dữ liệu "Live" (1.4.1) ---
+  current_price BigInt
+  bid_count     Int           @default(0)
+  
+  // --- Quan hệ ---
+  seller        User          @relation(name: "ProductsSold", fields: [seller_id], references: [id], onDelete: Cascade)
+  seller_id     Int
+  
+  category    Category      @relation(fields: [category_id], references: [id], onDelete: Restrict)
+  category_id Int           // (4.1) onDelete: Restrict -> Cấm xóa Category nếu có Product
+  
+  current_bidder    User?         @relation(name: "CurrentHighestBidder", fields: [current_bidder_id], references: [id])
+  current_bidder_id Int?          // (1.4.1) Người đang giữ giá cao nhất
+
+  // --- Quan hệ nghiệp vụ ---
+  auto_bids        AutoBid[]      // (6.2)
+  bid_histories    BidHistory[]   // (2.3)
+  watchlist_users  WatchList[]    // (2.1)
+  qna_items        QnA[]          // (1.5, 2.4)
+  banned_bidders   BannedBidder[] // (3.3)
+  transaction      Transaction?   // (7)
+
+  // --- Tối ưu hóa ---
+  @@index([end_time]) // (1.2) Top gần kết thúc
+  @@index([bid_count]) // (1.2) Top nhiều lượt ra giá
+  @@index([current_price]) // (1.2) Top giá cao nhất
+  @@index([category_id])
+  @@index([seller_id])
+}
+
+
+// ===================================
+// NHÓM 3: TƯƠNG TÁC ĐẤU GIÁ
+// ===================================
+
+// (6.2) Bảng CỐT LÕI: Lưu giá TỐI ĐA của người dùng
+model AutoBid {
+  id         Int      @id @default(autoincrement())
+  user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user_id    Int
+  product    Product  @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  product_id Int
+  max_price  BigInt   // (6.2) Giá-tối-đa
+  created_at DateTime @default(now())
+
+  @@unique([user_id, product_id]) // Một người 1 giá max cho 1 SP
+  @@index([product_id])
+}
+
+// (2.3) Bảng LỊCH SỬ các lần giá thay đổi
+model BidHistory {
+  id         Int      @id @default(autoincrement())
+  product    Product  @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  product_id Int
+  user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user_id    Int
+  bid_price  BigInt   // Giá tại thời điểm đó
+  created_at DateTime @default(now())
+
+  @@index([product_id])
+}
+
+// (2.1) Bảng danh sách yêu thích
+model WatchList {
+  user       User    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user_id    Int
+  product    Product @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  product_id Int
+
+  @@id([user_id, product_id]) // PK
+}
+
+// (1.5, 2.4, 3.4) Bảng Hỏi & Đáp
+model QnA {
+  id             Int      @id @default(autoincrement())
+  product        Product  @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  product_id     Int
+  questioner     User     @relation(fields: [questioner_id], references: [id], onDelete: Cascade)
+  questioner_id  Int
+  question_text  String   @db.Text
+  question_time  DateTime @default(now())
+  
+  answer_text    String?  @db.Text
+  answer_time    DateTime?
+
+  @@index([product_id])
+}
+
+// (3.3) Bảng cấm bidder
+model BannedBidder {
+  product    Product @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  product_id Int
+  bidder     User    @relation(fields: [bidder_id], references: [id], onDelete: Cascade)
+  bidder_id  Int
+
+  @@id([product_id, bidder_id]) // PK
+}
+
+// ===================================
+// NHÓM 4: SAU ĐẤU GIÁ (Giao dịch, Đánh giá, Chat)
+// ===================================
+
+// (7) Bảng Giao dịch (Hoàn tất đơn hàng)
+model Transaction {
+  id          Int      @id @default(autoincrement())
+  product     Product  @relation(fields: [product_id], references: [id])
+  product_id  Int      @unique // 1 sản phẩm chỉ có 1 giao dịch thắng
+  
+  winner      User     @relation(name: "WonTransactions", fields: [winner_id], references: [id])
+  winner_id   Int
+  seller      User     @relation(name: "SoldTransactions", fields: [seller_id], references: [id])
+  seller_id   Int
+  
+  final_price BigInt
+  status      TransactionStatus @default(PendingPayment)
+  created_at  DateTime @default(now())
+
+  // --- Dữ liệu 4 bước (7) ---
+  shipping_address      String?    @db.Text // (Step 1)
+  payment_invoice_url   String?    // (Step 1)
+  seller_confirmed_at   DateTime?  // (Step 2)
+  shipping_invoice_url  String?    // (Step 2)
+  buyer_confirmed_at    DateTime?  // (Step 3)
+  cancel_reason         String?    // (3.5)
+
+  // --- Quan hệ ---
+  ratings     Rating[]
+  messages    ChatMessage[]
+
+  @@index([winner_id])
+  @@index([seller_id])
+}
+
+// (2.5, 3.5, 7) Bảng Đánh giá
+model Rating {
+  id             Int          @id @default(autoincrement())
+  transaction    Transaction  @relation(fields: [transaction_id], references: [id])
+  transaction_id Int
+  
+  rater          User         @relation(name: "RatingsGiven", fields: [rater_id], references: [id], onDelete: NoAction)
+  rater_id       Int
+  rated_user     User         @relation(name: "RatingsReceived", fields: [rated_user_id], references: [id], onDelete: NoAction)
+  rated_user_id  Int
+  
+  score          RatingScore
+  comment        String?      @db.Text
+  created_at     DateTime     @default(now())
+
+  @@unique([transaction_id, rater_id]) // Mỗi người 1 đánh giá / 1 giao dịch
+  @@index([rated_user_id])
+}
+
+// (7) Bảng Chat
+model ChatMessage {
+  id             Int         @id @default(autoincrement())
+  transaction    Transaction @relation(fields: [transaction_id], references: [id], onDelete: Cascade)
+  transaction_id Int
+  
+  sender         User        @relation(name: "MessagesSent", fields: [sender_id], references: [id], onDelete: NoAction)
+  sender_id      Int
+  receiver       User        @relation(name: "MessagesReceived", fields: [receiver_id], references: [id], onDelete: NoAction)
+  receiver_id    Int
+  
+  message        String      @db.Text
+  created_at     DateTime    @default(now())
+
+  @@index([transaction_id])
+}
