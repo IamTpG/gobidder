@@ -1,16 +1,14 @@
-const passport = require('passport');
-const LocalStrategy = require('passport-local').Strategy;
-const GoogleStrategy = require('passport-google-oauth20').Strategy;
-const { Strategy: JwtStrategy, ExtractJwt } = require('passport-jwt');
-const { PrismaClient } = require('@prisma/client');
-const bcrypt = require('bcryptjs');
-
-const prisma = new PrismaClient();
+const passport = require("passport");
+const LocalStrategy = require("passport-local").Strategy;
+const GoogleStrategy = require("passport-google-oauth20").Strategy;
+const { Strategy: JwtStrategy, ExtractJwt } = require("passport-jwt");
+const bcrypt = require("bcryptjs");
+const prisma = require("../config/prisma");
 
 const cookieExtractor = (req) => {
   let token = null;
   if (req && req.cookies) {
-    token = req.cookies['access_token']; // Tên cookie
+    token = req.cookies["access_token"]; // Tên cookie
   }
   return token;
 };
@@ -35,15 +33,15 @@ passport.use(
       } catch (error) {
         return done(error, false);
       }
-    }
-  )
+    },
+  ),
 );
 
 passport.use(
   new LocalStrategy(
     {
-      usernameField: 'email',
-      passwordField: 'password',
+      usernameField: "email",
+      passwordField: "password",
     },
     async (email, password, done) => {
       try {
@@ -52,24 +50,26 @@ passport.use(
         });
 
         if (!user) {
-          return done(null, false, { message: 'Email không tồn tại.' });
+          return done(null, false, { message: "Email không tồn tại." });
         }
 
         const isMatch = await bcrypt.compare(password, user.password_hash);
         if (!isMatch) {
-          return done(null, false, { message: 'Mật khẩu không chính xác.' });
+          return done(null, false, { message: "Mật khẩu không chính xác." });
         }
 
         if (!user.is_email_verified) {
-          return done(null, false, { message: 'Tài khoản chưa được xác thực OTP.' });
+          return done(null, false, {
+            message: "Tài khoản chưa được xác thực OTP.",
+          });
         }
 
         return done(null, user);
       } catch (error) {
         return done(error);
       }
-    }
-  )
+    },
+  ),
 );
 
 passport.use(
@@ -78,7 +78,7 @@ passport.use(
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
       callbackURL: process.env.GOOGLE_CALLBACK_URL,
-      scope: ['profile', 'email'],
+      scope: ["profile", "email"],
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
@@ -99,7 +99,7 @@ passport.use(
             google_id: googleId,
             email: email,
             full_name: profile.displayName,
-            role: 'Bidder',
+            role: "Bidder",
             is_email_verified: true,
           },
         });
@@ -108,6 +108,6 @@ passport.use(
       } catch (error) {
         return done(error);
       }
-    }
-  )
+    },
+  ),
 );
