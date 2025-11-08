@@ -3,6 +3,7 @@ import { Routes, Route } from 'react-router-dom';
 import Layout from '../layouts/Layout';
 import Home from '../pages/Home';
 import Auth from '../pages/Auth';
+import ProductDetailsPage from '../pages/ProductDetailsPage';
 
 const AppRouter = () => {
   return (
@@ -15,6 +16,10 @@ const AppRouter = () => {
         <Route path="auth" element={<Auth />} />
         <Route path="login" element={<Auth />} />
         <Route path="register" element={<Auth />} />
+        
+        {/* Product/Auction Details */}
+        <Route path="product/:id" element={<ProductDetailsPage />} />
+        <Route path="auction/:id" element={<ProductDetailsPage />} />
         
         {/* TODO: Add more routes as needed */}
         {/* <Route path="auctions" element={<Auctions />} /> */}

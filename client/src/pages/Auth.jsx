@@ -78,15 +78,15 @@ const Auth = () => {
 
       {/* Login and Register Section */}
       <div className="container mx-auto px-4 max-w-7xl py-20 -mt-16">
-        <div className="grid md:grid-cols-2 gap-10 max-w-6xl mx-auto">
+        <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
           {/* Login Form */}
-          <div className="bg-gradient-to-br from-blue-50/50 via-slate-50 to-blue-50/30 rounded-3xl p-10 md:p-12 shadow-xl border border-slate-100">
-            <h2 className="text-3xl font-bold text-slate-800 mb-2 text-center">
+          <div className="bg-gradient-to-br from-blue-50/50 via-slate-50 to-blue-50/30 rounded-3xl p-8 md:p-10 shadow-xl border border-slate-100">
+            <h2 className="text-2xl md:text-3xl font-bold text-slate-800 mb-2 text-center">
               Login
             </h2>
-            <div className="w-24 h-1 bg-slate-300 mx-auto mb-8 rounded-full"></div>
+            <div className="w-20 h-1 bg-slate-300 mx-auto mb-6 rounded-full"></div>
 
-            <form onSubmit={handleLoginSubmit} className="space-y-6">
+            <form onSubmit={handleLoginSubmit} className="space-y-5">
               {/* Username or Email */}
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
@@ -98,7 +98,7 @@ const Auth = () => {
                   value={loginData.username}
                   onChange={handleLoginChange}
                   required
-                  className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-300"
+                  className="w-full px-4 py-2.5 border-2 border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-300 text-sm"
                   placeholder="Enter your username or email"
                 />
               </div>
@@ -115,7 +115,7 @@ const Auth = () => {
                     value={loginData.password}
                     onChange={handleLoginChange}
                     required
-                    className="w-full px-4 py-3 pr-12 border-2 border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-300"
+                    className="w-full px-4 py-2.5 pr-12 border-2 border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-300 text-sm"
                     placeholder="Enter your password"
                   />
                   <button
@@ -129,12 +129,12 @@ const Auth = () => {
               </div>
 
               {/* Remember Me & Submit */}
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between pt-2">
                 <Button
                   type="submit"
                   variant="primary"
-                  size="lg"
-                  className="px-8"
+                  size="md"
+                  className="px-6 py-2"
                 >
                   Log in
                 </Button>
@@ -161,13 +161,13 @@ const Auth = () => {
           </div>
 
           {/* Register Form */}
-          <div className="bg-gradient-to-br from-blue-50/50 via-slate-50 to-blue-50/30 rounded-3xl p-10 md:p-12 shadow-xl border border-slate-100">
-            <h2 className="text-3xl font-bold text-slate-800 mb-2 text-center">
+          <div className="bg-gradient-to-br from-blue-50/50 via-slate-50 to-blue-50/30 rounded-3xl p-8 md:p-10 shadow-xl border border-slate-100">
+            <h2 className="text-2xl md:text-3xl font-bold text-slate-800 mb-2 text-center">
               Register
             </h2>
-            <div className="w-24 h-1 bg-slate-300 mx-auto mb-8 rounded-full"></div>
+            <div className="w-20 h-1 bg-slate-300 mx-auto mb-6 rounded-full"></div>
 
-            <form onSubmit={handleRegisterSubmit} className="space-y-6">
+            <form onSubmit={handleRegisterSubmit} className="space-y-5">
               {/* Email Address */}
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
@@ -179,7 +179,7 @@ const Auth = () => {
                   value={registerData.email}
                   onChange={handleRegisterChange}
                   required
-                  className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-300"
+                  className="w-full px-4 py-2.5 border-2 border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-300 text-sm"
                   placeholder="Enter your email address"
                 />
                 <p className="text-xs text-slate-500 mt-2">
@@ -228,11 +228,11 @@ const Auth = () => {
               </div>
 
               {/* Submit Button */}
-              <div>
+              <div className="pt-2">
                 <Button
                   type="submit"
                   variant="primary"
-                  size="lg"
+                  size="md"
                   fullWidth
                 >
                   Register

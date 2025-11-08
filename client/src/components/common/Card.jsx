@@ -1,4 +1,5 @@
 import React from 'react';
+import Countdown from './Countdown';
 
 const Card = ({ 
   children,
@@ -155,16 +156,20 @@ const Card = ({
 
 // AuctionCard - Card chuyên dụng cho sản phẩm đấu giá (Design giống PROBID)
 export const AuctionCard = ({
+  id,
   image,
   title,
   currentBid,
   startingBid,
   lotNumber,
   status = 'live', // live, upcoming, ended
-  timeLeft, // { days, hours, minutes, seconds }
+  timeLeft, // { days, hours, minutes, seconds } - deprecated, use endDate instead
+  endDate, // ISO date string for automatic countdown
   onBid,
+  onClick,
   onFavorite,
   isFavorited = false,
+  buttonVariant = 'default', // 'default' or 'primary'
   className = '',
   ...props
 }) => {
@@ -197,23 +202,32 @@ export const AuctionCard = ({
 
   const config = statusConfig[status];
   
-  // Xác định màu nút dựa trên status
-  const buttonColorClass = status === 'live' && currentBid 
-    ? 'bg-primary hover:bg-primary/90' 
-    : 'bg-gray-900 hover:bg-gray-800';
+  // Button styles based on variant and status
+  const getButtonStyles = () => {
+    if (status === 'ended') {
+      return 'bg-slate-300 text-slate-500 cursor-not-allowed';
+    }
+    
+    // Mặc định: màu đen, hover chuyển sang primary
+    return 'bg-slate-900 text-white hover:bg-primary hover:shadow-lg transition-all duration-300';
+  };
 
   return (
-    <div className={`bg-white rounded-xl overflow-hidden shadow-card hover:shadow-card-hover transition-all duration-300 group ${className}`} {...props}>
+    <div 
+      className={`bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 group ${onClick ? 'cursor-pointer' : ''} ${className}`} 
+      onClick={onClick}
+      {...props}
+    >
       {/* Image Container */}
-      <div className="relative h-72">
+      <div className="relative h-64 bg-slate-100">
         <img 
           src={image} 
           alt={title}
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
         />
         
         {/* Status Badge - Top Left */}
-        <div className={`absolute top-3 left-3 px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 shadow-lg ${config.className}`}>
+        <div className={`absolute top-3 left-3 px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 shadow-md ${config.className}`}>
           {status === 'live' ? (
             <svg className="w-2 h-2" viewBox="0 0 12 12" fill="currentColor">
               <circle cx="6" cy="6" r="6">
@@ -228,96 +242,47 @@ export const AuctionCard = ({
         
         {/* Lot Number Badge - Top Right */}
         {lotNumber && (
-          <div className="absolute top-3 right-3 px-3 py-1.5 rounded-full text-xs font-semibold bg-slate-800/80 text-white backdrop-blur-sm">
+          <div className="absolute top-3 right-3 px-3 py-1.5 rounded-full text-xs font-semibold text-white backdrop-blur-sm" style={{ backgroundColor: '#747474' }}>
             Lot # {lotNumber}
           </div>
         )}
-        
-        {/* View Icon - Bottom Right (shows on hover for some cards) */}
-        {onFavorite && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onFavorite();
-            }}
-            className="absolute bottom-3 right-3 w-9 h-9 rounded-full bg-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110 shadow-lg"
-          >
-            <svg className="w-4 h-4 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-            </svg>
-          </button>
-        )}
 
-        {/* Countdown Timer - DESIGN MỚI: Overlay ở dưới cùng với background trắng tròn */}
-        {timeLeft && (
-          <div className="absolute bottom-3 left-3 right-3">
-            <div className="bg-white rounded-2xl shadow-lg px-3 py-3">
-              <div className="grid grid-cols-4 gap-2">
-                <div className="text-center">
-                  <div className="text-xl font-bold text-gray-900 leading-tight">
-                    {String(timeLeft.days || 0).padStart(2, '0')}
-                  </div>
-                  <div className="text-[10px] text-gray-600 font-medium uppercase tracking-wider mt-0.5">
-                    Days
-                  </div>
-                </div>
-                <div className="text-center">
-                  <div className="text-xl font-bold text-gray-900 leading-tight">
-                    {String(timeLeft.hours || 0).padStart(2, '0')}
-                  </div>
-                  <div className="text-[10px] text-gray-600 font-medium uppercase tracking-wider mt-0.5">
-                    Hours
-                  </div>
-                </div>
-                <div className="text-center">
-                  <div className="text-xl font-bold text-gray-900 leading-tight">
-                    {String(timeLeft.minutes || 0).padStart(2, '0')}
-                  </div>
-                  <div className="text-[10px] text-gray-600 font-medium uppercase tracking-wider mt-0.5">
-                    Minutes
-                  </div>
-                </div>
-                <div className="text-center">
-                  <div className="text-xl font-bold text-gray-900 leading-tight">
-                    {String(timeLeft.seconds || 0).padStart(2, '0')}
-                  </div>
-                  <div className="text-[10px] text-gray-600 font-medium uppercase tracking-wider mt-0.5">
-                    Seconds
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+        {/* Countdown Timer - Bottom overlay with rounded white background */}
+        {(timeLeft || endDate) && (
+          <Countdown 
+            endDate={endDate}
+            variant="overlay"
+            showLabels={true}
+            className="absolute left-0 right-0 bottom-0"
+          />
         )}
       </div>
 
       {/* Content */}
       <div className="p-5">
         {/* Title */}
-        <h3 className="text-base font-bold text-slate-900 mb-3 line-clamp-2 min-h-[3rem] leading-snug">
+        <h3 className="text-base font-semibold text-slate-900 mb-3 line-clamp-2 min-h-[3rem] leading-snug">
           {title}
         </h3>
 
         {/* Price Section */}
         <div className="mb-4">
-          <span className="text-xs text-slate-600 font-medium">
+          <p className="text-xs text-slate-600 font-medium mb-1">
             {startingBid ? 'Starting bid:' : 'Current bid:'}
-          </span>
-          <div className="text-2xl font-bold text-slate-900 mt-1">
+          </p>
+          <div className="text-2xl font-bold text-slate-900">
             ${(currentBid || startingBid)?.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00'}
           </div>
         </div>
 
         {/* Bid Button */}
         <button
-          onClick={onBid}
+          onClick={(e) => {
+            e.stopPropagation();
+            onBid && onBid();
+          }}
           disabled={status === 'ended'}
-          className={`w-full py-3 rounded-lg font-semibold transition-all duration-200 active:scale-[0.98] ${
-            status === 'ended'
-              ? 'bg-slate-300 text-slate-500 cursor-not-allowed'
-              : buttonColorClass + ' text-white'
-          }`}
+          className={`w-full py-3 rounded-xl font-semibold text-sm transition-all duration-300 active:scale-[0.98] ${getButtonStyles()}`}
         >
           {status === 'ended' ? 'Auction Ended' : 'Bid Now'}
         </button>
