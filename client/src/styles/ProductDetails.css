@@ -1,0 +1,249 @@
+/* ProductDetails Component Custom Styles */
+
+/* Smooth scroll behavior for tab content */
+.product-details-tabs {
+  scroll-behavior: smooth;
+}
+
+/* Custom scrollbar for image gallery on mobile */
+.image-gallery-thumbnails::-webkit-scrollbar {
+  height: 4px;
+}
+
+.image-gallery-thumbnails::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.image-gallery-thumbnails::-webkit-scrollbar-thumb {
+  background: #01AA85;
+  border-radius: 10px;
+}
+
+.image-gallery-thumbnails::-webkit-scrollbar-thumb:hover {
+  background: #019974;
+}
+
+/* Smooth image transitions */
+.product-main-image {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Hover effect for related products */
+.related-product-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.related-product-card:hover {
+  transform: translateY(-4px);
+}
+
+/* Bid amount input animation */
+.bid-amount-input {
+  animation: pulse-subtle 2s infinite;
+}
+
+@keyframes pulse-subtle {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.95;
+  }
+}
+
+/* Loading skeleton for images */
+.image-skeleton {
+  background: linear-gradient(
+    90deg,
+    #f0f0f0 25%,
+    #e0e0e0 50%,
+    #f0f0f0 75%
+  );
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Countdown animation */
+.countdown-unit {
+  animation: count-pulse 1s ease-in-out;
+}
+
+@keyframes count-pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Tab transition */
+.tab-content-enter {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.tab-content-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: all 0.3s ease-out;
+}
+
+/* Badge pulse for "Live" status */
+.badge-live {
+  animation: badge-pulse 2s infinite;
+}
+
+@keyframes badge-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(220, 38, 38, 0);
+  }
+}
+
+/* Reserve price met indicator */
+.reserve-met-indicator {
+  animation: slide-in-bottom 0.5s ease-out;
+}
+
+@keyframes slide-in-bottom {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Quick bid buttons hover effect */
+.quick-bid-btn {
+  position: relative;
+  overflow: hidden;
+}
+
+.quick-bid-btn::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(1, 170, 133, 0.1);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+.quick-bid-btn:hover::before {
+  width: 300px;
+  height: 300px;
+}
+
+/* Product info fade in */
+.product-info-section {
+  animation: fade-in 0.6s ease-out;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Features grid stagger animation */
+.feature-item {
+  animation: slide-in-left 0.5s ease-out;
+  animation-fill-mode: both;
+}
+
+.feature-item:nth-child(1) { animation-delay: 0.1s; }
+.feature-item:nth-child(2) { animation-delay: 0.2s; }
+.feature-item:nth-child(3) { animation-delay: 0.3s; }
+.feature-item:nth-child(4) { animation-delay: 0.4s; }
+.feature-item:nth-child(5) { animation-delay: 0.5s; }
+.feature-item:nth-child(6) { animation-delay: 0.6s; }
+.feature-item:nth-child(7) { animation-delay: 0.7s; }
+.feature-item:nth-child(8) { animation-delay: 0.8s; }
+
+@keyframes slide-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .product-details-container {
+    padding: 1rem;
+  }
+  
+  .image-gallery-thumbnails {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Print styles */
+@media print {
+  .bid-controls,
+  .action-buttons,
+  .related-products {
+    display: none;
+  }
+  
+  .product-details-container {
+    max-width: 100%;
+  }
+}
+
+/* Dark mode support (if needed in future) */
+@media (prefers-color-scheme: dark) {
+  /* Add dark mode styles here if needed */
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .product-details-container {
+    border: 2px solid currentColor;
+  }
+  
+  .bid-controls button {
+    border: 2px solid currentColor;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

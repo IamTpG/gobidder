@@ -259,7 +259,7 @@ const Header = () => {
             </div>
 
             {/* Desktop My Account Button - Hidden on mobile */}
-            <button className="hidden lg:flex bg-gray-900 hover:bg-primary text-white px-4 py-2 rounded-lg items-center space-x-2 ml-4 transition-colors">
+            <a href="/auth" className="hidden lg:flex bg-gray-900 hover:bg-primary text-white px-4 py-2 rounded-lg items-center space-x-2 ml-4 transition-colors">
               <svg
                 className="w-5 h-5"
                 fill="none"
@@ -274,7 +274,7 @@ const Header = () => {
                 />
               </svg>
               <span>My Account</span>
-            </button>
+            </a>
           </div>
         </div>
       </div>
@@ -503,7 +503,7 @@ const Header = () => {
 
           {/* My Account Button */}
           <div className="px-6 py-4 border-t border-gray-200">
-            <button className="w-full bg-gray-900 hover:bg-primary text-white px-4 py-3 rounded-lg flex items-center justify-center space-x-2 transition-colors">
+            <a href="/auth" className="w-full bg-gray-900 hover:bg-primary text-white px-4 py-3 rounded-lg flex items-center justify-center space-x-2 transition-colors">
               <svg
                 className="w-5 h-5"
                 fill="none"
@@ -518,7 +518,7 @@ const Header = () => {
                 />
               </svg>
               <span>My Account</span>
-            </button>
+            </a>
           </div>
         </div>
       </>
