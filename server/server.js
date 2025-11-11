@@ -9,6 +9,7 @@ require("./config/passport");
 
 // Routes
 const authRoutes = require("./routes/auth.route");
+const productsRoutes = require("./routes/product.route");
 
 const app = express();
 
@@ -26,6 +27,7 @@ app.use(cookieParser());
 app.use(passport.initialize());
 
 app.use("/api/auth", authRoutes);
+app.use("api/products", productsRoutes);
 
 const PORT = process.env.PORT || 5000;
 
