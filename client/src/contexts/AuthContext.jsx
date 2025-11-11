@@ -6,6 +6,8 @@ import React, {
   useMemo,
 } from "react";
 
+import api from "../services/api";
+
 const AuthContext = createContext();
 
 export const useAuth = () => {
@@ -37,19 +39,48 @@ export const AuthProvider = ({ children }) => {
     else localStorage.removeItem("auth:user");
   }, [user]);
 
-  //Mock API
-  const login = async ({ email, password }) => {
-    await new Promise((r) => setTimeout(r, 600));
-    if (!email || !password) throw new Error("Vui lòng nhập email và mật khẩu");
-    const mockUser = {
-      id: "u_" + Date.now(),
-      name: email.split("@")[0],
-      email,
-    };
-    setUser(mockUser);
-    return mockUser;
+  const login = async ({ username, password }) => {
+    if (!username || !password)
+      throw new Error("Vui lòng nhập tên đăng nhập và mật khẩu");
+
+    try {
+      const response = await api.post("/auth/login", {
+        email: username,
+        password: password,
+      });
+
+      const userData = response.data.user;
+      setUser(userData);
+      return userData;
+    } catch (error) {
+      let errorMsg = error.response?.data || "Unknown login error.";
+      if (errorMsg === "Unauthorized") {
+        errorMsg = "Incorrect Account or Password.";
+      }
+      throw new Error(errorMsg);
+    }
   };
 
+  const checkAuthStatusAfterRedirect = async () => {
+    try {
+      const response = await api.get("/auth/status");
+      const userData = response.data.user;
+      setUser(userData);
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } catch (error) {
+      setUser(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!user && !loading) {
+      checkAuthStatusAfterRedirect();
+    }
+  }, [user, loading]);
+
+  // Mock API
   const register = async ({ name, email, password }) => {
     await new Promise((r) => setTimeout(r, 800));
     if (!name || !email || !password)
