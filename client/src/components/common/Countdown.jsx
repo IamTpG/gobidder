@@ -51,12 +51,12 @@ const Countdown = ({
           absolute left-0 right-0 bottom-0
           bg-white/95 backdrop-blur-sm
           rounded-t-3xl shadow-countdown
-          px-4 py-3
+          px-3 py-2
           ${className}
         `}
         {...props}
       >
-        <div className="grid grid-cols-4 gap-3 text-center">
+        <div className="grid grid-cols-4 gap-2 text-center">
           {[
             { value: timeLeft.days, label: 'Days' },
             { value: timeLeft.hours, label: 'Hours' },
@@ -64,11 +64,11 @@ const Countdown = ({
             { value: timeLeft.seconds, label: 'Seconds' },
           ].map((item, index) => (
             <div key={index}>
-              <div className="text-3xl font-black text-slate-900 leading-none mb-1">
+              <div className="text-xl font-black text-slate-900 leading-none mb-0.5">
                 {formatNumber(item.value)}
               </div>
               {showLabels && (
-                <div className="text-countdown-label font-medium text-slate-600 uppercase tracking-wide">
+                <div className="text-[10px] font-medium text-slate-600 uppercase tracking-wide">
                   {item.label}
                 </div>
               )}

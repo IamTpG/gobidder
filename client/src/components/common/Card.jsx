@@ -155,61 +155,76 @@ const Card = ({
 };
 
 // AuctionCard - Card chuyên dụng cho sản phẩm đấu giá (Design giống PROBID)
+// Props khớp với DB schema
 export const AuctionCard = ({
   id,
-  image,
-  title,
-  currentBid,
-  startingBid,
-  lotNumber,
-  status = 'live', // live, upcoming, ended
-  timeLeft, // { days, hours, minutes, seconds } - deprecated, use endDate instead
-  endDate, // ISO date string for automatic countdown
+  images, // Json array từ DB: ["url1", "url2", ...]
+  name, // Tên sản phẩm từ DB
+  current_price, // BigInt -> String từ DB
+  start_price, // BigInt -> String từ DB
+  buy_now_price, // BigInt -> String từ DB (optional)
+  current_bidder, // Object từ DB: { id, full_name } hoặc null
+  bid_count = 0, // Integer từ DB
+  created_at, // DateTime từ DB
+  end_time, // DateTime từ DB
+  status = 'Active', // Enum từ DB: Pending, Active, Sold, Expired, Removed
   onBid,
   onClick,
-  onFavorite,
-  isFavorited = false,
-  buttonVariant = 'default', // 'default' or 'primary'
   className = '',
   ...props
 }) => {
-  // Status badge styles
-  const statusConfig = {
-    live: {
-      label: 'Live',
-      className: 'bg-red-600 text-white',
-      dotColor: 'bg-white',
-    },
-    upcoming: {
-      label: 'Upcoming',
-      className: 'bg-blue-600 text-white',
-      icon: (
-        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-        </svg>
-      ),
-    },
-    ended: {
-      label: 'Ended',
-      className: 'bg-slate-600 text-white',
-      icon: (
-        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      ),
-    },
+  // Get first image from array or use placeholder
+  const getImageUrl = () => {
+    if (!images) return 'https://via.placeholder.com/400x300?text=No+Image';
+    if (typeof images === 'string') {
+      try {
+        const parsed = JSON.parse(images);
+        return Array.isArray(parsed) && parsed.length > 0 ? parsed[0] : images;
+      } catch {
+        return images;
+      }
+    }
+    if (Array.isArray(images) && images.length > 0) return images[0];
+    return 'https://via.placeholder.com/400x300?text=No+Image';
   };
 
-  const config = statusConfig[status];
-  
-  // Button styles based on variant and status
+  // Format date
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric' 
+    });
+  };
+
+  // Format price from string (BigInt converted to string in API)
+  const formatPrice = (priceString) => {
+    if (!priceString) return '0.00';
+    const price = parseFloat(priceString);
+    return price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  };
+
+  // Button styles based on status from DB
   const getButtonStyles = () => {
-    if (status === 'ended') {
+    if (status === 'Sold' || status === 'Expired' || status === 'Removed') {
       return 'bg-slate-300 text-slate-500 cursor-not-allowed';
     }
-    
-    // Mặc định: màu đen, hover chuyển sang primary
+    if (status === 'Pending') {
+      return 'bg-yellow-500 text-white cursor-not-allowed';
+    }
     return 'bg-slate-900 text-white hover:bg-primary hover:shadow-lg transition-all duration-300';
+  };
+
+  const getButtonText = () => {
+    switch(status) {
+      case 'Sold': return 'Sold';
+      case 'Expired': return 'Auction Ended';
+      case 'Removed': return 'Removed';
+      case 'Pending': return 'Pending Approval';
+      default: return 'Bid Now';
+    }
   };
 
   return (
@@ -221,36 +236,15 @@ export const AuctionCard = ({
       {/* Image Container */}
       <div className="relative h-64 bg-slate-100">
         <img 
-          src={image} 
-          alt={title}
+          src={getImageUrl()} 
+          alt={name || 'Product'}
           className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
         />
-        
-        {/* Status Badge - Top Left */}
-        <div className={`absolute top-3 left-3 px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 shadow-md ${config.className}`}>
-          {status === 'live' ? (
-            <svg className="w-2 h-2" viewBox="0 0 12 12" fill="currentColor">
-              <circle cx="6" cy="6" r="6">
-                <animate attributeName="opacity" values="1;0.5;1" dur="1.5s" repeatCount="indefinite" />
-              </circle>
-            </svg>
-          ) : (
-            config.icon
-          )}
-          <span>{config.label}</span>
-        </div>
-        
-        {/* Lot Number Badge - Top Right */}
-        {lotNumber && (
-          <div className="absolute top-3 right-3 px-3 py-1.5 rounded-full text-xs font-semibold text-white backdrop-blur-sm" style={{ backgroundColor: '#747474' }}>
-            Lot # {lotNumber}
-          </div>
-        )}
 
-        {/* Countdown Timer - Bottom overlay with rounded white background */}
-        {(timeLeft || endDate) && (
+        {/* Countdown Timer - Bottom overlay */}
+        {end_time && (
           <Countdown 
-            endDate={endDate}
+            endDate={end_time}
             variant="overlay"
             showLabels={true}
             className="absolute left-0 right-0 bottom-0"
@@ -262,18 +256,68 @@ export const AuctionCard = ({
       <div className="p-5">
         {/* Title */}
         <h3 className="text-base font-semibold text-slate-900 mb-3 line-clamp-2 min-h-[3rem] leading-snug">
-          {title}
+          {name}
         </h3>
 
-        {/* Price Section */}
-        <div className="mb-4">
-          <p className="text-xs text-slate-600 font-medium mb-1">
-            {startingBid ? 'Starting bid:' : 'Current bid:'}
-          </p>
-          <div className="text-2xl font-bold text-slate-900">
-            ${(currentBid || startingBid)?.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00'}
+        {/* Current Bidder & Bid Count */}
+        <div className="flex items-center justify-between mb-3 text-xs">
+          {current_bidder ? (
+            <div className="flex items-center gap-1 text-slate-600">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+              <span className="font-medium">{current_bidder.full_name}</span>
+            </div>
+          ) : (
+            <div className="text-slate-400 italic">No bids yet</div>
+          )}
+          
+          <div className="flex items-center gap-1 text-slate-600">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+            </svg>
+            <span className="font-medium">{bid_count} {bid_count === 1 ? 'bid' : 'bids'}</span>
           </div>
         </div>
+
+        {/* Price Section */}
+        <div className="mb-3">
+          <p className="text-xs text-slate-600 font-medium mb-1">
+            {current_price && current_price !== start_price ? 'Current bid:' : 'Starting bid:'}
+          </p>
+          <div className="text-2xl font-bold text-slate-900">
+            ${formatPrice(current_price || start_price)}
+          </div>
+        </div>
+
+        {/* Buy Now Price */}
+        {buy_now_price ? (
+          <div className="mb-3 p-2 bg-green-50 border border-green-200 rounded-lg">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-green-700 font-medium">Buy Now:</span>
+              <span className="text-sm font-bold text-green-700">
+                ${formatPrice(buy_now_price)}
+              </span>
+            </div>
+          </div>
+        ) : (
+          <div className="mb-3 p-2 opacity-0 pointer-events-none">
+            <div className="flex items-center justify-between">
+              <span className="text-xs">Placeholder</span>
+              <span className="text-sm">$0.00</span>
+            </div>
+          </div>
+        )}
+
+        {/* Posted Date */}
+        {created_at && (
+          <div className="mb-4 text-xs text-slate-500 flex items-center gap-1">
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            <span>Posted: {formatDate(created_at)}</span>
+          </div>
+        )}
 
         {/* Bid Button */}
         <button
@@ -281,10 +325,10 @@ export const AuctionCard = ({
             e.stopPropagation();
             onBid && onBid();
           }}
-          disabled={status === 'ended'}
+          disabled={status !== 'Active'}
           className={`w-full py-3 rounded-xl font-semibold text-sm transition-all duration-300 active:scale-[0.98] ${getButtonStyles()}`}
         >
-          {status === 'ended' ? 'Auction Ended' : 'Bid Now'}
+          {getButtonText()}
         </button>
       </div>
     </div>

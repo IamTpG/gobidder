@@ -202,17 +202,18 @@ const AuctionSection = ({
                   >
                     <AuctionCard
                       id={item.id}
-                      lotNumber={item.lotNumber}
-                      image={item.image}
-                      title={item.title}
-                      currentBid={item.currentBid}
-                      startingBid={item.startingBid}
+                      images={item.images || item.image}
+                      name={item.name || item.title}
+                      current_price={item.current_price || item.currentBid || item.startingBid}
+                      start_price={item.start_price || item.startingBid}
+                      buy_now_price={item.buy_now_price || item.buyNowPrice}
+                      current_bidder={item.current_bidder || (item.highestBidder ? { full_name: item.highestBidder } : null)}
+                      bid_count={item.bid_count || item.bidCount || 0}
+                      created_at={item.created_at || item.createdAt}
+                      end_time={item.end_time || item.endDate}
                       status={item.status}
-                      endDate={item.endDate}
-                      timeLeft={item.timeLeft}
                       onClick={() => navigate(`/product/${item.id}`)}
-                      onBid={() => console.log('Bid on:', item.title)}
-                      buttonVariant={item.buttonVariant || 'primary'}
+                      onBid={() => console.log('Bid on:', item.name || item.title)}
                     />
                   </div>
                 ))}
