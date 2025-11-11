@@ -122,16 +122,19 @@ model SellerUpgradeRequest {
 // ===================================
 
 model Category {
-  id        Int       @id @default(autoincrement())
-  name      String
-  
-  // (1.1) Hỗ trợ 2 cấp
-  parent    Category? @relation(name: "ParentChild", fields: [parent_id], references: [id])
-  parent_id Int?
-  children  Category[] @relation(name: "ParentChild")
+  id          Int        @id @default(autoincrement())
+  name        String     @unique
+  description String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
 
-  products  Product[]
+  parent      Category?  @relation(name: "ParentChild", fields: [parent_id], references: [id])
+  parent_id   Int?
+  children    Category[] @relation(name: "ParentChild")
+
+  products    Product[]
 }
+
 
 model Product {
   id            Int      @id @default(autoincrement())

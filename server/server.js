@@ -9,6 +9,8 @@ require("./config/passport");
 
 // Routes
 const authRoutes = require("./routes/auth.route");
+// Import category route
+const categoryRoutes = require("./routes/category.routes.js");
 
 const app = express();
 
@@ -22,10 +24,11 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
-
 app.use(passport.initialize());
 
+// Mount routes
 app.use("/api/auth", authRoutes);
+app.use("/api/categories", categoryRoutes);
 
 const PORT = process.env.PORT || 5000;
 
@@ -39,7 +42,6 @@ const startServer = async () => {
       console.log(`Server running on port ${PORT}`);
     });
 
-    // Handel interrupt
     process.on("SIGINT", async () => {
       console.log("\nInterrupting Signal");
       server.close(async () => {
