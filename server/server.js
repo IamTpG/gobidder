@@ -9,6 +9,7 @@ require("./config/passport");
 
 // Routes
 const authRoutes = require("./routes/auth.route");
+const productsRoutes = require("./routes/product.route");
 const categoryRoutes = require("./routes/category.routes.js");
 const userRoutes = require("./routes/user.routes.js"); // Thêm route user
 
@@ -19,7 +20,7 @@ app.use(
   cors({
     origin: process.env.FE_URL || "http://localhost:3000",
     credentials: true,
-  })
+  }),
 );
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -28,6 +29,7 @@ app.use(passport.initialize());
 
 // Mount routes
 app.use("/api/auth", authRoutes);
+app.use("api/products", productsRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/users", userRoutes); // Mount CRUD user
 
