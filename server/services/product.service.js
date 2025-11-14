@@ -1,29 +1,32 @@
 const prisma = require("../config/prisma");
+const categoryService = require("./category.service");
 
-exports.getProducts = async ({ params }) => {
-  const { page, limit, categoryId, sort, q, skip } = params;
-
+exports.getProducts = async ({ page, limit, categoryId, sort, q, skip }) => {
   const where = {
     status: "Active",
   };
 
   if (categoryId) {
-    where.category_id = categoryId;
+    // Lấy tất cả category IDs (parent + children)
+    const categoryIds = await categoryService.getAllCategoryIds(categoryId);
+    // Filter products có category_id trong danh sách này
+    where.category_id = { in: categoryIds };
   }
 
-  if (q) {
+  const searchTerm = q?.trim();
+  if (searchTerm) {
     where.OR = [
-      { name: { contains: q, mode: "insensitive" } },
-      { description: { contains: q, mode: "insentative" } },
+      { name: { contains: searchTerm, mode: "insensitive" } },
+      { description: { contains: searchTerm, mode: "insensitive" } },
     ];
   }
 
-  let orderBy = {};
+  let orderBy;
   switch (sort) {
-    case "price-asc":
+    case "price_asc":
       orderBy = { current_price: "asc" };
       break;
-    case "price-desc":
+    case "price_desc":
       orderBy = { current_price: "desc" };
       break;
     case "end_time":
@@ -32,8 +35,9 @@ exports.getProducts = async ({ params }) => {
     case "bid_count":
       orderBy = { bid_count: "desc" };
       break;
+    case "created_at":
     default:
-      orderBy = { created_ad: "desc" };
+      orderBy = { created_at: "desc" };
   }
 
   const products = await prisma.product.findMany({
@@ -48,8 +52,8 @@ exports.getProducts = async ({ params }) => {
       category: {
         select: { id: true, name: true },
       },
-      current_bid: {
-        select: { id: true, full_name },
+      current_bidder: {
+        select: { id: true, full_name: true },
       },
     },
   });

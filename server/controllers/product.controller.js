@@ -1,10 +1,29 @@
 const productService = require("../services/product.service");
 
+const serializeBigInt = (value) => {
+  if (typeof value === "bigint") {
+    return value.toString();
+  }
+
+  if (Array.isArray(value)) {
+    return value.map(serializeBigInt);
+  }
+
+  if (value && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, val]) => [key, serializeBigInt(val)]),
+    );
+  }
+
+  return value;
+};
+
 exports.getProducts = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
-    const categoryId = req.query.category ? req.query.category : null;
+    const categoryIdParam = req.query.categoryId ?? req.query.category;
+    const categoryId = categoryIdParam ? Number(categoryIdParam) : undefined;
     const sort = req.query.sort || "created_at";
     const q = req.query.q || "";
 
@@ -22,8 +41,10 @@ exports.getProducts = async (req, res) => {
       skip,
     });
 
+    const serializedData = serializeBigInt(result.data);
+
     return res.status(200).json({
-      data: result.data,
+      data: serializedData,
       pagination: {
         page: validatePage,
         limit: validateLimit,

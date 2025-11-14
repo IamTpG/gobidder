@@ -4,6 +4,8 @@ import Layout from "../layouts/Layout";
 import Home from "../pages/Home";
 import Auth from "../pages/Auth";
 import ProductDetailsPage from "../pages/ProductDetailsPage";
+// import SetupAccount from '../pages/setupAccount';
+import ProductsPage from "../pages/ProductsPage";
 
 const AppRouter = () => {
   return (
@@ -11,7 +13,8 @@ const AppRouter = () => {
       <Route path="/" element={<Layout />}>
         {/* Home Page */}
         <Route index element={<Home />} />
-
+        {/* Products Page */}
+        <Route path="products" element={<ProductsPage />} />
         {/* Authentication Pages */}
         <Route path="auth" element={<Auth />} />
         <Route path="login" element={<Auth />} />

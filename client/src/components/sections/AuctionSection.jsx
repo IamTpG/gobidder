@@ -243,7 +243,7 @@ const AuctionSection = ({
                       created_at={item.created_at || item.createdAt}
                       end_time={item.end_time || item.endDate}
                       status={item.status}
-                      onClick={() => navigate(`/products/${item.id}`)}
+                      onClick={() => navigate(`/product/${item.id}`)}
                       onBid={() =>
                         console.log("Bid on:", item.name || item.title)
                       }
@@ -275,7 +275,11 @@ const AuctionSection = ({
 
             {/* View All Button */}
             <div className="text-center mt-8 sm:mt-12">
-              <button className="inline-flex items-center gap-2 px-6 sm:px-8 py-2.5 sm:py-3 border-2 border-primary text-primary font-medium rounded-xl hover:bg-primary hover:text-white transition-all text-sm sm:text-base">
+              <button
+                type="button"
+                onClick={() => navigate("/products")}
+                className="inline-flex items-center gap-2 px-6 sm:px-8 py-2.5 sm:py-3 border-2 border-primary text-primary font-medium rounded-xl hover:bg-primary hover:text-white transition-all text-sm sm:text-base"
+              >
                 View All Auction
                 <svg
                   className="w-4 h-4 sm:w-5 sm:h-5"
