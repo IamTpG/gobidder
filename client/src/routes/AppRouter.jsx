@@ -4,6 +4,7 @@ import Layout from '../layouts/Layout';
 import Home from '../pages/Home';
 import Auth from '../pages/Auth';
 import ProductDetailsPage from '../pages/ProductDetailsPage';
+import OtpVerification from '../pages/OtpVerification';
 
 const AppRouter = () => {
   return (
@@ -20,7 +21,7 @@ const AppRouter = () => {
         {/* Product/Auction Details */}
         <Route path="product/:id" element={<ProductDetailsPage />} />
         <Route path="auction/:id" element={<ProductDetailsPage />} />
-        
+        <Route path="verify-otp" element={<OtpVerification />} />
         {/* TODO: Add more routes as needed */}
         {/* <Route path="auctions" element={<Auctions />} /> */}
         {/* <Route path="auctions/:id" element={<AuctionDetails />} /> */}
