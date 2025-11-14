@@ -29,7 +29,7 @@ app.use(passport.initialize());
 
 // Mount routes
 app.use("/api/auth", authRoutes);
-app.use("api/products", productsRoutes);
+app.use("/api/products", productsRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/users", userRoutes); // Mount CRUD user
 

@@ -9,8 +9,8 @@ exports.getProducts = async (req, res) => {
     const q = req.query.q || "";
 
     const maxLimit = 50;
-    const validateLimit = min(limit, maxLimit);
-    const validatePage = max(page, 1);
+    const validateLimit = Math.min(limit, maxLimit);
+    const validatePage = Math.max(page, 1);
     const skip = (validatePage - 1) * validateLimit;
 
     const result = await productService.getProducts({
@@ -35,6 +35,34 @@ exports.getProducts = async (req, res) => {
     });
   } catch (error) {
     console.error("Error in getProducts:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+exports.getProductById = async (req, res) => {
+  try {
+    // 1. Lấy ID từ URL params
+    const productId = parseInt(req.params.id);
+
+    // 2. Validate ID
+    if (isNaN(productId) || productId <= 0) {
+      return res.status(400).json({ message: "Invalid product ID" });
+    }
+
+    // 3. Gọi service để lấy dữ liệu
+    const product = await productService.getProductById(productId);
+
+    // 4. Kiểm tra nếu không tìm thấy sản phẩm
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    // 5. Trả về kết quả
+    return res.status(200).json({
+      data: product,
+    });
+  } catch (error) {
+    console.error("Error in getProductById:", error);
     return res.status(500).json({ message: "Internal server error" });
   }
 };
