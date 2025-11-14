@@ -1,19 +1,20 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { AuctionCard } from '../common';
-import { CategoryFilter } from '../common';
+import React, { useState, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { AuctionCard } from "../common";
+import { CategoryFilter } from "../common";
 
-const AuctionSection = ({ 
-  title, 
+const AuctionSection = ({
+  title,
   subtitle,
-  items = [], 
+  items = [],
   showFilter = false,
   itemsPerView = 5,
-  className = '' 
+  className = "",
 }) => {
   const navigate = useNavigate();
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [responsiveItemsPerView, setResponsiveItemsPerView] = useState(itemsPerView);
+  const [responsiveItemsPerView, setResponsiveItemsPerView] =
+    useState(itemsPerView);
   const containerRef = useRef(null);
   const scrollTimeoutRef = useRef(null);
 
@@ -43,21 +44,21 @@ const AuctionSection = ({
     updateItemsPerView();
 
     // Add event listener
-    window.addEventListener('resize', updateItemsPerView);
+    window.addEventListener("resize", updateItemsPerView);
 
     // Cleanup
-    return () => window.removeEventListener('resize', updateItemsPerView);
+    return () => window.removeEventListener("resize", updateItemsPerView);
   }, [itemsPerView]);
 
   // Tính số items có thể scroll
   const maxIndex = Math.max(0, items.length - responsiveItemsPerView);
 
   const handlePrev = () => {
-    setCurrentIndex(prev => Math.max(0, prev - 1));
+    setCurrentIndex((prev) => Math.max(0, prev - 1));
   };
 
   const handleNext = () => {
-    setCurrentIndex(prev => Math.min(maxIndex, prev + 1));
+    setCurrentIndex((prev) => Math.min(maxIndex, prev + 1));
   };
 
   // Handle scroll snap on mobile with debounce
@@ -72,9 +73,9 @@ const AuctionSection = ({
       scrollTimeoutRef.current = setTimeout(() => {
         const container = containerRef.current;
         if (!container) return;
-        
+
         // Get all card elements
-        const cards = container.querySelectorAll('.flex > div');
+        const cards = container.querySelectorAll(".flex > div");
         if (cards.length === 0) return;
 
         const containerRect = container.getBoundingClientRect();
@@ -85,7 +86,7 @@ const AuctionSection = ({
         cards.forEach((card, index) => {
           const cardRect = card.getBoundingClientRect();
           const distance = Math.abs(cardRect.left - containerRect.left);
-          
+
           if (distance < minDistance) {
             minDistance = distance;
             closestIndex = index;
@@ -103,19 +104,20 @@ const AuctionSection = ({
   useEffect(() => {
     if (containerRef.current) {
       const container = containerRef.current;
-      const cards = container.querySelectorAll('.flex > div');
-      
+      const cards = container.querySelectorAll(".flex > div");
+
       if (cards[currentIndex]) {
         const targetCard = cards[currentIndex];
         const containerRect = container.getBoundingClientRect();
         const cardRect = targetCard.getBoundingClientRect();
-        
+
         // Calculate scroll position
-        const scrollLeft = container.scrollLeft + (cardRect.left - containerRect.left);
-        
+        const scrollLeft =
+          container.scrollLeft + (cardRect.left - containerRect.left);
+
         container.scrollTo({
           left: scrollLeft,
-          behavior: 'smooth'
+          behavior: "smooth",
         });
       }
     }
@@ -154,19 +156,39 @@ const AuctionSection = ({
                 className="w-12 h-12 rounded-full border-2 border-slate-300 flex items-center justify-center hover:border-slate-400 hover:bg-slate-50 transition-all disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:border-slate-300 disabled:hover:bg-transparent"
                 aria-label="Previous"
               >
-                <svg className="w-5 h-5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                <svg
+                  className="w-5 h-5 text-slate-700"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 19l-7-7 7-7"
+                  />
                 </svg>
               </button>
-              
+
               <button
                 onClick={handleNext}
                 disabled={currentIndex >= items.length - responsiveItemsPerView}
                 className="w-12 h-12 rounded-full border-2 border-slate-300 flex items-center justify-center hover:border-slate-400 hover:bg-slate-50 transition-all disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:border-slate-300 disabled:hover:bg-transparent"
                 aria-label="Next"
               >
-                <svg className="w-5 h-5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                <svg
+                  className="w-5 h-5 text-slate-700"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 5l7 7-7 7"
+                  />
                 </svg>
               </button>
             </div>
@@ -184,19 +206,19 @@ const AuctionSection = ({
         {items.length > 0 ? (
           <div className="relative">
             {/* Cards Container with Smooth Scroll */}
-            <div 
+            <div
               ref={containerRef}
               onScroll={handleScroll}
               className="overflow-x-auto overflow-y-visible scrollbar-hide scroll-smooth snap-x snap-mandatory"
               style={{
-                scrollbarWidth: 'none', // Firefox
-                msOverflowStyle: 'none', // IE/Edge
-                WebkitOverflowScrolling: 'touch', // iOS momentum scrolling
+                scrollbarWidth: "none", // Firefox
+                msOverflowStyle: "none", // IE/Edge
+                WebkitOverflowScrolling: "touch", // iOS momentum scrolling
               }}
             >
               <div className="flex gap-3 sm:gap-4 md:gap-6">
                 {items.map((item, index) => (
-                  <div 
+                  <div
                     key={item.id || index}
                     className="flex-shrink-0 w-full sm:w-[calc(50%-0.5rem)] md:w-[calc(33.333%-1rem)] lg:w-[calc(25%-1.125rem)] xl:w-[calc(20%-1.2rem)] snap-start snap-always"
                   >
@@ -204,16 +226,27 @@ const AuctionSection = ({
                       id={item.id}
                       images={item.images || item.image}
                       name={item.name || item.title}
-                      current_price={item.current_price || item.currentBid || item.startingBid}
+                      current_price={
+                        item.current_price ||
+                        item.currentBid ||
+                        item.startingBid
+                      }
                       start_price={item.start_price || item.startingBid}
                       buy_now_price={item.buy_now_price || item.buyNowPrice}
-                      current_bidder={item.current_bidder || (item.highestBidder ? { full_name: item.highestBidder } : null)}
+                      current_bidder={
+                        item.current_bidder ||
+                        (item.highestBidder
+                          ? { full_name: item.highestBidder }
+                          : null)
+                      }
                       bid_count={item.bid_count || item.bidCount || 0}
                       created_at={item.created_at || item.createdAt}
                       end_time={item.end_time || item.endDate}
                       status={item.status}
-                      onClick={() => navigate(`/product/${item.id}`)}
-                      onBid={() => console.log('Bid on:', item.name || item.title)}
+                      onClick={() => navigate(`/products/${item.id}`)}
+                      onBid={() =>
+                        console.log("Bid on:", item.name || item.title)
+                      }
                     />
                   </div>
                 ))}
@@ -223,18 +256,20 @@ const AuctionSection = ({
             {/* Scroll Indicators for Mobile/Tablet */}
             {items.length > responsiveItemsPerView && (
               <div className="flex lg:hidden justify-center gap-2 mt-6">
-                {items.slice(0, items.length - responsiveItemsPerView + 1).map((_, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => setCurrentIndex(idx)}
-                    className={`h-2 rounded-full transition-all duration-300 ${
-                      currentIndex === idx
-                        ? 'w-8 bg-primary'
-                        : 'w-2 bg-slate-300 hover:bg-slate-400'
-                    }`}
-                    aria-label={`Go to slide ${idx + 1}`}
-                  />
-                ))}
+                {items
+                  .slice(0, items.length - responsiveItemsPerView + 1)
+                  .map((_, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setCurrentIndex(idx)}
+                      className={`h-2 rounded-full transition-all duration-300 ${
+                        currentIndex === idx
+                          ? "w-8 bg-primary"
+                          : "w-2 bg-slate-300 hover:bg-slate-400"
+                      }`}
+                      aria-label={`Go to slide ${idx + 1}`}
+                    />
+                  ))}
               </div>
             )}
 
@@ -242,8 +277,18 @@ const AuctionSection = ({
             <div className="text-center mt-8 sm:mt-12">
               <button className="inline-flex items-center gap-2 px-6 sm:px-8 py-2.5 sm:py-3 border-2 border-primary text-primary font-medium rounded-xl hover:bg-primary hover:text-white transition-all text-sm sm:text-base">
                 View All Auction
-                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                <svg
+                  className="w-4 h-4 sm:w-5 sm:h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M17 8l4 4m0 0l-4 4m4-4H3"
+                  />
                 </svg>
               </button>
             </div>
