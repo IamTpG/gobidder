@@ -1,102 +1,226 @@
-import React, { useState } from 'react';
-import Badge from './common/Badge';
-import ImageGallery from './common/ImageGallery';
-import CountdownTimer from './common/CountdownTimer';
-import BidControls from './common/BidControls';
-import TabNavigation from './common/TabNavigation';
-import AuctionSection from './sections/AuctionSection';
+import React, { useState } from "react";
+import Badge from "./common/Badge";
+import ImageGallery from "./common/ImageGallery";
+import CountdownTimer from "./common/CountdownTimer";
+import BidControls from "./common/BidControls";
+import TabNavigation from "./common/TabNavigation";
+import AuctionSection from "./sections/AuctionSection";
 
-const ProductDetails = ({ 
+const ProductDetails = ({
   product = {
-    id: 'ARC-458-1',
-    title: 'Building Wealth Through Real Estate: A Guide',
-    description: 'Aptent taciti sociosa litor torquen per conubia nostra, per incep placerat felis non aliquam.Mauris nec justo vitae ante auctor.',
-    currentBid: 22007.00,
-    reservePrice: 22507.00,
-    reservePriceMet: true,
-    condition: 'USED',
-    auctionEndDate: '2026-01-30T12:00:00',
-    timezone: 'UTC 0',
-    sku: 'ARC-458-1',
-    categories: ['Ceramics', 'Real Estate'],
-    tags: ['Building', 'Real Estate'],
+    id: 1,
+    name: "Building Wealth Through Real Estate: A Guide",
+    description:
+      "Aptent taciti sociosa litor torquen per conubia nostra, per incep placerat felis non aliquam.Mauris nec justo vitae ante auctor.",
+    currentBid: 22007.0,
+    buyNowPrice: 22507.0,
+    startPrice: 10000.0,
+    stepPrice: 500.0,
+    auctionEndDate: "2026-01-30T12:00:00",
+    createdAt: "2024-11-01T10:00:00",
+    timezone: "UTC 0",
+    category: "Real Estate",
+    bidCount: 15,
+    // Thông tin người bán
+    seller: {
+      name: "John Smith",
+      ratingPlus: 45,
+      ratingMinus: 5,
+    },
+    // Thông tin người đặt giá cao nhất
+    currentBidder: {
+      name: "Jane Doe",
+      ratingPlus: 30,
+      ratingMinus: 2,
+    },
     images: [
-      'https://via.placeholder.com/600x400/01AA85/ffffff?text=Main+Image',
-      'https://via.placeholder.com/100x100/01AA85/ffffff?text=Thumb+1',
-      'https://via.placeholder.com/100x100/01AA85/ffffff?text=Thumb+2',
-      'https://via.placeholder.com/100x100/01AA85/ffffff?text=Thumb+3',
-      'https://via.placeholder.com/100x100/01AA85/ffffff?text=Thumb+4',
-      'https://via.placeholder.com/100x100/01AA85/ffffff?text=Thumb+5',
-      'https://via.placeholder.com/100x100/01AA85/ffffff?text=Thumb+6',
-      'https://via.placeholder.com/100x100/01AA85/ffffff?text=Thumb+7',
-      'https://via.placeholder.com/100x100/01AA85/ffffff?text=Thumb+8',
+      "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&h=600&fit=crop",
+      "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=200&h=200&fit=crop",
+      "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=200&h=200&fit=crop",
+      "https://images.unsplash.com/photo-1600573472591-ee6b68d14c68?w=200&h=200&fit=crop",
+      "https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde?w=200&h=200&fit=crop",
+      "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=200&h=200&fit=crop",
     ],
-    features: [
-      { icon: '✓', label: 'Paraben-Free' },
-      { icon: '✓', label: 'Sulfate-Free' },
-      { icon: '✓', label: 'Clean at Sephora' },
-      { icon: '✓', label: 'Clean at Sephora' },
-      { icon: '✓', label: 'Fragrance Free' },
-      { icon: '✓', label: 'Cruelty-Free' },
-      { icon: '✓', label: 'Antioxidants' },
-      { icon: '✓', label: 'Antioxidants' },
+    // Lịch sử đặt giá
+    bidHistory: [
+      { id: 1, date: "2024-11-14T09:00:00", amount: 22007.0, user: "Jane Doe" },
+      {
+        id: 2,
+        date: "2024-11-13T15:30:00",
+        amount: 21507.0,
+        user: "Mike Davis",
+      },
+      { id: 3, date: "2024-11-12T14:20:00", amount: 21007.0, user: "Jane Doe" },
+      {
+        id: 4,
+        date: "2024-11-11T10:15:00",
+        amount: 20507.0,
+        user: "Sarah Wilson",
+      },
+      {
+        id: 5,
+        date: "2024-11-10T16:45:00",
+        amount: 20007.0,
+        user: "Tom Brown",
+      },
+    ],
+    // Q&A
+    qnaItems: [
+      {
+        id: 1,
+        questionText: "Is the property still available for viewing?",
+        questionTime: "2024-11-10T10:00:00",
+        questionerId: 2,
+        questioner: {
+          id: 2,
+          fullName: "Bob Johnson",
+          ratingPlus: 20,
+          ratingMinus: 1,
+        },
+        answerText: "Yes, viewings are available on weekdays from 2-5 PM.",
+        answerTime: "2024-11-10T14:00:00",
+      },
+      {
+        id: 2,
+        questionText: "What is the property tax rate?",
+        questionTime: "2024-11-12T09:30:00",
+        questionerId: 3,
+        questioner: {
+          id: 3,
+          fullName: "Alice Williams",
+          ratingPlus: 35,
+          ratingMinus: 3,
+        },
+        answerText: "The annual property tax is approximately $2,500.",
+        answerTime: "2024-11-12T15:00:00",
+      },
+      {
+        id: 3,
+        questionText: "Are pets allowed in this property?",
+        questionTime: "2024-11-13T11:00:00",
+        questionerId: 4,
+        questioner: {
+          id: 4,
+          fullName: "Charlie Brown",
+          ratingPlus: 10,
+          ratingMinus: 0,
+        },
+        answerText: null,
+        answerTime: null,
+      },
     ],
     fullDescription: `Urna Aenean onewaryzo eleifend vitae tellus a facilisis. Nunc posuere at augue eget port. Inei odion goet tellus, dignissim fermentumara purus nec, consequat dapibus metus. Vav urna worlda mauris, goat te faucibus at egestas quis, fermentum egetonav neque. Dphare lectus nec risuonl pellentesque, opi vitae aliquet nisi dapibus. Sed volutpat mi velit.
 
 Urna Aenean onewaryzo eleifend vitae tellus a facilisis. Nunc posuere at augue eget port. Inei odion goet tellus, dignissim fermentumara purus nec.
 
-Nunc posuere at augue eget porta. Inei odion goat tellus, dignissim fermentumara purus nec, consequat dapibus metus.Vivamus urna worlda mauris, goat te faucibus at egestas quis, fermentum egetonav neque. Duis pharetra lectus nec risuonl pellentesque, opi vitae aliquet nisi dapibus. Sed volutpat mi velit, ateng maximus est eleifend accui Fusce porttitor ex ercu, Phasellus viverra lorem an nibh placerat tincidunt.bologtai Aliquam andit rutrum elementum urna, velgeria fringilla tellus varius ut. Morbi non velit odio.`
+Nunc posuere at augue eget porta. Inei odion goat tellus, dignissim fermentumara purus nec, consequat dapibus metus.Vivamus urna worlda mauris, goat te faucibus at egestas quis, fermentum egetonav neque. Duis pharetra lectus nec risuonl pellentesque, opi vitae aliquet nisi dapibus. Sed volutpat mi velit, ateng maximus est eleifend accui Fusce porttitor ex ercu, Phasellus viverra lorem an nibh placerat tincidunt.bologtai Aliquam andit rutrum elementum urna, velgeria fringilla tellus varius ut. Morbi non velit odio.`,
   },
-  className = ''
+  className = "",
 }) => {
-  const [bidAmount, setBidAmount] = useState(product.reservePrice);
-  const [activeTab, setActiveTab] = useState('description');
+  const [bidAmount, setBidAmount] = useState(
+    product.currentBid + product.stepPrice,
+  );
+  const [activeTab, setActiveTab] = useState("description");
+
+  // Helper functions
+  const formatPrice = (price) => {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      minimumFractionDigits: 2,
+    }).format(price);
+  };
+
+  const formatDateTime = (dateString) => {
+    return new Date(dateString).toLocaleString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  const calculateRating = (plus, minus) => {
+    const total = plus + minus;
+    if (total === 0) return "No ratings";
+    const percentage = ((plus / total) * 100).toFixed(1);
+    return `${plus}/${total} (${percentage}%)`;
+  };
+
+  const formatRelativeTime = (endDate) => {
+    const now = new Date();
+    const end = new Date(endDate);
+    const diff = end - now;
+
+    if (diff <= 0) return null;
+
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+    const minutes = Math.floor((diff / (1000 * 60)) % 60);
+
+    // Chỉ hiển thị relative time nếu còn ít hơn 3 ngày
+    if (days >= 3) return null;
+
+    if (days > 0) {
+      return `${days} day${days > 1 ? "s" : ""} left`;
+    } else if (hours > 0) {
+      return `${hours} hour${hours > 1 ? "s" : ""} left`;
+    } else {
+      return `${minutes} minute${minutes > 1 ? "s" : ""} left`;
+    }
+  };
 
   // Sample related products data
   const relatedProducts = [
     {
       id: 101,
-      lotNumber: '576894',
-      image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=300&fit=crop',
-      title: 'Premium Headphones Collection',
+      lotNumber: "576894",
+      image:
+        "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=300&fit=crop",
+      title: "Premium Headphones Collection",
       currentBid: 2458,
-      status: 'live',
+      status: "live",
       timeLeft: { days: 52, hours: 13, minutes: 32, seconds: 48 },
     },
     {
       id: 102,
-      lotNumber: '679542',
-      image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=300&fit=crop',
-      title: 'Luxury Watch Limited Edition',
+      lotNumber: "679542",
+      image:
+        "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=300&fit=crop",
+      title: "Luxury Watch Limited Edition",
       currentBid: 5200,
-      status: 'live',
+      status: "live",
       timeLeft: { days: 45, hours: 8, minutes: 15, seconds: 30 },
     },
     {
       id: 103,
-      lotNumber: '467188',
-      image: 'https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=400&h=300&fit=crop',
-      title: 'Designer Sneakers Rare',
+      lotNumber: "467188",
+      image:
+        "https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=400&h=300&fit=crop",
+      title: "Designer Sneakers Rare",
       currentBid: 1850,
-      status: 'live',
+      status: "live",
       timeLeft: { days: 38, hours: 22, minutes: 45, seconds: 12 },
     },
     {
       id: 104,
-      lotNumber: '258967',
-      image: 'https://images.unsplash.com/photo-1491553895911-0055eca6402d?w=400&h=300&fit=crop',
-      title: 'Vintage Camera Collection',
+      lotNumber: "258967",
+      image:
+        "https://images.unsplash.com/photo-1491553895911-0055eca6402d?w=400&h=300&fit=crop",
+      title: "Vintage Camera Collection",
       currentBid: 3100,
-      status: 'live',
+      status: "live",
       timeLeft: { days: 29, hours: 14, minutes: 28, seconds: 55 },
     },
     {
       id: 105,
-      lotNumber: '238964',
-      image: 'https://images.unsplash.com/photo-1560343090-f0409e92791a?w=400&h=300&fit=crop',
-      title: 'Modern Art Sculpture',
+      lotNumber: "238964",
+      image:
+        "https://images.unsplash.com/photo-1560343090-f0409e92791a?w=400&h=300&fit=crop",
+      title: "Modern Art Sculpture",
       currentBid: 4750,
-      status: 'live',
+      status: "live",
       timeLeft: { days: 60, hours: 5, minutes: 38, seconds: 20 },
     },
   ];
@@ -107,133 +231,134 @@ Nunc posuere at augue eget porta. Inei odion goat tellus, dignissim fermentumara
 
   const handlePlaceBid = () => {
     // Logic đặt giá
-    console.log('Placing bid:', bidAmount);
+    console.log("Placing bid:", bidAmount);
     // Có thể thêm API call ở đây
-    alert(`Bid placed: $${bidAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}`);
+    alert(
+      `Bid placed: $${bidAmount.toLocaleString("en-US", { minimumFractionDigits: 2 })}`,
+    );
   };
 
   return (
     <div className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 ${className}`}>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
         {/* Left Column - Images */}
-        <ImageGallery 
-          images={product.images}
-          alt={product.title}
-        />
+        <ImageGallery images={product.images} alt={product.name} />
 
         {/* Right Column - Product Info */}
         <div className="space-y-3">
-          {/* Lot Number Badge */}
-          {/* <div>
-            <Badge variant="lightPrimary" size="sm" className="font-semibold">
-              Lot # 368954
-            </Badge>
-          </div> */}
-
           {/* Title */}
           <div>
             <h2 className="text-xl lg:text-2xl font-bold text-gray-900 mb-1.5">
-              Invest Smartly in Today's Dynamic Real Estate Market
+              {product.name}
             </h2>
             <p className="text-xs text-gray-600 leading-relaxed">
               {product.description}
             </p>
           </div>
 
-          {/* Current Bid */}
-          <div>
-            <p className="text-[10px] text-gray-600 font-medium mb-0.5">Current bid:</p>
-            <p className="text-xl font-bold text-gray-900">
-              ${product.currentBid.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </p>
+          {/* Current Bid & Buy Now Price */}
+          <div className="grid grid-cols-2 gap-4">
+            {/* Current Bid */}
+            <div>
+              <p className="text-[10px] text-gray-600 font-medium mb-0.5">
+                Current bid:
+              </p>
+              <p className="text-xl font-bold text-gray-900">
+                {formatPrice(product.currentBid)}
+              </p>
+            </div>
+
+            {/* Buy Now Price */}
+            {product.buyNowPrice && (
+              <div>
+                <p className="text-[10px] text-gray-600 font-medium mb-0.5">
+                  Buy now price:
+                </p>
+                <p className="text-xl font-bold text-primary">
+                  {formatPrice(product.buyNowPrice)}
+                </p>
+              </div>
+            )}
           </div>
 
-          {/* Condition Badge */}
-          <div className="flex items-center gap-2">
-            <p className="text-[10px] font-semibold text-gray-900 uppercase">Item Condition:</p>
-            <Badge variant="lightPrimary" size="xs" className="font-semibold">
-              {product.condition}
-            </Badge>
+          {/* Seller Info */}
+          <div className="bg-gray-50 rounded-lg px-3 py-2 border border-gray-200">
+            <p className="text-[10px] text-gray-600 font-medium mb-1">
+              Seller Information:
+            </p>
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-semibold text-gray-900">
+                {product.seller.name}
+              </p>
+              <Badge variant="lightPrimary" size="xs">
+                Rating:{" "}
+                {calculateRating(
+                  product.seller.ratingPlus,
+                  product.seller.ratingMinus,
+                )}
+              </Badge>
+            </div>
           </div>
+
+          {/* Current Highest Bidder */}
+          {product.currentBidder && (
+            <div className="bg-green-50 rounded-lg px-3 py-2 border border-green-200">
+              <p className="text-[10px] text-gray-600 font-medium mb-1">
+                Current highest bidder:
+              </p>
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-semibold text-gray-900">
+                  {product.currentBidder.name}
+                </p>
+                <Badge variant="success" size="xs">
+                  Rating:{" "}
+                  {calculateRating(
+                    product.currentBidder.ratingPlus,
+                    product.currentBidder.ratingMinus,
+                  )}
+                </Badge>
+              </div>
+            </div>
+          )}
+
+          {/* Thời điểm kết thúc (relative time nếu < 3 ngày) */}
+          {formatRelativeTime(product.auctionEndDate) && (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+              <p className="text-sm font-semibold text-amber-800">
+                ⏰ {formatRelativeTime(product.auctionEndDate)}
+              </p>
+            </div>
+          )}
 
           {/* Countdown Timer */}
           <div>
-            <p className="text-[10px] font-medium text-gray-700 mb-1.5">Time left:</p>
-            <CountdownTimer 
+            <p className="text-[10px] font-medium text-gray-700 mb-1.5">
+              Time left:
+            </p>
+            <CountdownTimer
               endDate={product.auctionEndDate}
               timezone={product.timezone}
               variant="compact"
             />
           </div>
 
-          {/* Reserve Price Notice */}
-          {product.reservePriceMet && (
-            <div className="bg-green-50 border border-green-200 rounded-lg px-2.5 py-1.5">
-              <p className="text-[10px] text-green-800 font-medium">
-                ✓ Reserve price has been met
-              </p>
-            </div>
-          )}
-
           {/* Bid Controls */}
-          <BidControls 
+          <BidControls
             currentBid={product.currentBid}
             bidAmount={bidAmount}
             onBidChange={handleBidChange}
             onBid={handlePlaceBid}
-            minBidIncrement={500}
+            minBidIncrement={product.stepPrice}
           />
-
-          {/* Additional Info */}
-          <div className="space-y-1.5 text-[10px]">
-            {/* <div className="flex items-center gap-2">
-              <span className="font-semibold text-gray-700">SKU:</span>
-              <span className="text-gray-600">{product.sku}</span>
-            </div> */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="font-semibold text-gray-700">Categories:</span>
-                <span className="text-gray-600">{product.categories.join(', ')}</span>
-              </div>
-              
-              {/* Action Buttons */}
-              <div className="flex gap-2">
-                <button className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-gray-700 hover:text-primary border border-gray-300 hover:border-primary rounded-lg transition-all duration-200">
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  Ask a question
-                </button>
-                <button className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-gray-700 hover:text-red-600 border border-gray-300 hover:border-red-600 rounded-lg transition-all duration-200">
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                  </svg>
-                  Add to watch list
-                </button>
-              </div>
-            </div>
-            {/* <div className="flex items-center gap-2">
-              <span className="font-semibold text-gray-700">Tags:</span>
-              <span className="text-gray-600">{product.tags.join(', ')}</span>
-            </div> */}
-          </div>
-
-          {/* Safe Checkout */}
-          <div className="bg-gray-50 rounded-lg px-2.5 py-1.5 border border-gray-200">
-            <p className="text-[10px] text-gray-700 font-medium text-center">
-              🔒 Guaranted Safe Checkout
-            </p>
-          </div>
         </div>
       </div>
 
       {/* Tabs Section */}
       <div className="mt-6">
-        <TabNavigation 
+        <TabNavigation
           tabs={[
-            { key: 'description', label: 'Description' },
-            { key: 'auction-history', label: 'Auction History' },
-            { key: 'reviews', label: 'Reviews (0)' },
+            { key: "description", label: "Description" },
+            { key: "qna", label: `Q&A (${product.qnaItems?.length || 0})` },
           ]}
           activeTab={activeTab}
           onChange={setActiveTab}
@@ -242,202 +367,99 @@ Nunc posuere at augue eget porta. Inei odion goat tellus, dignissim fermentumara
 
         {/* Tab Content */}
         <div className="py-6">
-          {activeTab === 'description' && (
+          {activeTab === "description" && (
             <div className="max-w-none">
               <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                They're kinda our Best thing!
+                Product Description
               </h2>
-              
+
               <div className="space-y-4 text-sm text-gray-600 leading-relaxed">
-                {product.fullDescription.split('\n\n').map((paragraph, index) => (
-                  <p key={index}>
-                    {paragraph}
-                  </p>
-                ))}
-              </div>
-
-              {/* Features Grid */}
-              <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-3">
-                {product.features.map((feature, index) => (
-                  <div key={index} className="flex items-center gap-2">
-                    <span className="text-primary font-bold text-sm">{feature.icon}</span>
-                    <span className="text-sm text-gray-700">{feature.label}</span>
-                  </div>
-                ))}
+                {product.fullDescription
+                  .split("\n\n")
+                  .map((paragraph, index) => (
+                    <p key={index}>{paragraph}</p>
+                  ))}
               </div>
             </div>
           )}
 
-          {activeTab === 'auction-history' && (
-            <div className="border border-gray-300 rounded-lg overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full border-collapse">
-                  <thead>
-                    <tr className="border-b border-gray-300">
-                      <th className="text-left py-4 px-6 text-sm font-semibold text-gray-700 border-r border-gray-300">Date</th>
-                      <th className="text-left py-4 px-6 text-sm font-semibold text-gray-700 border-r border-gray-300">Bid</th>
-                      <th className="text-left py-4 px-6 text-sm font-semibold text-gray-700 border-r border-gray-300">User</th>
-                      <th className="text-left py-4 px-6 text-sm font-semibold text-gray-700">Auto</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr className="border-b border-gray-300">
-                      <td className="py-4 px-6 text-sm text-gray-600 border-r border-gray-300">June 20, 2025 3:55 am</td>
-                      <td className="py-4 px-6 text-sm text-gray-900 border-r border-gray-300">$6,051.00</td>
-                      <td className="py-4 px-6 text-sm text-gray-600 border-r border-gray-300">yizhan_96</td>
-                      <td className="py-4 px-6 text-sm text-gray-600"></td>
-                    </tr>
-                    <tr className="border-b border-gray-300">
-                      <td className="py-4 px-6 text-sm text-gray-600 border-r border-gray-300">April 24, 2025 12:51 pm</td>
-                      <td className="py-4 px-6 text-sm text-gray-900 border-r border-gray-300">$6,001.00</td>
-                      <td className="py-4 px-6 text-sm text-gray-600 border-r border-gray-300">ashrafashash2010</td>
-                      <td className="py-4 px-6 text-sm text-gray-600"></td>
-                    </tr>
-                    <tr className="border-b border-gray-300">
-                      <td className="py-4 px-6 text-sm text-gray-600 border-r border-gray-300">March 9, 2025 3:08 pm</td>
-                      <td className="py-4 px-6 text-sm text-gray-900 border-r border-gray-300">$5,951.00</td>
-                      <td className="py-4 px-6 text-sm text-gray-600 border-r border-gray-300">jelie2002</td>
-                      <td className="py-4 px-6 text-sm text-gray-600"></td>
-                    </tr>
-                    <tr className="border-b border-gray-300">
-                      <td className="py-4 px-6 text-sm text-gray-600 border-r border-gray-300">February 25, 2025 9:16 am</td>
-                      <td className="py-4 px-6 text-sm text-gray-900 border-r border-gray-300">$5,901.00</td>
-                      <td className="py-4 px-6 text-sm text-gray-600 border-r border-gray-300">andriatiana.janeck</td>
-                      <td className="py-4 px-6 text-sm text-gray-600"></td>
-                    </tr>
-                    <tr className="border-b border-gray-300">
-                      <td className="py-4 px-6 text-sm text-gray-600 border-r border-gray-300">January 4, 2025 12:40 pm</td>
-                      <td className="py-4 px-6 text-sm text-gray-900 border-r border-gray-300">$5,836.00</td>
-                      <td className="py-4 px-6 text-sm text-gray-600 border-r border-gray-300">demo</td>
-                      <td className="py-4 px-6 text-sm text-gray-600"></td>
-                    </tr>
-                    <tr className="border-b border-gray-300">
-                      <td className="py-4 px-6 text-sm text-gray-600 border-r border-gray-300">January 2, 2025 7:54 am</td>
-                      <td className="py-4 px-6 text-sm text-gray-900 border-r border-gray-300">$5,786.00</td>
-                      <td className="py-4 px-6 text-sm text-gray-600 border-r border-gray-300">mikmak</td>
-                      <td className="py-4 px-6 text-sm text-gray-600"></td>
-                    </tr>
-                    <tr>
-                      <td className="py-4 px-6 text-sm text-gray-600 border-r border-gray-300">November 8, 2024 12:00 am</td>
-                      <td className="py-4 px-6 text-sm text-gray-600 border-r border-gray-300">Auction started</td>
-                      <td className="py-4 px-6 text-sm text-gray-600 border-r border-gray-300"></td>
-                      <td className="py-4 px-6 text-sm text-gray-600"></td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
+          {activeTab === "qna" && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-bold text-gray-900 mb-4">
+                Questions & Answers
+              </h3>
 
-          {activeTab === 'reviews' && (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Left Column - Reviews List */}
-              <div className="lg:col-span-1">
-                <h3 className="text-base font-bold text-gray-900 mb-3">Reviews</h3>
-                <p className="text-sm text-gray-500">There are no reviews yet.</p>
-              </div>
+              {product.qnaItems && product.qnaItems.length > 0 ? (
+                <div className="space-y-4">
+                  {product.qnaItems.map((qna) => (
+                    <div
+                      key={qna.id}
+                      className="bg-gray-50 rounded-lg p-4 border border-gray-200"
+                    >
+                      <div className="mb-3">
+                        <div className="flex items-start justify-between mb-2">
+                          <p className="font-semibold text-sm text-gray-900">
+                            Q: {qna.questionText}
+                          </p>
+                        </div>
+                        <p className="text-xs text-gray-500">
+                          Asked by {qna.questioner.fullName} on{" "}
+                          {formatDateTime(qna.questionTime)}
+                        </p>
+                      </div>
 
-              {/* Right Column - Review Form */}
-              <div className="lg:col-span-2 bg-gray-50 rounded-lg p-5">
-                <h3 className="text-lg font-bold text-gray-900 mb-1">
-                  Be the first to review <span className="text-gray-700">"{product.title}"</span>
-                </h3>
-                <p className="text-xs text-gray-500 mb-4">
-                  Your email address will not be published. Required fields are marked <span className="text-red-500">*</span>
-                </p>
-
-                <form className="space-y-3">
-                  {/* Name Field */}
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-900 mb-1.5">
-                      Name <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                      required
-                    />
-                  </div>
-
-                  {/* Email Field */}
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-900 mb-1.5">
-                      Email <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="email"
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                      required
-                    />
-                  </div>
-
-                  {/* Save Info Checkbox */}
-                  <div className="flex items-start gap-2">
-                    <input
-                      type="checkbox"
-                      id="save-info"
-                      className="mt-0.5 w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
-                    />
-                    <label htmlFor="save-info" className="text-xs text-gray-600 leading-snug">
-                      Save my name, email, and website in this browser for the next time I comment.
-                    </label>
-                  </div>
-
-                  {/* Rating Field */}
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-900 mb-1.5">
-                      Your rating <span className="text-red-500">*</span>
-                    </label>
-                    <div className="flex gap-0.5">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <button
-                          key={star}
-                          type="button"
-                          className="text-xl text-yellow-400 hover:text-yellow-500 transition-colors"
-                        >
-                          ☆
-                        </button>
-                      ))}
+                      {qna.answerText ? (
+                        <div className="mt-3 pl-4 border-l-2 border-primary">
+                          <p className="text-sm text-gray-700 mb-1">
+                            <span className="font-semibold">A:</span>{" "}
+                            {qna.answerText}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            Answered on {formatDateTime(qna.answerTime)}
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="mt-3 pl-4 border-l-2 border-gray-300">
+                          <p className="text-sm text-gray-500 italic">
+                            Waiting for answer from seller...
+                          </p>
+                        </div>
+                      )}
                     </div>
-                  </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-gray-500">
+                    No questions yet. Be the first to ask!
+                  </p>
+                </div>
+              )}
 
-                  {/* Review Field */}
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-900 mb-1.5">
-                      Your review <span className="text-red-500">*</span>
-                    </label>
-                    <textarea
-                      rows="4"
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none"
-                      required
-                    ></textarea>
-                  </div>
-
-                  {/* Submit Button */}
-                  <button
-                    type="submit"
-                    className="w-full bg-primary hover:bg-primary/90 text-white font-semibold py-2.5 px-6 rounded-md transition-colors duration-200 text-sm"
-                  >
-                    Submit
-                  </button>
-                </form>
+              {/* Ask Question Button */}
+              <div className="mt-6">
+                <button className="w-full bg-primary hover:bg-primary/90 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200">
+                  Ask a Question
+                </button>
               </div>
             </div>
           )}
         </div>
       </div>
 
-      {/* Related Products Section - Thu gọn */}
-      <div className="mt-6">
-        <AuctionSection
-          title="Related"
-          subtitle="Products"
-          items={relatedProducts}
-          itemsPerView={5}
-          showFilter={false}
-          className=""
-        />
-      </div>
+      {/* Related Products Section */}
+      {relatedProducts && relatedProducts.length > 0 && (
+        <div className="mt-6">
+          <AuctionSection
+            title="Related"
+            subtitle="Products"
+            items={relatedProducts}
+            itemsPerView={5}
+            showFilter={false}
+            className=""
+          />
+        </div>
+      )}
     </div>
   );
 };
