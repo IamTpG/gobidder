@@ -7,4 +7,10 @@ const api = axios.create({
   withCredentials: true,
 });
 
+// API functions
+export const getProductById = async (id) => {
+  const response = await api.get(`/products/${id}`);
+  return response.data;
+};
+
 export default api;

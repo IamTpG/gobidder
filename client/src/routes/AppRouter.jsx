@@ -21,12 +21,9 @@ const AppRouter = () => {
         <Route path="login" element={<Auth />} />
         <Route path="register" element={<Auth />} />
 
-        {/* Product/Auction Details */}
-        <Route path="product/:id" element={<ProductDetailsPage />} />
-        <Route path="auction/:id" element={<ProductDetailsPage />} />
-        <Route path="verify-otp" element={<OtpVerification />} />
+        {/* Product Details - unified route */}
         <Route path="products/:id" element={<ProductDetailsPage />} />
-        <Route path="auctions/:id" element={<ProductDetailsPage />} />
+        <Route path="verify-otp" element={<OtpVerification />} />
 
         {/* TODO: Add more routes as needed */}
         {/* <Route path="auctions" element={<Auctions />} /> */}
@@ -42,4 +39,3 @@ const AppRouter = () => {
 };
 
 export default AppRouter;
-  

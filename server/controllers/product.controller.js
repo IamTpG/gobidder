@@ -78,9 +78,12 @@ exports.getProductById = async (req, res) => {
       return res.status(404).json({ message: "Product not found" });
     }
 
-    // 5. Trả về kết quả
+    // 5. Serialize BigInt trước khi trả về
+    const serializedProduct = serializeBigInt(product);
+
+    // 6. Trả về kết quả
     return res.status(200).json({
-      data: product,
+      data: serializedProduct,
     });
   } catch (error) {
     console.error("Error in getProductById:", error);

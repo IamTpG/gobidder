@@ -243,7 +243,7 @@ const AuctionSection = ({
                       created_at={item.created_at || item.createdAt}
                       end_time={item.end_time || item.endDate}
                       status={item.status}
-                      onClick={() => navigate(`/product/${item.id}`)}
+                      onClick={() => navigate(`/products/${item.id}`)}
                       onBid={() =>
                         console.log("Bid on:", item.name || item.title)
                       }

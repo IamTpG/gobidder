@@ -55,7 +55,7 @@ const transformProductForCard = (product, navigate) => {
       // TODO: Implement bid logic
       console.log("Bid on product:", product.id);
     },
-    onClick: () => navigate(`/product/${product.id}`),
+    onClick: () => navigate(`/products/${product.id}`),
   };
 };
 

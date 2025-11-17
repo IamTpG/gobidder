@@ -148,27 +148,29 @@ Nunc posuere at augue eget porta. Inei odion goat tellus, dignissim fermentumara
     return `${plus}/${total} (${percentage}%)`;
   };
 
-  const formatRelativeTime = (endDate) => {
+  // Tính số ngày còn lại đến khi kết thúc đấu giá
+  const getDaysUntilEnd = (endDate) => {
     const now = new Date();
     const end = new Date(endDate);
     const diff = end - now;
 
-    if (diff <= 0) return null;
+    if (diff <= 0) return 0;
 
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
-    const minutes = Math.floor((diff / (1000 * 60)) % 60);
+    return Math.floor(diff / (1000 * 60 * 60 * 24));
+  };
 
-    // Chỉ hiển thị relative time nếu còn ít hơn 3 ngày
-    if (days >= 3) return null;
+  // Format ngày giờ kết thúc theo định dạng: Date: 19/11/2025, 8:30 AM
+  const formatEndDate = (dateString) => {
+    const date = new Date(dateString);
+    const day = date.getDate().toString().padStart(2, "0");
+    const month = (date.getMonth() + 1).toString().padStart(2, "0");
+    const year = date.getFullYear();
+    const hours = date.getHours();
+    const minutes = date.getMinutes().toString().padStart(2, "0");
+    const ampm = hours >= 12 ? "PM" : "AM";
+    const displayHours = hours % 12 || 12;
 
-    if (days > 0) {
-      return `${days} day${days > 1 ? "s" : ""} left`;
-    } else if (hours > 0) {
-      return `${hours} hour${hours > 1 ? "s" : ""} left`;
-    } else {
-      return `${minutes} minute${minutes > 1 ? "s" : ""} left`;
-    }
+    return `Date: ${day}/${month}/${year}, ${displayHours}:${minutes} ${ampm}`;
   };
 
   // Sample related products data
@@ -281,6 +283,18 @@ Nunc posuere at augue eget porta. Inei odion goat tellus, dignissim fermentumara
             )}
           </div>
 
+          {/* Posted Date */}
+          {product.createdAt && (
+            <div className="bg-gray-50 rounded-lg px-3 py-2 border border-gray-200">
+              <p className="text-[10px] text-gray-600 font-medium mb-0.5">
+                Posted on:
+              </p>
+              <p className="text-sm font-semibold text-gray-900">
+                {formatDateTime(product.createdAt)}
+              </p>
+            </div>
+          )}
+
           {/* Seller Info */}
           <div className="bg-gray-50 rounded-lg px-3 py-2 border border-gray-200">
             <p className="text-[10px] text-gray-600 font-medium mb-1">
@@ -321,26 +335,32 @@ Nunc posuere at augue eget porta. Inei odion goat tellus, dignissim fermentumara
             </div>
           )}
 
-          {/* Thời điểm kết thúc (relative time nếu < 3 ngày) */}
-          {formatRelativeTime(product.auctionEndDate) && (
-            <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-              <p className="text-sm font-semibold text-amber-800">
-                ⏰ {formatRelativeTime(product.auctionEndDate)}
+          {/* Hiển thị thời gian còn lại */}
+          {getDaysUntilEnd(product.auctionEndDate) > 3 ? (
+            // Nếu còn > 3 ngày: Hiển thị ngày giờ kết thúc
+            <div>
+              <p className="text-[10px] font-medium text-gray-700 mb-1.5">
+                Time left:
               </p>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
+                <p className="text-sm font-semibold text-blue-800">
+                  📅 {formatEndDate(product.auctionEndDate)}
+                </p>
+              </div>
+            </div>
+          ) : (
+            // Nếu còn ≤ 3 ngày: Hiển thị countdown timer
+            <div>
+              <p className="text-[10px] font-medium text-gray-700 mb-1.5">
+                Time left:
+              </p>
+              <CountdownTimer
+                endDate={product.auctionEndDate}
+                timezone={product.timezone}
+                variant="compact"
+              />
             </div>
           )}
-
-          {/* Countdown Timer */}
-          <div>
-            <p className="text-[10px] font-medium text-gray-700 mb-1.5">
-              Time left:
-            </p>
-            <CountdownTimer
-              endDate={product.auctionEndDate}
-              timezone={product.timezone}
-              variant="compact"
-            />
-          </div>
 
           {/* Bid Controls */}
           <BidControls
@@ -358,6 +378,7 @@ Nunc posuere at augue eget porta. Inei odion goat tellus, dignissim fermentumara
         <TabNavigation
           tabs={[
             { key: "description", label: "Description" },
+            { key: "auctionHistory", label: "Auction History" },
             { key: "qna", label: `Q&A (${product.qnaItems?.length || 0})` },
           ]}
           activeTab={activeTab}
@@ -379,6 +400,66 @@ Nunc posuere at augue eget porta. Inei odion goat tellus, dignissim fermentumara
                   .map((paragraph, index) => (
                     <p key={index}>{paragraph}</p>
                   ))}
+              </div>
+            </div>
+          )}
+
+          {activeTab === "auctionHistory" && (
+            <div className="max-w-none">
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Date
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Bid
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        User
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {product.bidHistory && product.bidHistory.length > 0 ? (
+                      product.bidHistory.map((bid) => (
+                        <tr key={bid.id} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {formatDateTime(bid.date)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            {formatPrice(bid.amount)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {bid.user}
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td
+                          colSpan="4"
+                          className="px-6 py-8 text-center text-sm text-gray-500"
+                        >
+                          No auction history available yet.
+                        </td>
+                      </tr>
+                    )}
+                    {/* Auction Started Row */}
+                    <tr className="bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {formatDateTime(product.createdAt)}
+                      </td>
+                      <td
+                        colSpan="3"
+                        className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 italic"
+                      >
+                        Auction started
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
             </div>
           )}
