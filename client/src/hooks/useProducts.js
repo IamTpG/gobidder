@@ -4,45 +4,45 @@ import api from "../services/api";
 
 const ITEMS_PER_PAGE = 9;
 
+const parseFiltersFromSearchParams = (params) => {
+  const pageParam = parseInt(params.get("page"), 10);
+  const sortParam = params.get("sort") || "created_at";
+  const categoryParam = params.get("categoryId") || undefined;
+  const qParam = params.get("q") || "";
+
+  return {
+    page: Number.isInteger(pageParam) && pageParam > 0 ? pageParam : 1,
+    sort: sortParam,
+    categoryId: categoryParam,
+    q: qParam,
+  };
+};
+
 export const useProducts = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const searchParamsString = searchParams.toString();
+  const initialFiltersRef = useRef(parseFiltersFromSearchParams(searchParams));
+  const initialFilters = initialFiltersRef.current;
+
   const [products, setProducts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(initialFilters.page);
   const [totalPages, setTotalPages] = useState(0);
   const [totalItems, setTotalItems] = useState(0);
-  const [categoryId, setCategoryId] = useState(undefined);
-  const [sort, setSort] = useState("created_at");
-  const [q, setQ] = useState("");
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [categoryId, setCategoryId] = useState(initialFilters.categoryId);
+  const [sort, setSort] = useState(initialFilters.sort);
+  const [q, setQ] = useState(initialFilters.q);
 
-  // Ref để track xem có đang sync từ URL không (tránh circular update)
-  const isSyncingFromURL = useRef(false);
-  const isInitialMount = useRef(true);
-  const prevQRef = useRef("");
+  const prevQRef = useRef(initialFilters.q?.trim() || "");
+  const searchTimeoutRef = useRef(null);
+  const isApplyingSearchParams = useRef(false);
 
-  // Reset về trạng thái ban đầu khi reload trang (xóa URL params)
-  useEffect(() => {
-    // Chỉ chạy lần đầu mount
-    if (isInitialMount.current) {
-      // Xóa tất cả URL params để reset về trạng thái ban đầu
-      const hasParams = searchParams.toString().length > 0;
-      if (hasParams) {
-        setSearchParams({}, { replace: true });
-      }
-      // Reset state về giá trị mặc định
-      setCurrentPage(1);
-      setCategoryId(undefined);
-      setSort("created_at");
-      setQ("");
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Chỉ chạy 1 lần khi mount
-
-  // Fetch products từ API
+  // Hàm fetch products duy nhất
   const fetchProducts = useCallback(async () => {
     setIsLoading(true);
     setError(null);
+    setProducts([]);
 
     try {
       const params = {
@@ -52,7 +52,6 @@ export const useProducts = () => {
       };
 
       if (categoryId) params.categoryId = categoryId;
-
       const searchQuery = q?.trim();
       if (searchQuery) params.q = searchQuery;
 
@@ -76,71 +75,93 @@ export const useProducts = () => {
     }
   }, [categoryId, currentPage, q, sort]);
 
-  // Sync state với URL (chỉ khi state thay đổi từ user action, không sync khi reload)
+  // Đồng bộ state khi search params thay đổi (ví dụ navigate từ Header)
   useEffect(() => {
-    // Skip lần đầu mount (đã reset ở useEffect trên)
-    if (isInitialMount.current) {
-      return;
+    const parsed = parseFiltersFromSearchParams(searchParams);
+    let didUpdate = false;
+
+    setCurrentPage((prev) => {
+      if (prev === parsed.page) return prev;
+      didUpdate = true;
+      return parsed.page;
+    });
+
+    setSort((prev) => {
+      if (prev === parsed.sort) return prev;
+      didUpdate = true;
+      return parsed.sort;
+    });
+
+    setCategoryId((prev) => {
+      if ((prev ?? undefined) === parsed.categoryId) return prev;
+      didUpdate = true;
+      return parsed.categoryId;
+    });
+
+    setQ((prev) => {
+      if (prev === parsed.q) return prev;
+      didUpdate = true;
+      const trimmed = parsed.q?.trim() || "";
+      prevQRef.current = trimmed;
+      return parsed.q;
+    });
+
+    if (didUpdate) {
+      isApplyingSearchParams.current = true;
     }
+  }, [searchParamsString, searchParams]);
 
-    // Chỉ sync URL khi có filter/search/sort khác mặc định
-    const hasFilters =
-      categoryId || q?.trim() || sort !== "created_at" || currentPage !== 1;
-
-    if (hasFilters) {
-      const params = {
-        page: String(currentPage),
-        sort,
-      };
-
-      if (categoryId) params.categoryId = categoryId;
-      // Chỉ thêm q vào URL nếu có giá trị (trim để tránh space)
-      const searchQuery = q?.trim();
-      if (searchQuery) params.q = searchQuery;
-
-      setSearchParams(params, { replace: true });
-    } else {
-      // Nếu không có filter, xóa URL params
-      setSearchParams({}, { replace: true });
-    }
-  }, [currentPage, categoryId, sort, q, setSearchParams]);
-
-  // Fetch products khi state thay đổi (từ URL hoặc từ user action)
+  // Fetch products khi state thay đổi
   useEffect(() => {
-    // Lần đầu mount: fetch ngay
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
-      prevQRef.current = q || "";
-      fetchProducts();
-      return;
-    }
-
-    // Debounce chỉ cho search query (q), các thay đổi khác (sort, category, page) fetch ngay
+    // Debounce cho search query
     const searchQuery = q?.trim() || "";
     const isSearchChange = searchQuery !== prevQRef.current;
 
     if (isSearchChange && searchQuery) {
-      // Debounce 500ms cho search khi có text
-      const timer = setTimeout(() => {
+      // Debounce 500ms cho search
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+      searchTimeoutRef.current = setTimeout(() => {
         prevQRef.current = searchQuery;
-        isSyncingFromURL.current = false; // Reset flag khi search debounce complete
         fetchProducts();
       }, 500);
       return () => {
-        clearTimeout(timer);
+        if (searchTimeoutRef.current) {
+          clearTimeout(searchTimeoutRef.current);
+        }
       };
     } else if (isSearchChange && !searchQuery) {
-      // Khi search bị xóa, fetch ngay
+      // Search bị xóa: fetch ngay
       prevQRef.current = "";
-      isSyncingFromURL.current = false; // Reset flag
       fetchProducts();
     } else {
-      // Fetch ngay cho sort, category, page (không phải search change)
-      // Reset flag và fetch ngay, không cần delay
-      isSyncingFromURL.current = false;
+      // Các thay đổi khác (sort, category, page): fetch ngay
       fetchProducts();
     }
   }, [currentPage, categoryId, sort, q, fetchProducts]);
+
+  // Sync state với URL khi người dùng thay đổi filter tại UI
+  useEffect(() => {
+    if (isApplyingSearchParams.current) {
+      isApplyingSearchParams.current = false;
+      return;
+    }
+
+    const trimmedQ = q?.trim() || "";
+    const params = new URLSearchParams();
+
+    if (currentPage > 1) params.set("page", String(currentPage));
+    if (sort && sort !== "created_at") params.set("sort", sort);
+    if (categoryId) params.set("categoryId", categoryId);
+    if (trimmedQ) params.set("q", trimmedQ);
+
+    const nextParamsString = params.toString();
+    if (nextParamsString !== searchParamsString) {
+      const paramsObj = Object.fromEntries(params.entries());
+      setSearchParams(paramsObj, { replace: true });
+    }
+  }, [currentPage, categoryId, sort, q, searchParamsString, setSearchParams]);
 
   // Handlers
   const handlePageChange = useCallback((newPage) => {

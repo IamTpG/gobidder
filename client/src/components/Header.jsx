@@ -1,10 +1,49 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { useCategories } from "../hooks/useCategories";
 
 const Header = () => {
   const [hoveredDropdown, setHoveredDropdown] = useState(null);
+  const [hoveredParentCategory, setHoveredParentCategory] = useState(null);
+  const [childMenuTop, setChildMenuTop] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [expandedMenu, setExpandedMenu] = useState(null);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const isProductsPage = location.pathname.startsWith("/products");
+  const { categories, isLoading: categoriesLoading } = useCategories();
+  const parentItemRefs = useRef({});
+  const dropdownContainerRef = useRef(null);
+  const hideDropdownTimeout = useRef(null);
+  const [searchValue, setSearchValue] = useState("");
 
+  const clearDropdownCloseTimer = () => {
+    if (hideDropdownTimeout.current) {
+      clearTimeout(hideDropdownTimeout.current);
+      hideDropdownTimeout.current = null;
+    }
+  };
+
+  const closeCategoryDropdown = () => {
+    hideDropdownTimeout.current = setTimeout(() => {
+      setHoveredDropdown(null);
+      setHoveredParentCategory(null);
+      setChildMenuTop(0);
+    }, 300);
+  };
+
+  useEffect(() => {
+    return () => {
+      clearDropdownCloseTimer();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isProductsPage) return;
+    const params = new URLSearchParams(location.search);
+    const qParam = params.get("q") || "";
+    setSearchValue(qParam);
+  }, [isProductsPage, location.search]);
   // Close mobile menu when clicking outside or on backdrop
   useEffect(() => {
     if (isMobileMenuOpen) {
@@ -28,6 +67,18 @@ const Header = () => {
 
   const toggleSubMenu = (menu) => {
     setExpandedMenu(expandedMenu === menu ? null : menu);
+  };
+
+  const handleHeaderSearchSubmit = (e) => {
+    e.preventDefault();
+    const trimmed = searchValue.trim();
+    const params = new URLSearchParams();
+    if (trimmed) {
+      params.set("q", trimmed);
+    }
+    const queryString = params.toString();
+    navigate(`/products${queryString ? `?${queryString}` : ""}`);
+    setIsMobileMenuOpen(false);
   };
 
   return (
@@ -84,14 +135,20 @@ const Header = () => {
 
             <div
               className="relative"
-              onMouseEnter={() => setHoveredDropdown("auctions")}
-              onMouseLeave={() => setHoveredDropdown(null)}
+              onMouseEnter={() => {
+                clearDropdownCloseTimer();
+                setHoveredDropdown("categories");
+              }}
+              onMouseLeave={closeCategoryDropdown}
             >
-              <button className="text-gray-900 font-medium hover:text-primary flex items-center">
-                Auctions
+              <button
+                onClick={() => navigate("/products")}
+                className="text-gray-900 font-medium hover:text-primary flex items-center"
+              >
+                Categories
                 <svg
                   className={`w-4 h-4 ml-1 transition-transform duration-200 ${
-                    hoveredDropdown === "auctions" ? "rotate-180" : ""
+                    hoveredDropdown === "categories" ? "rotate-180" : ""
                   }`}
                   fill="none"
                   stroke="currentColor"
@@ -106,30 +163,148 @@ const Header = () => {
                 </svg>
               </button>
               <div
-                className={`absolute top-full left-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-50 transition-all duration-200 ease-in-out ${
-                  hoveredDropdown === "auctions"
+                className={`absolute top-[16px] left-0 mt-3 min-w-28 bg-white border border-gray-200 rounded-md shadow-lg z-50 transition-all duration-200 ease-in-out ${
+                  hoveredDropdown === "categories"
                     ? "opacity-100 visible translate-y-0"
                     : "opacity-0 invisible -translate-y-2 pointer-events-none"
                 }`}
               >
-                <a
-                  href="/auctions-grid"
-                  className="block px-4 py-2 text-gray-700 hover:bg-gray-50 border-b border-gray-100"
-                >
-                  Auctions Grid
-                </a>
-                <a
-                  href="/auctions-sidebar"
-                  className="block px-4 py-2 text-gray-700 hover:bg-gray-50 border-b border-gray-100"
-                >
-                  Auctions Sidebar
-                </a>
-                <a
-                  href="/auctions-details"
-                  className="block px-4 py-2 text-gray-700 hover:bg-gray-50"
-                >
-                  Auctions Details
-                </a>
+                {categoriesLoading ? (
+                  <div className="px-6 py-4 text-sm text-gray-500">
+                    Loading categories...
+                  </div>
+                ) : categories.length === 0 ? (
+                  <div className="px-6 py-4 text-sm text-gray-500">
+                    No categories available
+                  </div>
+                ) : (
+                  <div className="relative" ref={dropdownContainerRef}>
+                    {/* Parent categories */}
+                    <div className="w-48 bg-white">
+                      {categories.map((parent, index) => {
+                        const hasChildren =
+                          parent.children && parent.children.length > 0;
+                        const isHovered = hoveredParentCategory === parent.id;
+                        return (
+                          <div
+                            key={parent.id}
+                            className={`px-4 py-3 cursor-pointer transition-colors ${
+                              isHovered
+                                ? "bg-primary/10 text-primary font-medium"
+                                : "text-gray-700 hover:bg-gray-50"
+                            }`}
+                            ref={(el) => {
+                              if (el) {
+                                parentItemRefs.current[parent.id] = el;
+                              }
+                            }}
+                            onMouseEnter={() => {
+                              clearDropdownCloseTimer();
+                              setHoveredParentCategory(parent.id);
+                              // Tính toán vị trí top của child menu dựa trên vị trí của parent item
+                              const parentElement =
+                                parentItemRefs.current[parent.id];
+                              const containerElement =
+                                dropdownContainerRef.current;
+                              if (parentElement && containerElement) {
+                                const parentRect =
+                                  parentElement.getBoundingClientRect();
+                                const containerRect =
+                                  containerElement.getBoundingClientRect();
+                                const relativeTop =
+                                  parentRect.top - containerRect.top;
+                                setChildMenuTop(relativeTop);
+                              }
+                            }}
+                            onClick={() => {
+                              sessionStorage.setItem(
+                                "products_fromNavigation",
+                                "true",
+                              );
+                              navigate(`/products?categoryId=${parent.id}`);
+                              setHoveredDropdown(null);
+                            }}
+                          >
+                            <div className="flex items-center justify-between">
+                              <span>{parent.name}</span>
+                              {hasChildren && (
+                                <svg
+                                  className="w-4 h-4 text-gray-400"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M9 5l7 7-7 7"
+                                  />
+                                </svg>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Children categories - Positioned absolutely */}
+                    {hoveredParentCategory && (
+                      <div
+                        className="absolute left-[190px] min-w-[200px] max-h-[400px] overflow-y-auto bg-white border-l border-gray-200 shadow-lg ml-1 rounded-r-md"
+                        style={{
+                          top: `${childMenuTop}px`,
+                        }}
+                        onMouseEnter={clearDropdownCloseTimer}
+                        onMouseLeave={closeCategoryDropdown}
+                      >
+                        {(() => {
+                          const parent = categories.find(
+                            (cat) => cat.id === hoveredParentCategory,
+                          );
+                          if (!parent) {
+                            return (
+                              <div className="px-4 py-3 text-sm text-gray-500">
+                                Category not found
+                              </div>
+                            );
+                          }
+                          const hasChildren =
+                            parent.children && parent.children.length > 0;
+                          if (!hasChildren) {
+                            return (
+                              <div className="px-4 py-3 text-sm text-gray-500">
+                                No subcategories
+                              </div>
+                            );
+                          }
+                          return (
+                            <div>
+                              {parent.children.map((child) => (
+                                <button
+                                  key={child.id}
+                                  className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-primary/10 hover:text-primary transition-colors"
+                                  onClick={() => {
+                                    sessionStorage.setItem(
+                                      "products_fromNavigation",
+                                      "true",
+                                    );
+                                    navigate(
+                                      `/products?categoryId=${child.id}`,
+                                    );
+                                    setHoveredDropdown(null);
+                                  }}
+                                >
+                                  {child.name}
+                                </button>
+                              ))}
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -232,34 +407,47 @@ const Header = () => {
           </nav>
 
           {/* Desktop Search Bar - Hidden on mobile */}
-          <div className="hidden lg:flex items-center space-x-4">
-            <div className="hidden lg:flex items-center space-x-2 ml-8">
-              <div className="flex items-center rounded-lg border border-gray-300 focus-within:border-primary focus-within:ring-1 focus-within:ring-primary transition-all">
-                <input
-                  type="text"
-                  placeholder="Search your product..."
-                  className="px-4 py-2 rounded-l-lg outline-none border-none w-64 text-sm"
-                />
-                <button className="bg-primary hover:bg-primary/70 text-white px-4 py-2 rounded-r-lg transition-colors">
-                  <svg
-                    className="w-5 h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                    />
-                  </svg>
-                </button>
-              </div>
-            </div>
 
+          <div className="hidden lg:flex items-center space-x-4">
+            {!isProductsPage && (
+              <div className="hidden lg:flex items-center space-x-2 ml-8">
+                <form
+                  onSubmit={handleHeaderSearchSubmit}
+                  className="flex items-center rounded-lg border border-gray-300 focus-within:border-primary focus-within:ring-1 focus-within:ring-primary transition-all"
+                >
+                  <input
+                    type="text"
+                    placeholder="Search your product..."
+                    className="px-4 py-2 rounded-l-lg outline-none border-none w-64 text-sm"
+                    value={searchValue}
+                    onChange={(e) => setSearchValue(e.target.value)}
+                  />
+                  <button
+                    type="submit"
+                    className="bg-primary hover:bg-primary/70 text-white px-4 py-2 rounded-r-lg transition-colors"
+                  >
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                      />
+                    </svg>
+                  </button>
+                </form>
+              </div>
+            )}
             {/* Desktop My Account Button - Hidden on mobile */}
-            <a href="/auth" className="hidden lg:flex bg-gray-900 hover:bg-primary text-white px-4 py-2 rounded-lg items-center space-x-2 ml-4 transition-colors">
+            <a
+              href="/auth"
+              className="hidden lg:flex bg-gray-900 hover:bg-primary text-white px-4 py-2 rounded-lg items-center space-x-2 ml-4 transition-colors"
+            >
               <svg
                 className="w-5 h-5"
                 fill="none"
@@ -341,43 +529,92 @@ const Header = () => {
 
             <div>
               <button
-                onClick={() => toggleSubMenu("auctions")}
+                onClick={() => toggleSubMenu("categories")}
                 className="w-full flex items-center justify-between py-2 text-gray-900 font-medium"
               >
-                <span>Auctions</span>
+                <span>Categories</span>
                 <span className="text-gray-400">
-                  {expandedMenu === "auctions" ? "−" : "+"}
+                  {expandedMenu ? "−" : "+"}
                 </span>
               </button>
               <div
                 className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                  expandedMenu === "auctions"
-                    ? "max-h-96 opacity-100"
-                    : "max-h-0 opacity-0"
+                  expandedMenu ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
                 }`}
               >
                 <div className="pl-4 space-y-2 mt-2">
-                  <a
-                    href="/auctions-grid"
-                    className="block py-2 text-gray-600 text-sm"
-                    onClick={toggleMobileMenu}
-                  >
-                    Auctions Grid
-                  </a>
-                  <a
-                    href="/auctions-sidebar"
-                    className="block py-2 text-gray-600 text-sm"
-                    onClick={toggleMobileMenu}
-                  >
-                    Auctions Sidebar
-                  </a>
-                  <a
-                    href="/auctions-details"
-                    className="block py-2 text-gray-600 text-sm"
-                    onClick={toggleMobileMenu}
-                  >
-                    Auctions Details
-                  </a>
+                  {categoriesLoading ? (
+                    <div className="py-2 text-gray-600 text-sm">
+                      Loading categories...
+                    </div>
+                  ) : categories.length === 0 ? (
+                    <div className="py-2 text-gray-600 text-sm">
+                      No categories available
+                    </div>
+                  ) : (
+                    categories.map((parent) => {
+                      const hasChildren =
+                        parent.children && parent.children.length > 0;
+                      const isParentExpanded =
+                        expandedMenu === `category-${parent.id}`;
+                      return (
+                        <div key={parent.id} className="space-y-1">
+                          <div className="flex items-center justify-between">
+                            <button
+                              onClick={() => {
+                                sessionStorage.setItem(
+                                  "products_fromNavigation",
+                                  "true",
+                                );
+                                navigate(`/products?categoryId=${parent.id}`);
+                                toggleMobileMenu();
+                              }}
+                              className="py-2 text-gray-600 text-sm hover:text-primary flex-1 text-left"
+                            >
+                              {parent.name}
+                            </button>
+                            {hasChildren && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleSubMenu(
+                                    isParentExpanded
+                                      ? "categories"
+                                      : `category-${parent.id}`,
+                                  );
+                                }}
+                                className="text-gray-400 px-2"
+                              >
+                                {isParentExpanded ? "−" : "+"}
+                              </button>
+                            )}
+                          </div>
+                          {hasChildren && isParentExpanded && (
+                            <div className="pl-4 space-y-1 border-l-2 border-gray-200">
+                              {parent.children.map((child) => (
+                                <button
+                                  key={child.id}
+                                  onClick={() => {
+                                    sessionStorage.setItem(
+                                      "products_fromNavigation",
+                                      "true",
+                                    );
+                                    navigate(
+                                      `/products?categoryId=${child.id}`,
+                                    );
+                                    toggleMobileMenu();
+                                  }}
+                                  className="block py-1.5 text-gray-500 text-xs hover:text-primary w-full text-left"
+                                >
+                                  {child.name}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })
+                  )}
                 </div>
               </div>
             </div>
@@ -476,34 +713,47 @@ const Header = () => {
           </div>
 
           {/* Search Bar */}
-          <div className="px-6 py-4 border-t border-gray-200">
-            <div className="flex items-center rounded-lg border border-gray-300 focus-within:border-primary focus-within:ring-1 focus-within:ring-primary transition-all">
-              <input
-                type="text"
-                placeholder="Search your product..."
-                className="px-4 py-2 rounded-l-lg outline-none border-none w-64 text-sm"
-              />
-              <button className="bg-primary hover:bg-primary/70 text-white px-4 py-2 rounded-r-lg transition-colors">
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+          {!isProductsPage && (
+            <div className="px-6 py-4 border-t border-gray-200">
+              <form
+                onSubmit={handleHeaderSearchSubmit}
+                className="flex items-center rounded-lg border border-gray-300 focus-within:border-primary focus-within:ring-1 focus-within:ring-primary transition-all"
+              >
+                <input
+                  type="text"
+                  placeholder="Search your product..."
+                  className="px-4 py-2 rounded-l-lg outline-none border-none w-64 text-sm"
+                  value={searchValue}
+                  onChange={(e) => setSearchValue(e.target.value)}
+                />
+                <button
+                  type="submit"
+                  className="bg-primary hover:bg-primary/70 text-white px-4 py-2 rounded-r-lg transition-colors"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                  />
-                </svg>
-              </button>
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                    />
+                  </svg>
+                </button>
+              </form>
             </div>
-          </div>
+          )}
 
           {/* My Account Button */}
           <div className="px-6 py-4 border-t border-gray-200">
-            <a href="/auth" className="w-full bg-gray-900 hover:bg-primary text-white px-4 py-3 rounded-lg flex items-center justify-center space-x-2 transition-colors">
+            <a
+              href="/auth"
+              className="w-full bg-gray-900 hover:bg-primary text-white px-4 py-3 rounded-lg flex items-center justify-center space-x-2 transition-colors"
+            >
               <svg
                 className="w-5 h-5"
                 fill="none"

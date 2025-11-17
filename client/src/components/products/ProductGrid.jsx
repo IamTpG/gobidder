@@ -48,7 +48,7 @@ const transformProductForCard = (product, navigate) => {
     current_bidder: currentBidder,
     bid_count: product.bid_count || 0,
     created_at: product.created_at,
-    end_time: product.end_time || product.endDate,
+    end_time: product.end_time,
     status: product.status || "Active",
     onBid: (e) => {
       e?.stopPropagation();
@@ -74,9 +74,9 @@ const ProductGrid = ({ products }) => {
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 mt-8">
-      {transformedProducts.map((cardProps) => (
-        <AuctionCard key={cardProps.id} {...cardProps} />
-      ))}
+      {transformedProducts.map((cardProps) => {
+        return <AuctionCard key={cardProps.id} {...cardProps} />;
+      })}
     </div>
   );
 };
