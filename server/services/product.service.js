@@ -16,8 +16,16 @@ exports.getProducts = async ({ page, limit, categoryId, sort, q, skip }) => {
   const searchTerm = q?.trim();
   if (searchTerm) {
     where.OR = [
-      { name: { contains: searchTerm, mode: "insensitive" } },
-      { description: { contains: searchTerm, mode: "insensitive" } },
+      { name: { equals: searchTerm, mode: "insensitive" } },
+      { name: { startsWith: searchTerm + " ", mode: "insensitive" } },
+      { name: { endsWith: " " + searchTerm, mode: "insensitive" } },
+      { name: { contains: " " + searchTerm + " ", mode: "insensitive" } },
+      { description: { equals: searchTerm, mode: "insensitive" } },
+      { description: { startsWith: searchTerm + " ", mode: "insensitive" } },
+      { description: { endsWith: " " + searchTerm, mode: "insensitive" } },
+      {
+        description: { contains: " " + searchTerm + " ", mode: "insensitive" },
+      },
     ];
   }
 
@@ -29,8 +37,11 @@ exports.getProducts = async ({ page, limit, categoryId, sort, q, skip }) => {
     case "price_desc":
       orderBy = { current_price: "desc" };
       break;
-    case "end_time":
+    case "end_time_asc":
       orderBy = { end_time: "asc" };
+      break;
+    case "end_time_desc":
+      orderBy = { end_time: "desc" };
       break;
     case "bid_count":
       orderBy = { bid_count: "desc" };
