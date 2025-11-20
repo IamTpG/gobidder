@@ -1,10 +1,9 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../services/api"; // Import axios instance đã cấu hình withCredentials
-import Button from "../components/common/Button"; // Giả định bạn có component này
-import Spinner from "../components/common/Spinner"; // Giả định bạn có component này
+import api from "../services/api";
+import Button from "../components/common/Button";
+import Spinner from "../components/common/Spinner";
 
-// --- ICONS ---
 const MailIcon = () => (
   <svg
     className="w-12 h-12 text-primary mb-4 mx-auto"
@@ -84,18 +83,15 @@ const EyeOffIcon = () => (
 const ForgotPassword = () => {
   const navigate = useNavigate();
 
-  // State quản lý các bước (1: Email, 2: OTP, 3: New Password, 4: Success)
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Data inputs
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
-  // Password visibility
   const [showPass, setShowPass] = useState(false);
 
   const handleSendOtp = async (e) => {
@@ -104,7 +100,7 @@ const ForgotPassword = () => {
     setError(null);
     try {
       await api.post("/auth/forgot-password", { email });
-      setStep(2); // Chuyển sang bước nhập OTP
+      setStep(2);
     } catch (err) {
       setError(
         err.response?.data?.message ||
@@ -120,9 +116,8 @@ const ForgotPassword = () => {
     setLoading(true);
     setError(null);
     try {
-      // Gọi API verify. Nếu thành công, BE sẽ set cookie 'reset_token'
       await api.post("/auth/verify-forgot-password-otp", { email, otp });
-      setStep(3); // Chuyển sang bước nhập mật khẩu mới
+      setStep(3);
     } catch (err) {
       setError(err.response?.data?.message || "Invalid OTP. Please try again.");
     } finally {
@@ -144,7 +139,7 @@ const ForgotPassword = () => {
       setStep(4);
 
       setTimeout(() => {
-        navigate("/auth"); // Hoặc trang login
+        navigate("/auth");
       }, 3000);
     } catch (err) {
       setError(
@@ -279,7 +274,7 @@ const ForgotPassword = () => {
                       value={otp}
                       onChange={(e) => setOtp(e.target.value)}
                       required
-                      className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-300 text-sm tracking-widest text-center font-bold text-lg"
+                      className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-300 tracking-widest text-center font-bold text-lg"
                       placeholder="XXXXXX"
                       maxLength={6}
                     />
