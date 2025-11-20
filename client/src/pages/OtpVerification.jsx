@@ -33,7 +33,7 @@ const OtpVerification = () => {
     setLoading(true);
     try {
       await verifyOtp({ email, otp });
-      alert("OTP verified successfully!");
+      // alert("OTP verified successfully!");
       navigate("/auth"); // chuyển về trang login sau khi xác thực thành công
     } catch (err) {
       if (err.response?.data?.message) setError(err.response.data.message);
@@ -51,7 +51,8 @@ const OtpVerification = () => {
       <div className="w-20 h-1 bg-slate-300 mx-auto mb-6 rounded-full"></div>
 
       <p className="text-sm text-slate-700 mb-4 text-center">
-        Enter the 6-digit OTP sent to <span className="font-medium">{email}</span>
+        Enter the 6-digit OTP sent to{" "}
+        <span className="font-medium">{email}</span>
       </p>
 
       <form onSubmit={handleSubmit} className="space-y-5">
@@ -78,7 +79,13 @@ const OtpVerification = () => {
         )}
 
         <div className="pt-2">
-          <Button type="submit" variant="primary" size="md" fullWidth disabled={loading}>
+          <Button
+            type="submit"
+            variant="primary"
+            size="md"
+            fullWidth
+            disabled={loading}
+          >
             {loading ? (
               <div className="flex items-center justify-center gap-2">
                 <Spinner size="sm" className="text-white" />

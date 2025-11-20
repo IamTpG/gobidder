@@ -5,6 +5,7 @@ import Home from "../pages/Home";
 import Auth from "../pages/Auth";
 import ProductDetailsPage from "../pages/ProductDetailsPage";
 import OtpVerification from "../pages/OtpVerification";
+import ForgotPassword from "../pages/ForgotPassword";
 // import SetupAccount from '../pages/setupAccount';
 import ProductsPage from "../pages/ProductsPage";
 
@@ -20,10 +21,11 @@ const AppRouter = () => {
         <Route path="auth" element={<Auth />} />
         <Route path="login" element={<Auth />} />
         <Route path="register" element={<Auth />} />
+        <Route path="verify-otp" element={<OtpVerification />} />
+        <Route path="forgot-password" element={<ForgotPassword />} />
 
         {/* Product Details - unified route */}
         <Route path="products/:id" element={<ProductDetailsPage />} />
-        <Route path="verify-otp" element={<OtpVerification />} />
 
         {/* TODO: Add more routes as needed */}
         {/* <Route path="auctions" element={<Auctions />} /> */}

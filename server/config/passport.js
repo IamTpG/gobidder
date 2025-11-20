@@ -1,24 +1,22 @@
 const passport = require("passport");
+const { Strategy: JwtStrategy, ExtractJwt } = require("passport-jwt");
 const LocalStrategy = require("passport-local").Strategy;
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
-const { Strategy: JwtStrategy, ExtractJwt } = require("passport-jwt");
 const { PrismaClient } = require("@prisma/client");
 const bcrypt = require("bcryptjs");
 
+const cookieExtractor = require("../utils/cookieExtractor");
+
 const prisma = new PrismaClient();
 
-const cookieExtractor = (req) => {
-  let token = null;
-  if (req && req.cookies) {
-    token = req.cookies["access_token"]; // Tên cookie
-  }
-  return token;
+const jwtCookieExtractor = (req) => {
+  return cookieExtractor(req, "access_token");
 };
 
 passport.use(
   new JwtStrategy(
     {
-      jwtFromRequest: ExtractJwt.fromExtractors([cookieExtractor]),
+      jwtFromRequest: ExtractJwt.fromExtractors([jwtCookieExtractor]),
       secretOrKey: process.env.JWT_SECRET,
     },
     async (jwt_payload, done) => {

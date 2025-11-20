@@ -11,7 +11,7 @@ require("./config/passport");
 const authRoutes = require("./routes/auth.route");
 const productsRoutes = require("./routes/product.route");
 const categoryRoutes = require("./routes/category.routes.js");
-const userRoutes = require("./routes/user.routes.js"); 
+const userRoutes = require("./routes/user.routes.js");
 const bidHistoryRoutes = require("./routes/bidHistory.route.js");
 const app = express();
 
@@ -32,7 +32,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/products", productsRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/users", userRoutes);
-app.use("/api/bid-history", bidHistoryRoutes); 
+app.use("/api/bid-history", bidHistoryRoutes);
 const PORT = process.env.PORT || 5000;
 
 app.get("/", (req, res) => {

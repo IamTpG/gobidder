@@ -10,14 +10,14 @@ router.post("/register", authController.register);
 
 // Xác thực OTP
 // POST /api/auth/verify-otp
-router.post("/verify-otp", authController.verifyOtp);
+router.post("/verify-otp", authController.verifyRegistrationOtp);
 
 // Đăng nhập Local (dùng email)
 // POST /api/auth/login
 router.post(
   "/login",
   passport.authenticate("local", { session: false }),
-  authController.loginCallback, // Chỉ chạy nếu xác thực thành công
+  authController.loginCallback,
 );
 
 // Đăng nhập Google
@@ -46,5 +46,13 @@ router.get(
   passport.authenticate("jwt", { session: false }),
   authController.getStatus,
 );
+
+// Quên mật khẩu
+router.post("/forgot-password", authController.forgotPassword);
+router.post(
+  "/verify-forgot-password-otp",
+  authController.verifyForgotPasswordOtp,
+);
+router.post("/reset-password", authController.resetPassword);
 
 module.exports = router;
