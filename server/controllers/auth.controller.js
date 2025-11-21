@@ -1,19 +1,12 @@
-const { PrismaClient } = require("@prisma/client");
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
-const axios = require("axios");
-const {
-  signTokenAndSetCookie,
-  verifyOtpHelper,
-} = require("../utils/authHelper");
+const authService = require("../services/auth.service");
+const { signTokenAndSetCookie } = require("../utils/authHelper");
 const cookieExtractor = require("../utils/cookieExtractor");
-const { generateOtp, sendOtpEmail } = require("../services/otp.service");
 
-const prisma = new PrismaClient();
-
+// Đăng ký thông tin ban đầu & gửi OTP
 const register = async (req, res) => {
   const { fullName, address, email, password, recaptchaToken } = req.body;
 
+  // Validate cơ bản
   if (!fullName || !email || !password || !recaptchaToken) {
     return res
       .status(400)
@@ -21,86 +14,39 @@ const register = async (req, res) => {
   }
 
   try {
-    const recaptchaSecret = process.env.RECAPTCHA_SECRET_KEY;
-    const response = await axios.post(
-      "https://www.google.com/recaptcha/api/siteverify",
-      null,
-      {
-        params: { secret: recaptchaSecret, response: recaptchaToken },
-      },
-    );
+    // Gọi service xử lý logic
+    const result = await authService.registerUser({
+      fullName,
+      address,
+      email,
+      password,
+      recaptchaToken,
+    });
 
-    if (!response.data.success) {
-      return res.status(400).json({ message: "reCAPTCHA verification failed" });
+    return res.status(201).json(result);
+  } catch (error) {
+    // Xử lý các lỗi nghiệp vụ cụ thể để trả về status code đúng
+    if (error.message === "Email already exists") {
+      return res.status(409).json({ message: error.message });
     }
-  } catch {
-    return res.status(500).json({ message: "Error verifying reCAPTCHA" });
-  }
-
-  try {
-    const existingUser = await prisma.user.findUnique({
-      where: { email: email.toLowerCase() },
-    });
-
-    if (existingUser) {
-      if (existingUser.is_email_verified) {
-        return res.status(409).json({ message: "Email already exists" });
-      } else {
-        await prisma.$transaction([
-          prisma.otp.deleteMany({ where: { email: email.toLowerCase() } }),
-          prisma.user.delete({ where: { email: email.toLowerCase() } }),
-        ]);
-      }
+    if (error.message.includes("reCAPTCHA")) {
+      return res.status(400).json({ message: error.message });
     }
-
-    const passwordHash = await bcrypt.hash(password, 10);
-
-    await prisma.user.create({
-      data: {
-        full_name: fullName,
-        address,
-        birthdate: null,
-        email: email.toLowerCase(),
-        password_hash: passwordHash,
-        role: "Bidder",
-        is_email_verified: false,
-      },
-    });
-
-    const otp = generateOtp();
-    const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
-
-    await prisma.otp.deleteMany({ where: { email: email.toLowerCase() } });
-
-    await prisma.otp.create({
-      data: { email: email.toLowerCase(), code: otp, expires_at: expiresAt },
-    });
-
-    const emailSent = await sendOtpEmail(email.toLowerCase(), otp);
-    if (!emailSent) {
-      return res.status(500).json({ message: "Unable to send OTP email" });
-    }
-
-    return res.status(201).json({
-      message:
-        "Registration successful. Please check your email for OTP verification.",
-    });
-  } catch {
-    return res.status(500).json({ message: "Internal server error" });
+    return res
+      .status(500)
+      .json({ message: error.message || "Internal server error" });
   }
 };
 
+// Xác thực OTP đăng ký & Tự động đăng nhập
 const verifyRegistrationOtp = async (req, res) => {
   const { email, otp } = req.body;
 
   try {
-    await verifyOtpHelper(email, otp);
+    // Gọi service để verify và kích hoạt user
+    const user = await authService.verifyRegistrationOtpService(email, otp);
 
-    const user = await prisma.user.update({
-      where: { email: email.toLowerCase() },
-      data: { is_email_verified: true },
-    });
-
+    // Đăng nhập ngay lập tức: Tạo Token & Set Cookie
     signTokenAndSetCookie(
       res,
       {
@@ -115,6 +61,12 @@ const verifyRegistrationOtp = async (req, res) => {
 
     return res.status(200).json({
       message: "Email verification successful. You are now logged in.",
+      user: {
+        id: user.id,
+        email: user.email,
+        fullName: user.full_name,
+        role: user.role,
+      },
     });
   } catch (error) {
     return res
@@ -123,8 +75,11 @@ const verifyRegistrationOtp = async (req, res) => {
   }
 };
 
+// Callback cho Passport Local Strategy
 const loginCallback = (req, res) => {
+  // req.user đã có sẵn nhờ Passport verify thành công trước đó
   const user = req.user;
+
   signTokenAndSetCookie(
     res,
     {
@@ -148,8 +103,10 @@ const loginCallback = (req, res) => {
   });
 };
 
+// Callback cho Passport Google Strategy
 const googleCallback = (req, res) => {
   const user = req.user;
+
   signTokenAndSetCookie(
     res,
     {
@@ -161,44 +118,33 @@ const googleCallback = (req, res) => {
     "access_token",
     "1d",
   );
+
+  // Redirect về Frontend sau khi set cookie xong
   res.redirect(process.env.FE_URL || "http://localhost:3000");
 };
 
+// Gửi yêu cầu quên mật khẩu (Gửi OTP)
 const forgotPassword = async (req, res) => {
   const { email } = req.body;
   try {
-    const user = await prisma.user.findUnique({
-      where: { email: email.toLowerCase() },
-    });
-    if (!user) return res.status(404).json({ message: "User not found" });
-
-    const otp = generateOtp();
-    const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
-
-    await prisma.otp.deleteMany({ where: { email: email.toLowerCase() } });
-
-    await prisma.otp.create({
-      data: { email: email.toLowerCase(), code: otp, expires_at: expiresAt },
-    });
-
-    const emailSent = await sendOtpEmail(email.toLowerCase(), otp);
-    if (!emailSent) {
-      return res.status(500).json({ message: "Unable to send OTP email" });
-    }
-
-    return res.status(201).json({
-      message: "Please check your email for OTP verification.",
-    });
+    const result = await authService.initiateForgotPassword(email);
+    return res.status(200).json(result);
   } catch (error) {
+    if (error.message === "User not found") {
+      // Có thể trả về 200 giả để bảo mật, hoặc 404 tùy yêu cầu
+      return res.status(404).json({ message: error.message });
+    }
     return res.status(500).json({ message: "Internal error" });
   }
 };
 
+// Xác thực OTP quên mật khẩu & Cấp quyền đổi pass (Reset Token)
 const verifyForgotPasswordOtp = async (req, res) => {
   const { email, otp } = req.body;
   try {
-    await verifyOtpHelper(email, otp);
+    await authService.verifyForgotPasswordOtpService(email, otp);
 
+    // Cấp Reset Token (Cookie ngắn hạn 10 phút)
     signTokenAndSetCookie(res, { email }, "reset_token", "10m");
 
     return res
@@ -209,9 +155,11 @@ const verifyForgotPasswordOtp = async (req, res) => {
   }
 };
 
+// Đặt mật khẩu mới (Sử dụng Reset Token từ Cookie)
 const resetPassword = async (req, res) => {
   const { newPassword } = req.body;
 
+  // Lấy token từ cookie (thay vì body)
   const resetToken = cookieExtractor(req, "reset_token");
 
   if (!resetToken) {
@@ -221,29 +169,28 @@ const resetPassword = async (req, res) => {
   }
 
   try {
-    const decoded = jwt.verify(resetToken, process.env.JWT_SECRET);
-    const email = decoded.email;
+    const result = await authService.resetUserPassword(resetToken, newPassword);
 
-    const passwordHash = await bcrypt.hash(newPassword, 10);
-
-    await prisma.user.update({
-      where: { email: email.toLowerCase() },
-      data: { password_hash: passwordHash },
+    // Xóa cookie reset_token sau khi đổi pass thành công
+    res.clearCookie("reset_token", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
     });
 
-    res.clearCookie("reset_token");
-
-    return res
-      .status(200)
-      .json({ message: "Password has been reset successfully." });
+    return res.status(200).json(result);
   } catch (error) {
-    return res.status(403).json({ message: "Invalid token" });
+    return res
+      .status(403)
+      .json({ message: "Invalid token or expired session" });
   }
 };
 
+// Kiểm tra trạng thái đăng nhập (Dùng cho AuthContext FE)
 const getStatus = (req, res) => {
-  const user = req.user;
+  const user = req.user; // Lấy từ JWT middleware
   if (!user) return res.status(401).json({ message: "Not authenticated" });
+
   res.status(200).json({
     message: "User is authenticated",
     user: {
@@ -255,6 +202,7 @@ const getStatus = (req, res) => {
   });
 };
 
+// Đăng xuất (Xóa cookie)
 const logout = (req, res) => {
   res.clearCookie("access_token", {
     httpOnly: true,
