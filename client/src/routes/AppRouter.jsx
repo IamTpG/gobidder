@@ -5,6 +5,7 @@ import Home from "../pages/Home";
 import Auth from "../pages/Auth";
 import ProductDetailsPage from "../pages/ProductDetailsPage";
 import OtpVerification from "../pages/OtpVerification";
+import ProfilePage from "../pages/ProfilePage";
 // import SetupAccount from '../pages/setupAccount';
 import ProductsPage from "../pages/ProductsPage";
 
@@ -30,6 +31,7 @@ const AppRouter = () => {
         {/* <Route path="auctions/:id" element={<AuctionDetails />} /> */}
         {/* <Route path="profile" element={<Profile />} /> */}
         {/* <Route path="dashboard" element={<Dashboard />} /> */}
+        <Route path="profile" element={<ProfilePage />} />
 
         {/* 404 - Page Not Found */}
         {/* <Route path="*" element={<NotFound />} /> */}

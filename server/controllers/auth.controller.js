@@ -1,46 +1,18 @@
 const { PrismaClient } = require("@prisma/client");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const nodemailer = require("nodemailer");
 const axios = require("axios");
+const { generateOtp, sendOtpEmail } = require("../services/otp.service");
 
 const prisma = new PrismaClient();
-
-function generateOtp() {
-  return Math.floor(100000 + Math.random() * 900000).toString();
-}
-
-async function sendOtpEmail(email, otp) {
-  const transporter = nodemailer.createTransport({
-    host: process.env.MAIL_HOST,
-    port: Number(process.env.MAIL_PORT) || 587,
-    secure: Number(process.env.MAIL_PORT) === 465,
-    auth: {
-      user: process.env.MAIL_USER,
-      pass: process.env.MAIL_PASS,
-    },
-  });
-
-  const mailOptions = {
-    from: `"GoBidder" <${process.env.MAIL_FROM}>`,
-    to: email,
-    subject: "Your GoBidder Account OTP Verification",
-    text: `Your OTP code is: ${otp}. It will expire in 5 minutes.`,
-  };
-
-  try {
-    await transporter.sendMail(mailOptions);
-    return true;
-  } catch {
-    return false;
-  }
-}
 
 const register = async (req, res) => {
   const { fullName, address, email, password, recaptchaToken } = req.body;
 
   if (!fullName || !email || !password || !recaptchaToken) {
-    return res.status(400).json({ message: "Missing registration information or captcha" });
+    return res
+      .status(400)
+      .json({ message: "Missing registration information or captcha" });
   }
 
   try {
@@ -48,7 +20,9 @@ const register = async (req, res) => {
     const response = await axios.post(
       "https://www.google.com/recaptcha/api/siteverify",
       null,
-      { params: { secret: recaptchaSecret, response: recaptchaToken } }
+      {
+        params: { secret: recaptchaSecret, response: recaptchaToken },
+      },
     );
 
     if (!response.data.success) {
@@ -80,6 +54,7 @@ const register = async (req, res) => {
       data: {
         full_name: fullName,
         address,
+        birthdate: null,
         email: email.toLowerCase(),
         password_hash: passwordHash,
         role: "Bidder",
@@ -100,7 +75,8 @@ const register = async (req, res) => {
     }
 
     return res.status(201).json({
-      message: "Registration successful. Please check your email for OTP verification.",
+      message:
+        "Registration successful. Please check your email for OTP verification.",
     });
   } catch {
     return res.status(500).json({ message: "Internal server error" });
@@ -116,7 +92,11 @@ const verifyOtp = async (req, res) => {
 
   try {
     const otpRecord = await prisma.otp.findFirst({
-      where: { email: email.toLowerCase(), code: otp, expires_at: { gt: new Date() } },
+      where: {
+        email: email.toLowerCase(),
+        code: otp,
+        expires_at: { gt: new Date() },
+      },
       orderBy: { expires_at: "desc" },
     });
 
@@ -154,7 +134,12 @@ const loginCallback = (req, res) => {
   signTokenAndSetCookie(res, user);
   res.status(200).json({
     message: "Login successful",
-    user: { id: user.id, email: user.email, fullName: user.full_name, role: user.role },
+    user: {
+      id: user.id,
+      email: user.email,
+      fullName: user.full_name,
+      role: user.role,
+    },
   });
 };
 
@@ -170,8 +155,22 @@ const getStatus = (req, res) => {
   if (!user) return res.status(401).json({ message: "Not authenticated" });
   res.status(200).json({
     message: "User is authenticated",
-    user: { id: user.id, email: user.email, fullName: user.full_name, role: user.role },
+    user: {
+      id: user.id,
+      email: user.email,
+      fullName: user.full_name,
+      role: user.role,
+    },
   });
+};
+
+const logout = (req, res) => {
+  res.clearCookie("access_token", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+  });
+  res.status(200).json({ message: "Logged out" });
 };
 
 module.exports = {
@@ -180,4 +179,5 @@ module.exports = {
   loginCallback,
   googleCallback,
   getStatus,
+  logout,
 };

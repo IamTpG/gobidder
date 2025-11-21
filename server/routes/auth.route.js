@@ -47,4 +47,6 @@ router.get(
   authController.getStatus,
 );
 
+router.post("/logout", authController.logout);
+
 module.exports = router;
