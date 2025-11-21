@@ -7,8 +7,10 @@ import ProductDetailsPage from "../pages/ProductDetailsPage";
 import OtpVerification from "../pages/OtpVerification";
 import ProfilePage from "../pages/ProfilePage";
 import ForgotPassword from "../pages/ForgotPassword";
-// import SetupAccount from '../pages/setupAccount';
+import NotFound from "../pages/NotFound";
 import ProductsPage from "../pages/ProductsPage";
+import ProtectedRoute from "../components/routes/ProtectedRoute";
+import PublicRoute from "../components/routes/PublicRoute";
 
 const AppRouter = () => {
   return (
@@ -18,12 +20,48 @@ const AppRouter = () => {
         <Route index element={<Home />} />
         {/* Products Page */}
         <Route path="products" element={<ProductsPage />} />
-        {/* Authentication Pages */}
-        <Route path="auth" element={<Auth />} />
-        <Route path="login" element={<Auth />} />
-        <Route path="register" element={<Auth />} />
-        <Route path="verify-otp" element={<OtpVerification />} />
-        <Route path="forgot-password" element={<ForgotPassword />} />
+
+        {/* Authentication Pages - Only accessible when not logged in */}
+        <Route
+          path="auth"
+          element={
+            <PublicRoute>
+              <Auth />
+            </PublicRoute>
+          }
+        />
+        <Route
+          path="login"
+          element={
+            <PublicRoute>
+              <Auth />
+            </PublicRoute>
+          }
+        />
+        <Route
+          path="register"
+          element={
+            <PublicRoute>
+              <Auth />
+            </PublicRoute>
+          }
+        />
+        <Route
+          path="verify-otp"
+          element={
+            <PublicRoute>
+              <OtpVerification />
+            </PublicRoute>
+          }
+        />
+        <Route
+          path="forgot-password"
+          element={
+            <PublicRoute>
+              <ForgotPassword />
+            </PublicRoute>
+          }
+        />
 
         {/* Product Details - unified route */}
         <Route path="products/:id" element={<ProductDetailsPage />} />
@@ -33,10 +71,19 @@ const AppRouter = () => {
         {/* <Route path="auctions/:id" element={<AuctionDetails />} /> */}
         {/* <Route path="profile" element={<Profile />} /> */}
         {/* <Route path="dashboard" element={<Dashboard />} /> */}
-        <Route path="profile" element={<ProfilePage />} />
+
+        {/* Protected Routes - Only accessible when logged in */}
+        <Route
+          path="profile"
+          element={
+            <ProtectedRoute>
+              <ProfilePage />
+            </ProtectedRoute>
+          }
+        />
 
         {/* 404 - Page Not Found */}
-        {/* <Route path="*" element={<NotFound />} /> */}
+        <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>
   );
