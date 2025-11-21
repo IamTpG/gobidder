@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useCategories } from "../hooks/useCategories";
+import { useAuth } from "../contexts/AuthContext";
 
 const Header = () => {
   const [hoveredDropdown, setHoveredDropdown] = useState(null);
@@ -12,6 +13,8 @@ const Header = () => {
   const location = useLocation();
   const isProductsPage = location.pathname.startsWith("/products");
   const { categories, isLoading: categoriesLoading } = useCategories();
+  const { user, loading: authLoading } = useAuth();
+  const isLoggedIn = Boolean(user);
   const parentItemRefs = useRef({});
   const dropdownContainerRef = useRef(null);
   const hideDropdownTimeout = useRef(null);
@@ -68,6 +71,20 @@ const Header = () => {
   const toggleSubMenu = (menu) => {
     setExpandedMenu(expandedMenu === menu ? null : menu);
   };
+
+  const handleAccountNavigate = (origin) => {
+    const target = isLoggedIn ? "/profile" : "/auth";
+    navigate(target);
+    if (origin === "mobile") {
+      setIsMobileMenuOpen(false);
+    }
+  };
+
+  const accountLabel = authLoading
+    ? "..."
+    : isLoggedIn
+      ? "My Account"
+      : "Login";
 
   const handleHeaderSearchSubmit = (e) => {
     e.preventDefault();
@@ -443,10 +460,12 @@ const Header = () => {
                 </form>
               </div>
             )}
-            {/* Desktop My Account Button - Hidden on mobile */}
-            <a
-              href="/auth"
-              className="hidden lg:flex bg-gray-900 hover:bg-primary text-white px-4 py-2 rounded-lg items-center space-x-2 ml-4 transition-colors"
+            {/* Desktop Account/Login Button */}
+            <button
+              type="button"
+              onClick={() => handleAccountNavigate("desktop")}
+              className="hidden lg:flex bg-gray-900 hover:bg-primary text-white px-4 py-2 rounded-lg items-center space-x-2 ml-4 transition-colors disabled:opacity-60"
+              disabled={authLoading}
             >
               <svg
                 className="w-5 h-5"
@@ -461,8 +480,8 @@ const Header = () => {
                   d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
                 />
               </svg>
-              <span>My Account</span>
-            </a>
+              <span>{accountLabel}</span>
+            </button>
           </div>
         </div>
       </div>
@@ -748,11 +767,13 @@ const Header = () => {
             </div>
           )}
 
-          {/* My Account Button */}
+          {/* Account/Login Button */}
           <div className="px-6 py-4 border-t border-gray-200">
-            <a
-              href="/auth"
-              className="w-full bg-gray-900 hover:bg-primary text-white px-4 py-3 rounded-lg flex items-center justify-center space-x-2 transition-colors"
+            <button
+              type="button"
+              onClick={() => handleAccountNavigate("mobile")}
+              disabled={authLoading}
+              className="w-full bg-gray-900 hover:bg-primary text-white px-4 py-3 rounded-lg flex items-center justify-center space-x-2 transition-colors disabled:opacity-60"
             >
               <svg
                 className="w-5 h-5"
@@ -767,8 +788,8 @@ const Header = () => {
                   d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
                 />
               </svg>
-              <span>My Account</span>
-            </a>
+              <span>{accountLabel}</span>
+            </button>
           </div>
         </div>
       </>

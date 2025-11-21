@@ -1,45 +1,15 @@
 const { PrismaClient } = require("@prisma/client");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const nodemailer = require("nodemailer");
 const axios = require("axios");
 const {
   signTokenAndSetCookie,
   verifyOtpHelper,
 } = require("../utils/authHelper");
 const cookieExtractor = require("../utils/cookieExtractor");
+const { generateOtp, sendOtpEmail } = require("../services/otp.service");
 
 const prisma = new PrismaClient();
-
-function generateOtp() {
-  return Math.floor(100000 + Math.random() * 900000).toString();
-}
-
-async function sendOtpEmail(email, otp) {
-  const transporter = nodemailer.createTransport({
-    host: process.env.MAIL_HOST,
-    port: Number(process.env.MAIL_PORT) || 587,
-    secure: Number(process.env.MAIL_PORT) === 465,
-    auth: {
-      user: process.env.MAIL_USER,
-      pass: process.env.MAIL_PASS,
-    },
-  });
-
-  const mailOptions = {
-    from: `"GoBidder" <${process.env.MAIL_FROM}>`,
-    to: email,
-    subject: "Your GoBidder Account OTP Verification",
-    text: `Your OTP code is: ${otp}. It will expire in 5 minutes.`,
-  };
-
-  try {
-    await transporter.sendMail(mailOptions);
-    return true;
-  } catch {
-    return false;
-  }
-}
 
 const register = async (req, res) => {
   const { fullName, address, email, password, recaptchaToken } = req.body;
@@ -55,7 +25,9 @@ const register = async (req, res) => {
     const response = await axios.post(
       "https://www.google.com/recaptcha/api/siteverify",
       null,
-      { params: { secret: recaptchaSecret, response: recaptchaToken } },
+      {
+        params: { secret: recaptchaSecret, response: recaptchaToken },
+      },
     );
 
     if (!response.data.success) {
@@ -87,6 +59,7 @@ const register = async (req, res) => {
       data: {
         full_name: fullName,
         address,
+        birthdate: null,
         email: email.toLowerCase(),
         password_hash: passwordHash,
         role: "Bidder",
@@ -282,6 +255,15 @@ const getStatus = (req, res) => {
   });
 };
 
+const logout = (req, res) => {
+  res.clearCookie("access_token", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+  });
+  res.status(200).json({ message: "Logged out" });
+};
+
 module.exports = {
   register,
   verifyRegistrationOtp,
@@ -291,4 +273,5 @@ module.exports = {
   verifyForgotPasswordOtp,
   resetPassword,
   getStatus,
+  logout,
 };

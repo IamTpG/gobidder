@@ -4,7 +4,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import Button from "../common/Button";
 import Spinner from "../common/Spinner";
 
-const EyeIcon = () => (
+export const EyeIcon = () => (
   <svg
     width="20"
     height="20"
@@ -18,7 +18,7 @@ const EyeIcon = () => (
   </svg>
 );
 
-const EyeOffIcon = () => (
+export const EyeOffIcon = () => (
   <svg
     width="20"
     height="20"

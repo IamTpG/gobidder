@@ -38,7 +38,7 @@ export const useProducts = () => {
   const searchTimeoutRef = useRef(null);
   const isApplyingSearchParams = useRef(false);
 
-  // Hàm fetch products duy nhất
+  // Hàm fetch products
   const fetchProducts = useCallback(async () => {
     setIsLoading(true);
     setError(null);
