@@ -75,7 +75,7 @@ const getBidHistoryByProduct = async (req, res) => {
  * Lấy lịch sử đấu giá theo người dùng
  */
 const getBidHistoryByUser = async (req, res) => {
-  const { userId } = req.params;
+  const userId = req.user.id;
   const { page = 1, limit = 20, order = "desc" } = req.query;
 
   try {

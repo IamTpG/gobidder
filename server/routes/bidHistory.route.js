@@ -1,4 +1,6 @@
 const express = require("express");
+const passport = require("passport");
+
 const {
   getAllBidHistory,
   getBidHistoryById,
@@ -11,21 +13,27 @@ const {
 const router = express.Router();
 
 // GET all bid history (với filter)
-router.get("/", getAllBidHistory);
+// router.get("/", getAllBidHistory);
 
 // GET bid history theo product
 router.get("/product/:productId", getBidHistoryByProduct);
 
 // GET bid history theo user
-router.get("/user/:userId", getBidHistoryByUser);
+router.get(
+  "/me",
+  passport.authenticate("jwt", { session: false }),
+  getBidHistoryByUser,
+);
 
 // GET bid history theo ID
-router.get("/:id", getBidHistoryById);
+// router.get("/:id", getBidHistoryById);
 
 // POST tạo bid history mới
-router.post("/", createBidHistory);
+// Phu
+// router.post("/", createBidHistory);
 
 // DELETE xóa bid history
-router.delete("/:id", deleteBidHistory);
+// Minh
+// router.delete("/:id", deleteBidHistory);
 
 module.exports = router;

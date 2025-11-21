@@ -1,40 +1,28 @@
-const jwt = require("jsonwebtoken");
-const { PrismaClient } = require("@prisma/client");
-const prisma = new PrismaClient();
+/**
+ * Middleware kiểm tra quyền hạn (Role-based Authorization)
+ * @param {...String} allowedRoles - Danh sách các role được phép truy cập (vd: "Admin", "Seller")
+ */
+const authorizeRoles = (...allowedRoles) => {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Unauthorized." });
+    }
 
-const extractToken = (req) => {
-  const authHeader = req.headers.authorization;
-  if (authHeader && authHeader.startsWith("Bearer ")) {
-    return authHeader.split(" ")[1];
-  }
-  if (req.cookies?.access_token) {
-    return req.cookies.access_token;
-  }
-  return null;
-};
+    const userRole = req.user.role;
 
-const isAuth = async (req, res, next) => {
-  try {
-    const token = extractToken(req);
-    if (!token) return res.status(401).json({ message: "No token provided" });
+    const normalizedUserRole = userRole.toLowerCase();
+    const normalizedAllowedRoles = allowedRoles.map((role) =>
+      role.toLowerCase(),
+    );
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await prisma.user.findUnique({ where: { id: decoded.id } });
-    if (!user) return res.status(401).json({ message: "User not found" });
+    if (!normalizedAllowedRoles.includes(normalizedUserRole)) {
+      return res.status(403).json({
+        message: `Forbidden: Require role: ${allowedRoles.join(", ")}`,
+      });
+    }
 
-    req.user = user;
     next();
-  } catch (err) {
-    console.error(err);
-    res.status(401).json({ message: "Unauthorized" });
-  }
+  };
 };
 
-const isAdmin = (req, res, next) => {
-  if (req.user.role !== "Admin") {
-    return res.status(403).json({ message: "Forbidden: Admin only" });
-  }
-  next();
-};
-
-module.exports = { isAuth, isAdmin };
+module.exports = { authorizeRoles };
