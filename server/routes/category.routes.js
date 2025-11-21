@@ -1,40 +1,39 @@
 const express = require("express");
 const passport = require("passport");
-const { authorizeRoles } = require("../middlewares/auth.middleware");
 
-const {
-  getAllCategories,
-  getCategoryById,
-  createCategory,
-  updateCategory,
-  deleteCategory,
-} = require("../controllers/category.controller");
+const { authorizeRoles } = require("../middlewares/auth.middleware");
+const categoryController = require("../controllers/category.controller");
 
 const router = express.Router();
 
-router.get("/", getAllCategories);
+// Lấy tất cả danh mục
+router.get("/", categoryController.getAllCategories);
 
-router.get("/:id", getCategoryById);
+// Lấy danh mục theo id
+router.get("/:id", categoryController.getCategoryById);
 
+// Tạo danh mục mới
 router.post(
   "/",
   passport.authenticate("jwt", { session: false }),
   authorizeRoles("Admin"),
-  createCategory,
+  categoryController.createCategory,
 );
 
+// Cập nhật danh mục
 router.patch(
   "/:id",
   passport.authenticate("jwt", { session: false }),
   authorizeRoles("Admin"),
-  updateCategory,
+  categoryController.updateCategory,
 );
 
+// Xóa danh mục
 router.delete(
   "/:id",
   passport.authenticate("jwt", { session: false }),
   authorizeRoles("Admin"),
-  deleteCategory,
+  categoryController.deleteCategory,
 );
 
 module.exports = router;

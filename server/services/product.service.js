@@ -1,7 +1,8 @@
 const prisma = require("../config/prisma");
 const categoryService = require("./category.service");
 
-exports.getProducts = async ({ page, limit, categoryId, sort, q, skip }) => {
+// Lấy tất cả sản phẩm
+const getProducts = async ({ page, limit, categoryId, sort, q, skip }) => {
   const where = {
     status: "Active",
   };
@@ -83,7 +84,8 @@ exports.getProducts = async ({ page, limit, categoryId, sort, q, skip }) => {
   return response;
 };
 
-exports.getProductById = async (productId) => {
+// Lấy một sản phẩm
+const getProductById = async (productId) => {
   // Query chi tiết sản phẩm với tất cả thông tin liên quan
   const product = await prisma.product.findUnique({
     where: {
@@ -224,4 +226,9 @@ exports.getProductById = async (productId) => {
       answerTime: qna.answer_time,
     })),
   };
+};
+
+module.exports = {
+  getProducts,
+  getProductById,
 };

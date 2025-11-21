@@ -1,9 +1,10 @@
 const userService = require("../services/user.service");
+const { signTokenAndSetCookie } = require("../utils/utils");
 
-// Lấy thông tin bản thân
+// Lấy thông tin cá nhân
 const getMe = async (req, res) => {
   try {
-    // req.user.id đến từ middleware xác thực (Passport JWT)
+    // req.user đã có sẵn nhờ Passport verify thành công trước đó
     const result = await userService.getMyProfile(req.user.id);
     return res.json(result);
   } catch (err) {
@@ -15,33 +16,7 @@ const getMe = async (req, res) => {
   }
 };
 
-// Lấy danh sách user (Admin)
-const getUsers = async (req, res) => {
-  try {
-    const users = await userService.getAllUsers();
-    return res.json(users);
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ message: "Server error" });
-  }
-};
-
-// Lấy thông tin user theo ID (Admin)
-const getUserById = async (req, res) => {
-  const { id } = req.params;
-  try {
-    const user = await userService.getUserByIdService(id);
-    return res.json(user);
-  } catch (err) {
-    if (err.message === "User not found") {
-      return res.status(404).json({ message: err.message });
-    }
-    console.error(err);
-    return res.status(500).json({ message: "Server error" });
-  }
-};
-
-// Cập nhật thông tin bản thân
+// Cập nhật thông tin cá nhân
 const updateMe = async (req, res) => {
   const { full_name, address, birthdate } = req.body;
   try {
@@ -60,7 +35,7 @@ const updateMe = async (req, res) => {
   }
 };
 
-// Đổi mật khẩu
+// Đổi mật khẩu cá nhân
 const changePassword = async (req, res) => {
   const { currentPassword, newPassword } = req.body;
   try {
@@ -78,7 +53,7 @@ const changePassword = async (req, res) => {
       return res.status(400).json({ message: err.message });
     }
     if (err.message === "Current password is incorrect") {
-      return res.status(400).json({ message: err.message }); // Hoặc 401/403 tùy logic
+      return res.status(400).json({ message: err.message });
     }
     if (err.message.includes("only available for email/password accounts")) {
       return res.status(400).json({ message: err.message });
@@ -88,7 +63,7 @@ const changePassword = async (req, res) => {
   }
 };
 
-// Yêu cầu đổi Email
+// Đổi email cá nhân
 const requestEmailChange = async (req, res) => {
   const { newEmail } = req.body;
   try {
@@ -115,14 +90,37 @@ const requestEmailChange = async (req, res) => {
   }
 };
 
-// Xác nhận đổi Email (Verify OTP)
+// Xác nhận đổi email cá nhân
 const confirmEmailChange = async (req, res) => {
   const { newEmail, otp } = req.body;
   try {
-    const result = await userService.confirmEmailChangeService(req.user.id, {
-      newEmail,
-      otp,
+    const result = await userService.confirmEmailChangeService(
+      req.user.id,
+      req.user.email,
+      {
+        newEmail,
+        otp,
+      },
+    );
+
+    res.clearCookie("reset_token", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
     });
+
+    signTokenAndSetCookie(
+      res,
+      {
+        id: result.user.id,
+        email: result.user.email,
+        fullName: result.user.full_name,
+        role: result.user.role,
+      },
+      "access_token",
+      "1d",
+    );
+
     return res.json(result);
   } catch (err) {
     if (err.message === "Email and OTP are required") {
@@ -133,6 +131,32 @@ const confirmEmailChange = async (req, res) => {
     }
     if (err.message === "Email is already in use") {
       return res.status(409).json({ message: err.message });
+    }
+    console.error(err);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+// Lấy tất cả người dùng
+const getUsers = async (req, res) => {
+  try {
+    const users = await userService.getAllUsers();
+    return res.json(users);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+// Lấy thông tin người dùng bằng id
+const getUserById = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const user = await userService.getUserByIdService(id);
+    return res.json(user);
+  } catch (err) {
+    if (err.message === "User not found") {
+      return res.status(404).json({ message: err.message });
     }
     console.error(err);
     return res.status(500).json({ message: "Server error" });

@@ -1,20 +1,11 @@
+const prisma = require("../config/prisma");
 
-// ==========================================
-// FILE: services/bidHistory.service.js
-// ==========================================
-
-const { PrismaClient } = require("@prisma/client");
-const prisma = new PrismaClient();
-
-/**
- * Lấy tất cả lịch sử đấu giá với filter và phân trang
- */
+// Lấy tất cả lịch sử đấu giá với filter và phân trang
 const getAllBidHistory = async (options) => {
   const { page, limit, productId, userId } = options;
 
   const skip = (page - 1) * limit;
 
-  // Build where clause
   const where = {};
   if (productId) where.product_id = productId;
   if (userId) where.user_id = userId;
@@ -76,9 +67,7 @@ const getAllBidHistory = async (options) => {
   };
 };
 
-/**
- * Lấy một bản ghi lịch sử đấu giá theo ID
- */
+// Lấy một lịch sử đấu giá theo ID
 const getBidHistoryById = async (id) => {
   const bidHistoryId = parseInt(id);
   if (isNaN(bidHistoryId)) {
@@ -127,9 +116,7 @@ const getBidHistoryById = async (id) => {
   };
 };
 
-/**
- * Lấy lịch sử đấu giá theo sản phẩm (2.3)
- */
+// Lấy lịch sử đấu giá theo sản phẩm (2.3)
 const getBidHistoryByProduct = async (productId, options) => {
   const { page, limit, order } = options;
 
@@ -208,9 +195,7 @@ const getBidHistoryByProduct = async (productId, options) => {
   };
 };
 
-/**
- * Lấy lịch sử đấu giá theo người dùng
- */
+// Lấy lịch sử đấu giá theo người dùng
 const getBidHistoryByUser = async (userId, options) => {
   const { page, limit, order } = options;
 
@@ -273,9 +258,7 @@ const getBidHistoryByUser = async (userId, options) => {
   };
 };
 
-/**
- * Tạo một bản ghi lịch sử đấu giá mới
- */
+// Tạo một bản ghi lịch sử đấu giá mới
 const createBidHistory = async (data) => {
   const { product_id, user_id, bid_price } = data;
 
@@ -337,9 +320,7 @@ const createBidHistory = async (data) => {
   };
 };
 
-/**
- * Xóa một bản ghi lịch sử đấu giá
- */
+// Xóa một bản ghi lịch sử đấu giá
 const deleteBidHistory = async (id) => {
   const bidHistoryId = parseInt(id);
   if (isNaN(bidHistoryId)) {

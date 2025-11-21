@@ -1,19 +1,17 @@
 const express = require("express");
 const passport = require("passport");
+
 const authController = require("../controllers/auth.controller");
 
 const router = express.Router();
 
 // Đăng ký
-// POST /api/auth/register
 router.post("/register", authController.register);
 
-// Xác thực OTP
-// POST /api/auth/verify-otp
+// Xác thực OTP Đăng ký
 router.post("/verify-otp", authController.verifyRegistrationOtp);
 
-// Đăng nhập Local (dùng email)
-// POST /api/auth/login
+// Đăng nhập Local
 router.post(
   "/login",
   passport.authenticate("local", { session: false }),
@@ -21,7 +19,6 @@ router.post(
 );
 
 // Đăng nhập Google
-// GET /api/auth/google
 router.get(
   "/google",
   passport.authenticate("google", {
@@ -31,7 +28,6 @@ router.get(
 );
 
 // Đăng nhập Google (Callback)
-// GET /api/auth/google/callback
 router.get(
   "/google/callback",
   passport.authenticate("google", {
@@ -41,6 +37,7 @@ router.get(
   authController.googleCallback,
 );
 
+// Kiểm tra trạng thái đăng nhập
 router.get(
   "/status",
   passport.authenticate("jwt", { session: false }),
@@ -49,12 +46,17 @@ router.get(
 
 // Quên mật khẩu
 router.post("/forgot-password", authController.forgotPassword);
+
+// Xác nhận OTP Quên mật khẩu
 router.post(
   "/verify-forgot-password-otp",
   authController.verifyForgotPasswordOtp,
 );
+
+// Đặt lại mật khẩu
 router.post("/reset-password", authController.resetPassword);
 
+// Đăng xuất
 router.post("/logout", authController.logout);
 
 module.exports = router;

@@ -1,16 +1,14 @@
-const { PrismaClient } = require("@prisma/client");
 const bcrypt = require("bcryptjs");
-const { generateOtp, sendOtpEmail } = require("./otp.service"); // Giả định đường dẫn
 
-const prisma = new PrismaClient();
+const prisma = require("../config/prisma");
+const {
+  normalizeEmail,
+  isValidEmail,
+  generateOtp,
+  sendOtpEmail,
+} = require("../utils/utils");
 
-// Helper functions (giữ nguyên)
-const normalizeEmail = (email) => email?.trim().toLowerCase();
-const isValidEmail = (email) => /\S+@\S+\.\S+/.test(email);
-
-/**
- * Lấy thông tin chi tiết của user đang đăng nhập
- */
+// Lấy thông tin cá nhân
 const getMyProfile = async (userId) => {
   const user = await prisma.user.findUnique({
     where: { id: userId },
@@ -39,47 +37,7 @@ const getMyProfile = async (userId) => {
   };
 };
 
-/**
- * Lấy danh sách tất cả users (Admin)
- */
-const getAllUsers = async () => {
-  return await prisma.user.findMany({
-    select: {
-      id: true,
-      full_name: true,
-      email: true,
-      role: true,
-      created_at: true,
-      birthdate: true,
-    },
-  });
-};
-
-/**
- * Lấy thông tin user theo ID (Admin)
- */
-const getUserByIdService = async (id) => {
-  const user = await prisma.user.findUnique({
-    where: { id: parseInt(id) },
-    select: {
-      id: true,
-      full_name: true,
-      email: true,
-      role: true,
-      created_at: true,
-      birthdate: true,
-    },
-  });
-
-  if (!user) {
-    throw new Error("User not found");
-  }
-  return user;
-};
-
-/**
- * Cập nhật thông tin cá nhân (Profile)
- */
+// Cập nhật thông tin cá nhân
 const updateMyProfile = async (userId, { full_name, address, birthdate }) => {
   let parsedBirthdate;
   if (birthdate !== undefined) {
@@ -114,9 +72,7 @@ const updateMyProfile = async (userId, { full_name, address, birthdate }) => {
   return updatedUser;
 };
 
-/**
- * Đổi mật khẩu
- */
+// Đổi mật khẩu cá nhân
 const changeUserPassword = async (userId, { currentPassword, newPassword }) => {
   if (!currentPassword || !newPassword) {
     throw new Error("Missing password inputs");
@@ -154,9 +110,7 @@ const changeUserPassword = async (userId, { currentPassword, newPassword }) => {
   return { message: "Password updated successfully" };
 };
 
-/**
- * Yêu cầu đổi email (Gửi OTP đến email MỚI)
- */
+// Đổi email cá nhân
 const requestEmailChangeService = async (userId, newEmail) => {
   const normalizedEmail = normalizeEmail(newEmail);
 
@@ -188,19 +142,18 @@ const requestEmailChangeService = async (userId, newEmail) => {
     throw new Error("Email is already in use");
   }
 
-  // Xóa OTP cũ của email MỚI (nếu có)
-  await prisma.otp.deleteMany({
-    where: { email: normalizedEmail },
-  });
-
+  // Tạo và gửi email
   const otp = generateOtp();
   const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
+  // Xóa OTP cũ
+  await prisma.otp.deleteMany({ where: { email: user.email } });
+
   await prisma.otp.create({
-    data: { email: normalizedEmail, code: otp, expires_at: expiresAt },
+    data: { email: user.email, code: otp, expires_at: expiresAt },
   });
 
-  const emailSent = await sendOtpEmail(normalizedEmail, otp, {
+  const emailSent = await sendOtpEmail(user.email, otp, {
     subject: "Confirm your new GoBidder email",
     text: `Your OTP for changing to ${normalizedEmail} is ${otp}. It expires in 5 minutes.`,
   });
@@ -208,7 +161,7 @@ const requestEmailChangeService = async (userId, newEmail) => {
   if (!emailSent) {
     // Clean up nếu gửi mail lỗi
     await prisma.otp.deleteMany({
-      where: { email: normalizedEmail, code: otp },
+      where: { email: user.email, code: otp },
     });
     throw new Error("Unable to send OTP email");
   }
@@ -218,10 +171,12 @@ const requestEmailChangeService = async (userId, newEmail) => {
   };
 };
 
-/**
- * Xác nhận đổi email (Verify OTP & Update Email)
- */
-const confirmEmailChangeService = async (userId, { newEmail, otp }) => {
+// Xác nhận đổi email cá nhân
+const confirmEmailChangeService = async (
+  userId,
+  currentEmail,
+  { newEmail, otp },
+) => {
   const normalizedEmail = normalizeEmail(newEmail);
 
   if (!normalizedEmail || !otp) {
@@ -230,7 +185,7 @@ const confirmEmailChangeService = async (userId, { newEmail, otp }) => {
 
   const otpRecord = await prisma.otp.findFirst({
     where: {
-      email: normalizedEmail,
+      email: currentEmail,
       code: otp,
       expires_at: { gt: new Date() },
     },
@@ -247,9 +202,11 @@ const confirmEmailChangeService = async (userId, { newEmail, otp }) => {
     select: { is_email_verified: true },
   });
 
-  if (existingUser) {
-    await prisma.otp.deleteMany({ where: { email: normalizedEmail } });
+  if (existingUser?.is_email_verified) {
+    await prisma.otp.deleteMany({ where: { email: currentEmail } });
     throw new Error("Email is already in use");
+  } else {
+    await prisma.user.deleteMany({ where: { email: normalizedEmail } });
   }
 
   const updatedUser = await prisma.user.update({
@@ -266,12 +223,46 @@ const confirmEmailChangeService = async (userId, { newEmail, otp }) => {
     },
   });
 
-  await prisma.otp.deleteMany({ where: { email: normalizedEmail } });
+  await prisma.otp.deleteMany({ where: { email: currentEmail } });
 
   return {
     message: "Email updated successfully",
     user: updatedUser,
   };
+};
+
+// Lấy tất cả người dùng
+const getAllUsers = async () => {
+  return await prisma.user.findMany({
+    select: {
+      id: true,
+      full_name: true,
+      email: true,
+      role: true,
+      created_at: true,
+      birthdate: true,
+    },
+  });
+};
+
+// Lấy thông tin người dùng bằng id
+const getUserByIdService = async (id) => {
+  const user = await prisma.user.findUnique({
+    where: { id: parseInt(id) },
+    select: {
+      id: true,
+      full_name: true,
+      email: true,
+      role: true,
+      created_at: true,
+      birthdate: true,
+    },
+  });
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+  return user;
 };
 
 module.exports = {

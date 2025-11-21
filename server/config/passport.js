@@ -2,12 +2,11 @@ const passport = require("passport");
 const { Strategy: JwtStrategy, ExtractJwt } = require("passport-jwt");
 const LocalStrategy = require("passport-local").Strategy;
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
-const { PrismaClient } = require("@prisma/client");
 const bcrypt = require("bcryptjs");
 
-const cookieExtractor = require("../utils/cookieExtractor");
+const { cookieExtractor } = require("../utils/utils");
 
-const prisma = new PrismaClient();
+const prisma = require("../config/prisma");
 
 const jwtCookieExtractor = (req) => {
   return cookieExtractor(req, "access_token");

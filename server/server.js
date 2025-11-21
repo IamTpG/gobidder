@@ -1,8 +1,8 @@
 const express = require("express");
 const cors = require("cors");
+const prisma = require("./config/prisma");
 const passport = require("passport");
 const cookieParser = require("cookie-parser");
-const prisma = require("./config/prisma");
 
 require("dotenv").config();
 require("./config/passport");
@@ -33,11 +33,12 @@ app.use("/api/products", productsRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/bid-history", bidHistoryRoutes);
-const PORT = process.env.PORT || 5000;
 
 app.get("/", (req, res) => {
   res.send("Server is running!");
 });
+
+const PORT = process.env.PORT || 5000;
 
 const startServer = async () => {
   try {

@@ -1,15 +1,15 @@
-const { PrismaClient } = require("@prisma/client");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const axios = require("axios");
-const { verifyOtpHelper } = require("../utils/authHelper");
-const { generateOtp, sendOtpEmail } = require("./otp.service"); // Giả định bạn đã có file này như code cũ
 
-const prisma = new PrismaClient();
+const prisma = require("../config/prisma");
+const {
+  verifyOtpHelper,
+  generateOtp,
+  sendOtpEmail,
+} = require("../utils/utils");
 
-/**
- * Xử lý logic đăng ký người dùng
- */
+// Xử lý logic đăng ký người dùng
 const registerUser = async ({
   fullName,
   address,
@@ -17,7 +17,7 @@ const registerUser = async ({
   password,
   recaptchaToken,
 }) => {
-  // 1. Verify ReCAPTCHA
+  // Xác thực ReCAPTCHA
   try {
     const recaptchaSecret = process.env.RECAPTCHA_SECRET_KEY;
     const response = await axios.post(
@@ -33,7 +33,7 @@ const registerUser = async ({
     throw new Error(error.message || "Error verifying reCAPTCHA");
   }
 
-  // 2. Check existing user
+  // Kiểm tra người dùng tồn tại
   const existingUser = await prisma.user.findUnique({
     where: { email: email.toLowerCase() },
   });
@@ -50,7 +50,7 @@ const registerUser = async ({
     }
   }
 
-  // 3. Hash password & Create User
+  // Băm mật khẩu & tạo người dùng
   const passwordHash = await bcrypt.hash(password, 10);
 
   await prisma.user.create({
@@ -65,11 +65,11 @@ const registerUser = async ({
     },
   });
 
-  // 4. Generate & Send OTP
+  // Tạo và gửi email
   const otp = generateOtp();
   const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
-  // Cleanup old OTPs
+  // Xóa OTP cũ
   await prisma.otp.deleteMany({ where: { email: email.toLowerCase() } });
 
   await prisma.otp.create({
@@ -78,43 +78,45 @@ const registerUser = async ({
 
   const emailSent = await sendOtpEmail(email.toLowerCase(), otp);
   if (!emailSent) {
+    // Clean up nếu gửi mail lỗi
+    await prisma.otp.deleteMany({
+      where: { email: email.toLowerCase(), code: otp },
+    });
     throw new Error("Unable to send OTP email");
   }
 
   return { message: "Registration successful. Please check your email." };
 };
 
-/**
- * Xử lý verify OTP đăng ký và kích hoạt user
- */
+// Xử lý verify OTP đăng ký và kích hoạt user
 const verifyRegistrationOtpService = async (email, otp) => {
-  // Helper check OTP DB
   await verifyOtpHelper(email, otp);
 
-  // Update User status
   const user = await prisma.user.update({
     where: { email: email.toLowerCase() },
     data: { is_email_verified: true },
   });
 
-  return user; // Trả về user để controller set cookie
+  // Trả về user để controller set cookie
+  return user;
 };
 
-/**
- * Xử lý logic yêu cầu quên mật khẩu
- */
+// Xử lý logic yêu cầu quên mật khẩu
 const initiateForgotPassword = async (email) => {
   const user = await prisma.user.findUnique({
     where: { email: email.toLowerCase() },
   });
 
   if (!user) {
-    throw new Error("User not found"); // Controller sẽ map ra 404
+    // Controller sẽ map ra 404
+    throw new Error("User not found");
   }
 
+  // Tạo và gửi email
   const otp = generateOtp();
   const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
+  // Xóa OTP cũ
   await prisma.otp.deleteMany({ where: { email: email.toLowerCase() } });
 
   await prisma.otp.create({
@@ -123,26 +125,25 @@ const initiateForgotPassword = async (email) => {
 
   const emailSent = await sendOtpEmail(email.toLowerCase(), otp);
   if (!emailSent) {
+    // Clean up nếu gửi mail lỗi
+    await prisma.otp.deleteMany({
+      where: { email: email.toLowerCase(), code: otp },
+    });
     throw new Error("Unable to send OTP email");
   }
 
   return { message: "OTP sent to your email." };
 };
 
-/**
- * Xử lý verify OTP quên mật khẩu
- */
+// Xử lý verify OTP quên mật khẩu
 const verifyForgotPasswordOtpService = async (email, otp) => {
   // Chỉ cần verify OTP hợp lệ, controller sẽ chịu trách nhiệm ký reset_token
   await verifyOtpHelper(email, otp);
   return true;
 };
 
-/**
- * Xử lý đặt lại mật khẩu mới
- */
+// Xử lý đặt lại mật khẩu mới
 const resetUserPassword = async (resetToken, newPassword) => {
-  // Verify token logic nằm ở service để clean controller
   const decoded = jwt.verify(resetToken, process.env.JWT_SECRET);
   const email = decoded.email;
 
