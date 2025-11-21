@@ -36,7 +36,7 @@ const Spinner = ({ size = "md" }) => {
         strokeWidth="5"
         strokeLinecap="round"
         strokeLinejoin="round"
-        class="text-gray-900"
+        className="text-gray-900"
       ></path>
     </svg>
   );
