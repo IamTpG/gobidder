@@ -1,7 +1,7 @@
 const prisma = require("../config/prisma");
 
-// Helper function để lấy tất cả category IDs (bao gồm parent và tất cả children)
-exports.getAllCategoryIds = async (categoryId) => {
+// Lấy tất cả category IDs (bao gồm parent và tất cả children)
+const getAllCategoryIds = async (categoryId) => {
   try {
     const categoryIdNum = Number(categoryId);
 
@@ -33,7 +33,7 @@ exports.getAllCategoryIds = async (categoryId) => {
 };
 
 // Lấy tất cả categories với children
-exports.getAllCategories = async () => {
+const getAllCategories = async () => {
   try {
     const categories = await prisma.category.findMany({
       include: { children: true },
@@ -46,7 +46,7 @@ exports.getAllCategories = async () => {
 };
 
 // Lấy category theo ID với children
-exports.getCategoryById = async (id) => {
+const getCategoryById = async (id) => {
   try {
     const category = await prisma.category.findUnique({
       where: { id: parseInt(id) },
@@ -60,7 +60,7 @@ exports.getCategoryById = async (id) => {
 };
 
 // Tạo category mới
-exports.createCategory = async (data) => {
+const createCategory = async (data) => {
   try {
     const { name, description, parentId } = data;
 
@@ -82,7 +82,7 @@ exports.createCategory = async (data) => {
 };
 
 // Cập nhật category
-exports.updateCategory = async (id, data) => {
+const updateCategory = async (id, data) => {
   try {
     const { name, description, parentId } = data;
 
@@ -120,7 +120,7 @@ exports.updateCategory = async (id, data) => {
 };
 
 // Xóa category
-exports.deleteCategory = async (id) => {
+const deleteCategory = async (id) => {
   try {
     await prisma.category.delete({ where: { id: parseInt(id) } });
     return { message: "Category deleted" };
@@ -131,4 +131,13 @@ exports.deleteCategory = async (id) => {
     }
     throw error;
   }
+};
+
+module.exports = {
+  getAllCategoryIds,
+  getAllCategories,
+  getCategoryById,
+  createCategory,
+  updateCategory,
+  deleteCategory,
 };

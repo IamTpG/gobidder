@@ -1,5 +1,6 @@
 const categoryService = require("../services/category.service");
 
+// Lấy tất cả danh mục
 const getAllCategories = async (req, res) => {
   try {
     const categories = await categoryService.getAllCategories();
@@ -10,6 +11,7 @@ const getAllCategories = async (req, res) => {
   }
 };
 
+// Lấy danh mục theo id
 const getCategoryById = async (req, res) => {
   const { id } = req.params;
   try {
@@ -24,6 +26,7 @@ const getCategoryById = async (req, res) => {
   }
 };
 
+// Tạo danh mục mới
 const createCategory = async (req, res) => {
   const { name, description, parentId } = req.body;
 
@@ -47,6 +50,7 @@ const createCategory = async (req, res) => {
   }
 };
 
+// Cập nhật danh mục
 const updateCategory = async (req, res) => {
   const { id } = req.params;
   const { name, description, parentId } = req.body;
@@ -70,6 +74,7 @@ const updateCategory = async (req, res) => {
   }
 };
 
+// Xóa danh mục
 const deleteCategory = async (req, res) => {
   const { id } = req.params;
   try {

@@ -1,31 +1,30 @@
 const express = require("express");
-const {
-  getAllBidHistory,
-  getBidHistoryById,
-  getBidHistoryByProduct,
-  getBidHistoryByUser,
-  createBidHistory,
-  deleteBidHistory,
-} = require("../controllers/bidHistory.controller");
+const passport = require("passport");
+
+const bidHistoryController = require("../controllers/bidHistory.controller");
 
 const router = express.Router();
 
-// GET all bid history (với filter)
-router.get("/", getAllBidHistory);
+// Lấy lịch sử đặt giá theo sản phẩm
+router.get("/product/:productId", bidHistoryController.getBidHistoryByProduct);
 
-// GET bid history theo product
-router.get("/product/:productId", getBidHistoryByProduct);
+// Lấy lịch sử đặt giá cá nhân
+router.get(
+  "/me",
+  passport.authenticate("jwt", { session: false }),
+  bidHistoryController.getBidHistoryByUser,
+);
 
-// GET bid history theo user
-router.get("/user/:userId", getBidHistoryByUser);
+// Lấy tất cả lịch sử đặt giá (với filter)
+// router.get("/", bidHistoryController.getAllBidHistory);
 
-// GET bid history theo ID
-router.get("/:id", getBidHistoryById);
+// Lấy một lịch sử đặt giá
+// router.get("/:id", bidHistoryController.getBidHistoryById);
 
-// POST tạo bid history mới
-router.post("/", createBidHistory);
+// Tạo lịch sử đặt giá
+// router.post("/", bidHistoryController.createBidHistory);
 
-// DELETE xóa bid history
-router.delete("/:id", deleteBidHistory);
+// Xóa lịch sử đặt giá
+// router.delete("/:id", bidHistoryController.deleteBidHistory);
 
 module.exports = router;
