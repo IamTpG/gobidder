@@ -9,6 +9,15 @@ const router = express.Router();
 // Lấy tất cả sản phẩm
 router.get("/", productController.getProducts);
 
+// Top 5 sản phẩm gần kết thúc
+router.get("/top/ending-soon", productController.getTopEndingSoon);
+
+// Top 5 sản phẩm có nhiều lượt ra giá nhất
+router.get("/top/most-bids", productController.getTopMostBids);
+
+// Top 5 sản phẩm có giá cao nhất
+router.get("/top/highest-price", productController.getTopHighestPrice);
+
 // Lấy một sản phẩm
 router.get("/:id", productController.getProductById);
 
