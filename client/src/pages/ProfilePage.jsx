@@ -37,6 +37,7 @@ const ProfilePage = () => {
   const [changingPassword, setChangingPassword] = useState(false);
   const [emailForm, setEmailForm] = useState({
     newEmail: "",
+    password: "",
     otp: "",
   });
   const [emailErrors, setEmailErrors] = useState({});
@@ -156,6 +157,9 @@ const ProfilePage = () => {
 
   const handleRequestEmailOtp = async () => {
     const errors = {};
+    if (!emailForm.password) {
+      errors.password = "Password is required.";
+    }
     if (!emailForm.newEmail) {
       errors.newEmail = "New email is required.";
     } else if (!isValidEmail(emailForm.newEmail)) {
@@ -172,7 +176,10 @@ const ProfilePage = () => {
     setChangingEmail(true);
     setEmailNotice(null);
     try {
-      const payload = { newEmail: emailForm.newEmail.trim() };
+      const payload = {
+        newEmail: emailForm.newEmail.trim(),
+        password: emailForm.password,
+      };
       await api.post("/users/me/request-email-change", payload);
       setEmailNotice({
         type: "success",
@@ -224,7 +231,7 @@ const ProfilePage = () => {
         type: "success",
         message: data?.message || "Email updated successfully.",
       });
-      setEmailForm({ newEmail: "", otp: "" });
+      setEmailForm({ newEmail: "", otp: "", password: "" });
       setEmailStep("idle");
       setEmailErrors({});
     } catch (err) {
@@ -280,6 +287,11 @@ const ProfilePage = () => {
 
       const { data } = await api.put("/users/me", payload);
       setProfile((prev) => ({ ...prev, ...data }));
+      setFormData({
+        full_name: data.full_name || "",
+        address: data.address || "",
+        birthdate: data.birthdate ? toInputDate(data.birthdate) : "",
+      });
       setIsEditing(false);
       setNotification({
         type: "success",

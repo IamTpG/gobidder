@@ -1,6 +1,7 @@
 import React from "react";
 import FormInput from "./FormInput";
 import NotificationBanner from "./NotificationBanner";
+import PasswordInput from "./PasswordInput";
 
 const EmailChangeSection = ({
   formData,
@@ -33,6 +34,15 @@ const EmailChangeSection = ({
           onChange={onChange}
           placeholder="user@example.com"
           error={errors.newEmail}
+          required
+        />
+        <PasswordInput
+          label="Current password"
+          name="password"
+          value={formData.password}
+          onChange={onChange}
+          placeholder="••••••••"
+          error={errors.password}
           required
         />
         {step === "otp" && (

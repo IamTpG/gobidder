@@ -52,13 +52,20 @@ const updateMyProfile = async (userId, { full_name, address, birthdate }) => {
     }
   }
 
+  const updateData = {};
+  if (full_name !== undefined) {
+    updateData.full_name = full_name;
+  }
+  if (address !== undefined) {
+    updateData.address = address;
+  }
+  if (birthdate !== undefined) {
+    updateData.birthdate = parsedBirthdate;
+  }
+
   const updatedUser = await prisma.user.update({
     where: { id: userId },
-    data: {
-      full_name: full_name ?? undefined,
-      address: address ?? undefined,
-      birthdate: birthdate !== undefined ? parsedBirthdate : undefined,
-    },
+    data: updateData,
     select: {
       id: true,
       full_name: true,
@@ -66,6 +73,7 @@ const updateMyProfile = async (userId, { full_name, address, birthdate }) => {
       role: true,
       created_at: true,
       birthdate: true,
+      address: true,
     },
   });
 
@@ -111,7 +119,7 @@ const changeUserPassword = async (userId, { currentPassword, newPassword }) => {
 };
 
 // Đổi email cá nhân
-const requestEmailChangeService = async (userId, newEmail) => {
+const requestEmailChangeService = async (userId, { newEmail, password }) => {
   const normalizedEmail = normalizeEmail(newEmail);
 
   if (!normalizedEmail || !isValidEmail(normalizedEmail)) {
@@ -142,18 +150,23 @@ const requestEmailChangeService = async (userId, newEmail) => {
     throw new Error("Email is already in use");
   }
 
+  const isMatch = await bcrypt.compare(password, user.password_hash);
+  if (!isMatch) {
+    throw new Error("Password is incorrect");
+  }
+
   // Tạo và gửi email
   const otp = generateOtp();
   const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
   // Xóa OTP cũ
-  await prisma.otp.deleteMany({ where: { email: user.email } });
+  await prisma.otp.deleteMany({ where: { email: normalizedEmail } });
 
   await prisma.otp.create({
-    data: { email: user.email, code: otp, expires_at: expiresAt },
+    data: { email: normalizedEmail, code: otp, expires_at: expiresAt },
   });
 
-  const emailSent = await sendOtpEmail(user.email, otp, {
+  const emailSent = await sendOtpEmail(normalizedEmail, otp, {
     subject: "Confirm your new GoBidder email",
     text: `Your OTP for changing to ${normalizedEmail} is ${otp}. It expires in 5 minutes.`,
   });
@@ -161,7 +174,7 @@ const requestEmailChangeService = async (userId, newEmail) => {
   if (!emailSent) {
     // Clean up nếu gửi mail lỗi
     await prisma.otp.deleteMany({
-      where: { email: user.email, code: otp },
+      where: { email: normalizedEmail, code: otp },
     });
     throw new Error("Unable to send OTP email");
   }
@@ -185,7 +198,7 @@ const confirmEmailChangeService = async (
 
   const otpRecord = await prisma.otp.findFirst({
     where: {
-      email: currentEmail,
+      email: normalizedEmail,
       code: otp,
       expires_at: { gt: new Date() },
     },
@@ -203,7 +216,7 @@ const confirmEmailChangeService = async (
   });
 
   if (existingUser?.is_email_verified) {
-    await prisma.otp.deleteMany({ where: { email: currentEmail } });
+    await prisma.otp.deleteMany({ where: { email: normalizedEmail } });
     throw new Error("Email is already in use");
   } else {
     await prisma.user.deleteMany({ where: { email: normalizedEmail } });
@@ -211,7 +224,7 @@ const confirmEmailChangeService = async (
 
   const updatedUser = await prisma.user.update({
     where: { id: userId },
-    data: { email: normalizedEmail, is_email_verified: true },
+    data: { email: normalizedEmail, is_email_verified: true, google_id: null },
     select: {
       id: true,
       full_name: true,
@@ -223,7 +236,7 @@ const confirmEmailChangeService = async (
     },
   });
 
-  await prisma.otp.deleteMany({ where: { email: currentEmail } });
+  await prisma.otp.deleteMany({ where: { email: normalizedEmail } });
 
   return {
     message: "Email updated successfully",

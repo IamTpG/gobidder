@@ -65,12 +65,12 @@ const changePassword = async (req, res) => {
 
 // Đổi email cá nhân
 const requestEmailChange = async (req, res) => {
-  const { newEmail } = req.body;
+  const { newEmail, password } = req.body;
   try {
-    const result = await userService.requestEmailChangeService(
-      req.user.id,
+    const result = await userService.requestEmailChangeService(req.user.id, {
       newEmail,
-    );
+      password,
+    });
     return res.json(result);
   } catch (err) {
     if (
@@ -84,6 +84,12 @@ const requestEmailChange = async (req, res) => {
     }
     if (err.message.includes("only available for email/password accounts")) {
       return res.status(400).json({ message: err.message });
+    }
+    if (err.message === "Password is incorrect") {
+      return res.status(400).json({ message: err.message });
+    }
+    if (err.message === "Unable to send OTP email") {
+      return res.status(500).json({ message: err.message });
     }
     console.error(err);
     return res.status(500).json({ message: "Server error" });
