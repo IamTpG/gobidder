@@ -34,4 +34,16 @@ export const answerProductQuestion = async (
   return response.data;
 };
 
+export const placeBid = async (productId, maxPrice) => {
+  const response = await api.post(`/products/${productId}/bid`, { maxPrice });
+  return response.data;
+};
+
+export const getMyAutoBid = async (productId) => {
+  const response = await api.get(`/bid-history/me/product/${productId}`, {
+    productId,
+  });
+  return response.data;
+};
+
 export default api;

@@ -15,6 +15,12 @@ router.get(
   bidHistoryController.getBidHistoryByUser,
 );
 
+router.get(
+  "/me/product/:productId",
+  passport.authenticate("jwt", { session: false }),
+  bidHistoryController.getAutoBidProductByUser,
+);
+
 // Lấy tất cả lịch sử đặt giá (với filter)
 // router.get("/", bidHistoryController.getAllBidHistory);
 
