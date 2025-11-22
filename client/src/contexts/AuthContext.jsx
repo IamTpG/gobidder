@@ -18,31 +18,19 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-
   useEffect(() => {
+    let isMounted = true;
     const raw = localStorage.getItem("auth:user");
     if (raw) {
       try {
-        setUser(JSON.parse(raw));
+        const cachedUser = JSON.parse(raw);
+        if (isMounted) setUser(cachedUser);
       } catch {
         localStorage.removeItem("auth:user");
       }
+    } else {
+      checkAuthStatusAfterRedirect();
     }
-  }, []);
-
-  useEffect(() => {
-    let isMounted = true;
-    const fetchCurrentUser = async () => {
-      try {
-        const { data } = await api.get("/users/me");
-        if (isMounted) setUser(data);
-      } catch {
-        if (isMounted) setUser(null);
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    };
-    fetchCurrentUser();
     return () => {
       isMounted = false;
     };
@@ -52,6 +40,20 @@ export const AuthProvider = ({ children }) => {
     if (user) localStorage.setItem("auth:user", JSON.stringify(user));
     else localStorage.removeItem("auth:user");
   }, [user]);
+
+  const checkAuthStatusAfterRedirect = async () => {
+    setLoading(true);
+    try {
+      const response = await api.get("/auth/status");
+      const userData = response.data.user;
+      setUser(userData);
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } catch (error) {
+      setUser(null);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const login = async ({ username, password }) => {
     if (!username || !password)
@@ -110,6 +112,7 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     try {
       await api.post("/auth/logout");
+      localStorage.removeItem("auth:user");
     } catch {
       // ignore network/logout errors; still clear local state
     } finally {

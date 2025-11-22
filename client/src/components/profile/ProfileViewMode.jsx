@@ -3,10 +3,10 @@ import ProfileAvatar from "./ProfileAvatar";
 import ProfileInfoCard from "./ProfileInfoCard";
 
 const formatDisplayDate = (value) => {
-  if (!value) return "Chưa cập nhật";
+  if (!value) return "Update your information";
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "Chưa cập nhật";
-  return date.toLocaleDateString("vi-VN", {
+  if (Number.isNaN(date.getTime())) return "Update your information";
+  return date.toLocaleDateString("en-US", {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
