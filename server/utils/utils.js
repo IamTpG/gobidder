@@ -143,12 +143,43 @@ const isValidEmail = (email) => {
   return /\S+@\S+\.\S+/.test(email);
 };
 
+// Gửi email chung (đóng gói nodemailer)
+const sendMail = async ({ to, subject, text, html }) => {
+  const transporter = nodemailer.createTransport({
+    host: process.env.MAIL_HOST,
+    port: Number(process.env.MAIL_PORT) || 587,
+    secure: Number(process.env.MAIL_PORT) === 465,
+    auth: {
+      user: process.env.MAIL_USER,
+      pass: process.env.MAIL_PASS,
+    },
+  });
+
+  const mailOptions = {
+    from: `"GoBidder" <${process.env.MAIL_FROM}>`,
+    to,
+    subject,
+    text,
+    html,
+  };
+
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    console.log("Email sent:", info.messageId);
+    return info;
+  } catch (err) {
+    console.error("sendMail error:", err);
+    throw err;
+  }
+};
+
 module.exports = {
   cookieExtractor,
   signTokenAndSetCookie,
   verifyOtpHelper,
   generateOtp,
   sendOtpEmail,
+  sendMail,
   serializeBigInt,
   normalizeEmail,
   isValidEmail,

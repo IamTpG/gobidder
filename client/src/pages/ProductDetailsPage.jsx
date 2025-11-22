@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import ProductDetails from "../components/ProductDetails";
 import Spinner from "../components/common/Spinner";
 import { getProductById } from "../services/api";
@@ -7,9 +7,16 @@ import { getProductById } from "../services/api";
 const ProductDetailsPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [product, setProduct] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  // Hàm để refetch product data (dùng khi có câu hỏi mới hoặc câu trả lời mới)
+  const refetchProduct = () => {
+    setRefreshTrigger((prev) => prev + 1);
+  };
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -30,7 +37,17 @@ const ProductDetailsPage = () => {
     if (id) {
       fetchProduct();
     }
-  }, [id]);
+  }, [id, refreshTrigger]);
+
+  // Xử lý query param openQ để mở tab Q&A
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const openQ = params.get("openQ");
+    if (openQ && product) {
+      // Scroll sẽ được xử lý trong ProductDetails component
+      // Ở đây chỉ cần pass openQ xuống
+    }
+  }, [location.search, product]);
 
   if (isLoading) {
     return (
@@ -156,7 +173,7 @@ const ProductDetailsPage = () => {
       </div>
 
       {/* Product Details */}
-      <ProductDetails product={product} />
+      <ProductDetails product={product} onRefresh={refetchProduct} />
     </div>
   );
 };

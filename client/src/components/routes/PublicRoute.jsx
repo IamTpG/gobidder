@@ -1,7 +1,7 @@
 import React from "react";
+import { Navigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import Spinner from "../common/Spinner";
-import NotFound from "../../pages/NotFound";
 
 const PublicRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -18,7 +18,7 @@ const PublicRoute = ({ children }) => {
   }
 
   if (user) {
-    return <NotFound />;
+    return <Navigate to="/" replace />;
   }
 
   return children;

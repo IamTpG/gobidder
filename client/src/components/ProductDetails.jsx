@@ -1,12 +1,15 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import Badge from "./common/Badge";
 import ImageGallery from "./common/ImageGallery";
 import CountdownTimer from "./common/CountdownTimer";
 import BidControls from "./common/BidControls";
 import TabNavigation from "./common/TabNavigation";
 import AuctionSection from "./sections/AuctionSection";
+import { useAuth } from "../contexts/AuthContext";
+import { createProductQuestion, answerProductQuestion } from "../services/api";
 
-// Dữ liệu Related Products vẫn giữ lại vì nó là dữ liệu SAMPLE, 
+// Dữ liệu Related Products vẫn giữ lại vì nó là dữ liệu SAMPLE,
 // không liên quan trực tiếp đến sản phẩm hiện tại mà là dữ liệu gợi ý.
 
 const relatedProducts = [
@@ -63,23 +66,51 @@ const relatedProducts = [
 ];
 // Helper function để che tên người dùng
 const maskUserName = (userName) => {
-  if (!userName || typeof userName !== 'string') return "*****";
+  if (!userName || typeof userName !== "string") return "*****";
 
   const nameLength = userName.length;
   const maskLength = Math.floor(nameLength * 0.8);
 
   const visiblePart = userName.substring(maskLength);
 
-  const maskedPart = '*****';
+  const maskedPart = "*****";
 
   return maskedPart + visiblePart;
 };
-const ProductDetails = ({ product, className = "" }) => {
+
+const ProductDetails = ({ product, onRefresh, className = "" }) => {
+  const location = useLocation();
+  const { user } = useAuth();
   const [bidAmount, setBidAmount] = useState(
-    (product?.currentBid || 0) + (product?.stepPrice || 0)
+    (product?.currentBid || 0) + (product?.stepPrice || 0),
   );
 
   const [activeTab, setActiveTab] = useState("description");
+  const [newQuestion, setNewQuestion] = useState("");
+  const [answerText, setAnswerText] = useState({});
+  const [isSubmittingQuestion, setIsSubmittingQuestion] = useState(false);
+  const [isSubmittingAnswer, setIsSubmittingAnswer] = useState({});
+
+  // Xử lý query param openQ để tự động mở tab Q&A và scroll
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const openQ = params.get("openQ");
+    if (openQ) {
+      setActiveTab("qna");
+      // Delay scroll để đảm bảo DOM đã render
+      setTimeout(() => {
+        const element = document.getElementById(`q-${openQ}`);
+        if (element) {
+          element.scrollIntoView({ behavior: "smooth", block: "center" });
+          element.classList.add("highlight-question");
+          setTimeout(
+            () => element.classList.remove("highlight-question"),
+            2000,
+          );
+        }
+      }, 300);
+    }
+  }, [location.search]);
 
   if (!product) return null;
 
@@ -147,6 +178,49 @@ const ProductDetails = ({ product, className = "" }) => {
     alert(
       `Bid placed: $${bidAmount.toLocaleString("en-US", { minimumFractionDigits: 2 })}`,
     );
+  };
+
+  // Handler cho submit câu hỏi
+  const handleSubmitQuestion = async () => {
+    if (!newQuestion.trim()) {
+      return;
+    }
+
+    if (!user) {
+      return;
+    }
+
+    try {
+      setIsSubmittingQuestion(true);
+      await createProductQuestion(product.id, { question_text: newQuestion });
+      setNewQuestion("");
+      if (onRefresh) onRefresh(); // Refresh product data
+    } catch (error) {
+      console.error("Error submitting question:", error);
+    } finally {
+      setIsSubmittingQuestion(false);
+    }
+  };
+
+  // Handler cho submit câu trả lời
+  const handleSubmitAnswer = async (questionId) => {
+    const answer = answerText[questionId];
+    if (!answer || !answer.trim()) {
+      return;
+    }
+
+    try {
+      setIsSubmittingAnswer((prev) => ({ ...prev, [questionId]: true }));
+      await answerProductQuestion(product.id, questionId, {
+        answer_text: answer,
+      });
+      setAnswerText((prev) => ({ ...prev, [questionId]: "" }));
+      if (onRefresh) onRefresh(); // Refresh product data
+    } catch (error) {
+      console.error("Error submitting answer:", error);
+    } finally {
+      setIsSubmittingAnswer((prev) => ({ ...prev, [questionId]: false }));
+    }
   };
 
   return (
@@ -342,7 +416,6 @@ const ProductDetails = ({ product, className = "" }) => {
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                             {maskUserName(bid.user)}
                           </td>
-
                         </tr>
                       ))
                     ) : (
@@ -384,7 +457,8 @@ const ProductDetails = ({ product, className = "" }) => {
                   {product.qnaItems.map((qna) => (
                     <div
                       key={qna.id}
-                      className="bg-gray-50 rounded-lg p-4 border border-gray-200"
+                      id={`q-${qna.id}`}
+                      className="bg-gray-50 rounded-lg p-4 border border-gray-200 transition-colors"
                     >
                       <div className="mb-3">
                         <div className="flex items-start justify-between mb-2">
@@ -393,7 +467,7 @@ const ProductDetails = ({ product, className = "" }) => {
                           </p>
                         </div>
                         <p className="text-xs text-gray-500">
-                          Asked by {qna.questioner?.fullName || 'Anonymous'} on{" "}
+                          Asked by {qna.questioner?.fullName || "Anonymous"} on{" "}
                           {formatDateTime(qna.questionTime)}
                         </p>
                       </div>
@@ -409,11 +483,42 @@ const ProductDetails = ({ product, className = "" }) => {
                           </p>
                         </div>
                       ) : (
-                        <div className="mt-3 pl-4 border-l-2 border-gray-300">
-                          <p className="text-sm text-gray-500 italic">
-                            Waiting for answer from seller...
-                          </p>
-                        </div>
+                        <>
+                          {/* Chỉ seller mới có thể trả lời */}
+                          {user &&
+                          product.seller &&
+                          user.id === product.seller.id ? (
+                            <div className="mt-3 pl-4 border-l-2 border-gray-300">
+                              <textarea
+                                value={answerText[qna.id] || ""}
+                                onChange={(e) =>
+                                  setAnswerText((prev) => ({
+                                    ...prev,
+                                    [qna.id]: e.target.value,
+                                  }))
+                                }
+                                placeholder="Type your answer here..."
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                                rows="3"
+                              />
+                              <button
+                                onClick={() => handleSubmitAnswer(qna.id)}
+                                disabled={isSubmittingAnswer[qna.id]}
+                                className="mt-2 bg-primary hover:bg-primary/90 text-white font-semibold py-2 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                {isSubmittingAnswer[qna.id]
+                                  ? "Submitting..."
+                                  : "Submit Answer"}
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="mt-3 pl-4 border-l-2 border-gray-300">
+                              <p className="text-sm text-gray-500 italic">
+                                Waiting for answer from seller...
+                              </p>
+                            </div>
+                          )}
+                        </>
                       )}
                     </div>
                   ))}
@@ -426,12 +531,44 @@ const ProductDetails = ({ product, className = "" }) => {
                 </div>
               )}
 
-              {/* Ask Question Button */}
-              <div className="mt-6">
-                <button className="w-full bg-primary hover:bg-primary/90 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200">
-                  Ask a Question
-                </button>
-              </div>
+              {/* Form hỏi câu hỏi mới */}
+              {/* Chỉ hiển thị nếu user không phải là seller */}
+              {(!user || (product.seller && user.id !== product.seller.id)) && (
+                <div className="mt-6 bg-white border border-gray-200 rounded-lg p-4">
+                  <h4 className="font-semibold text-gray-900 mb-3">
+                    Ask a Question
+                  </h4>
+                  <textarea
+                    value={newQuestion}
+                    onChange={(e) => setNewQuestion(e.target.value)}
+                    placeholder="Type your question about this product..."
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary disabled:bg-gray-100"
+                    rows="4"
+                    disabled={!user}
+                  />
+                  <button
+                    onClick={handleSubmitQuestion}
+                    disabled={isSubmittingQuestion || !user}
+                    className="mt-3 w-full bg-primary hover:bg-primary/90 text-white font-semibold py-3 px-6 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isSubmittingQuestion
+                      ? "Submitting..."
+                      : user
+                        ? "Submit Question"
+                        : "Login to Ask Question"}
+                  </button>
+                </div>
+              )}
+
+              {/* Thông báo cho seller */}
+              {user && product.seller && user.id === product.seller.id && (
+                <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <p className="text-sm text-blue-800">
+                    <strong>Note:</strong> As the seller of this product, you
+                    can only answer questions, not ask them.
+                  </p>
+                </div>
+              )}
             </div>
           )}
         </div>

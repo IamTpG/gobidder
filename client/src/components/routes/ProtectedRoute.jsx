@@ -1,6 +1,6 @@
 import React from "react";
+import { Navigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
-import NotFound from "../../pages/NotFound";
 import Spinner from "../common/Spinner";
 
 const ProtectedRoute = ({ children }) => {
@@ -18,7 +18,7 @@ const ProtectedRoute = ({ children }) => {
   }
 
   if (!user) {
-    return <NotFound />;
+    return <Navigate to="/auth" replace />;
   }
 
   return children;
