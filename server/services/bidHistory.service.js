@@ -258,6 +258,22 @@ const getBidHistoryByUser = async (userId, options) => {
   };
 };
 
+const getAutoBidProductByUser = async (userId, productId) => {
+  const myAutoBid = await prisma.autoBid.findUnique({
+    where: {
+      user_id_product_id: { user_id: userId, product_id: Number(productId) },
+    },
+  });
+  if (myAutoBid) {
+    myAutoBidPrice = myAutoBid.max_price.toString();
+  } else {
+    myAutoBidPrice = 0;
+  }
+  return {
+    myAutoBidPrice: myAutoBidPrice,
+  };
+};
+
 // Tạo một bản ghi lịch sử đấu giá mới
 const createBidHistory = async (data) => {
   const { product_id, user_id, bid_price } = data;
@@ -352,6 +368,7 @@ module.exports = {
   getBidHistoryById,
   getBidHistoryByProduct,
   getBidHistoryByUser,
+  getAutoBidProductByUser,
   createBidHistory,
   deleteBidHistory,
 };

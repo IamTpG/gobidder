@@ -46,6 +46,23 @@ const getBidHistoryByUser = async (req, res) => {
   }
 };
 
+// Lấy giá trần cá nhân đã đặt cho sản phẩm
+const getAutoBidProductByUser = async (req, res) => {
+  const userId = req.user.id;
+  const { productId } = req.params;
+
+  try {
+    const result = await bidHistoryService.getAutoBidProductByUser(
+      userId,
+      productId,
+    );
+    res.json(result);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 // Lấy tất cả lịch sử đấu giá
 const getAllBidHistory = async (req, res) => {
   const { page = 1, limit = 20, productId, userId } = req.query;
@@ -139,6 +156,7 @@ module.exports = {
   getBidHistoryById,
   getBidHistoryByProduct,
   getBidHistoryByUser,
+  getAutoBidProductByUser,
   createBidHistory,
   deleteBidHistory,
 };

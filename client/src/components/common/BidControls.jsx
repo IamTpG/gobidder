@@ -1,92 +1,78 @@
-import React from 'react';
-import Button from './Button';
+import React from "react";
+import Button from "./Button"; // Sử dụng Button chung của bạn (đã có Spinner)
+import Spinner from "./Spinner";
 
-const BidControls = ({ 
+const BidControls = ({
   currentBid,
-  bidAmount, 
+  bidAmount,
   onBidChange,
   onBid,
-  minBidIncrement = 500,
-  className = ''
+  minBidIncrement,
+  disabled = false,
+  isBidding = false,
+  label = "Place Bid",
 }) => {
-  const incrementBid = () => {
-    onBidChange(bidAmount + minBidIncrement);
-  };
-
-  const decrementBid = () => {
-    const newAmount = bidAmount - minBidIncrement;
-    if (newAmount >= currentBid + minBidIncrement) {
-      onBidChange(newAmount);
-    }
-  };
-
-  const formatCurrency = (amount) => {
-    return `$${amount.toLocaleString('en-US', { 
-      minimumFractionDigits: 2, 
-      maximumFractionDigits: 2 
-    })}`;
-  };
+  const minBid = currentBid + minBidIncrement;
 
   return (
-    <div className={`bg-white border-2 border-gray-200 rounded-lg p-3 space-y-2.5 ${className}`}>
-      {/* Bid Amount Display */}
-      <div className="flex items-center justify-center gap-2.5">
-        <button 
-          onClick={decrementBid}
-          disabled={bidAmount <= currentBid + minBidIncrement}
-          className="w-9 h-9 flex items-center justify-center bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 rounded-lg transition-colors duration-200 font-bold text-base text-gray-700"
-        >
-          −
-        </button>
-        
-        <div className="flex-1 text-center">
-          <input 
-            type="text" 
-            value={formatCurrency(bidAmount)}
-            readOnly
-            className="w-full text-lg font-bold text-gray-900 text-center bg-transparent border-none focus:outline-none cursor-default"
-          />
-          <p className="text-[9px] text-gray-500 mt-0">
-            Minimum bid: {formatCurrency(currentBid + minBidIncrement)}
-          </p>
+    <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+      <div className="flex flex-col space-y-3">
+        <div className="flex justify-between text-sm">
+          <span className="text-gray-600">Minimum bid:</span>
+          <span className="font-medium text-gray-900">
+            ${minBid.toLocaleString()}
+          </span>
         </div>
-        
-        <button 
-          onClick={incrementBid}
-          className="w-9 h-9 flex items-center justify-center bg-primary hover:bg-primary/90 rounded-lg transition-colors duration-200 font-bold text-base text-white shadow-sm hover:shadow-md"
-        >
-          +
-        </button>
-      </div>
 
-      {/* Quick Bid Buttons */}
-      <div className="grid grid-cols-3 gap-1.5">
-        {[500, 1000, 5000].map((amount) => (
-          <button
-            key={amount}
-            onClick={() => onBidChange(bidAmount + amount)}
-            className="px-2 py-1 text-[10px] font-medium text-gray-700 bg-gray-50 hover:bg-gray-100 border border-gray-200 hover:border-gray-300 rounded-lg transition-all duration-200"
+        <div className="flex gap-3">
+          <div className="relative flex-1">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">
+              $
+            </span>
+            <input
+              type="number"
+              value={bidAmount}
+              onChange={(e) => onBidChange(Number(e.target.value))}
+              className="w-full pl-8 pr-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-[#00B289] focus:ring-0 font-semibold text-gray-900 transition-colors"
+              placeholder="Enter amount"
+              min={minBid}
+              disabled={disabled}
+            />
+          </div>
+
+          <Button
+            onClick={onBid}
+            disabled={disabled || bidAmount < minBid}
+            variant="primary"
+            className="px-6 whitespace-nowrap"
           >
-            +{formatCurrency(amount)}
-          </button>
-        ))}
-      </div>
-      
-      {/* Place Bid Button */}
-      <Button 
-        variant="primary" 
-        size="md" 
-        fullWidth
-        onClick={onBid}
-        className="text-sm font-semibold h-9 shadow-lg hover:shadow-xl"
-      >
-        Place Bid
-      </Button>
+            {isBidding ? (
+              <div className="flex items-center gap-2">
+                <Spinner size="sm" className="text-white" />
+                <span>Bidding...</span>
+              </div>
+            ) : (
+              label
+            )}
+          </Button>
+        </div>
 
-      {/* Bid Info */}
-      {/* <div className="text-center text-[9px] text-gray-500 pt-0.5 border-t border-gray-100">
-        <p>By placing a bid, you agree to our terms and conditions</p>
-      </div> */}
+        {/* Các nút gợi ý nhanh (Quick bid buttons) */}
+        <div className="flex gap-2 overflow-x-auto pb-1">
+          {[minBid, minBid + minBidIncrement, minBid + minBidIncrement * 2].map(
+            (amount) => (
+              <button
+                key={amount}
+                onClick={() => onBidChange(amount)}
+                disabled={disabled}
+                className="px-3 py-1 text-xs font-medium text-gray-600 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-full transition-colors whitespace-nowrap"
+              >
+                ${amount.toLocaleString()}
+              </button>
+            ),
+          )}
+        </div>
+      </div>
     </div>
   );
 };
