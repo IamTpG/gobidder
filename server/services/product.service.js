@@ -228,7 +228,91 @@ const getProductById = async (productId) => {
   };
 };
 
+// Top 5 sản phẩm gần kết thúc
+const getTopEndingSoon = async () => {
+  const products = await prisma.product.findMany({
+    where: {
+      status: "Active",
+      end_time: {
+        gt: new Date(), // Chỉ lấy sản phẩm chưa kết thúc
+      },
+    },
+    orderBy: {
+      end_time: "asc", // Sắp xếp theo thời gian kết thúc gần nhất
+    },
+    take: 5,
+    include: {
+      seller: {
+        select: { id: true, full_name: true, email: true },
+      },
+      category: {
+        select: { id: true, name: true },
+      },
+      current_bidder: {
+        select: { id: true, full_name: true },
+      },
+    },
+  });
+
+  return products;
+};
+
+// Top 5 sản phẩm có nhiều lượt ra giá nhất
+const getTopMostBids = async () => {
+  const products = await prisma.product.findMany({
+    where: {
+      status: "Active",
+    },
+    orderBy: {
+      bid_count: "desc", // Sắp xếp theo số lượt đấu giá giảm dần
+    },
+    take: 5,
+    include: {
+      seller: {
+        select: { id: true, full_name: true, email: true },
+      },
+      category: {
+        select: { id: true, name: true },
+      },
+      current_bidder: {
+        select: { id: true, full_name: true },
+      },
+    },
+  });
+
+  return products;
+};
+
+// Top 5 sản phẩm có giá cao nhất
+const getTopHighestPrice = async () => {
+  const products = await prisma.product.findMany({
+    where: {
+      status: "Active",
+    },
+    orderBy: {
+      current_price: "desc", // Sắp xếp theo giá hiện tại giảm dần
+    },
+    take: 5,
+    include: {
+      seller: {
+        select: { id: true, full_name: true, email: true },
+      },
+      category: {
+        select: { id: true, name: true },
+      },
+      current_bidder: {
+        select: { id: true, full_name: true },
+      },
+    },
+  });
+
+  return products;
+};
+
 module.exports = {
   getProducts,
   getProductById,
+  getTopEndingSoon,
+  getTopMostBids,
+  getTopHighestPrice,
 };

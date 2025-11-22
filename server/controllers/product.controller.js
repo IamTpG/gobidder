@@ -309,9 +309,48 @@ const answerQuestion = async (req, res) => {
   }
 };
 
+// Top 5 sản phẩm gần kết thúc
+const getTopEndingSoon = async (req, res) => {
+  try {
+    const products = await productService.getTopEndingSoon();
+    const serializedProducts = serializeBigInt(products);
+    return res.status(200).json({ data: serializedProducts });
+  } catch (error) {
+    console.error("Error in getTopEndingSoon:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// Top 5 sản phẩm có nhiều lượt ra giá nhất
+const getTopMostBids = async (req, res) => {
+  try {
+    const products = await productService.getTopMostBids();
+    const serializedProducts = serializeBigInt(products);
+    return res.status(200).json({ data: serializedProducts });
+  } catch (error) {
+    console.error("Error in getTopMostBids:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// Top 5 sản phẩm có giá cao nhất
+const getTopHighestPrice = async (req, res) => {
+  try {
+    const products = await productService.getTopHighestPrice();
+    const serializedProducts = serializeBigInt(products);
+    return res.status(200).json({ data: serializedProducts });
+  } catch (error) {
+    console.error("Error in getTopHighestPrice:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
 module.exports = {
   getProducts,
   getProductById,
   createQuestion,
   answerQuestion,
+  getTopEndingSoon,
+  getTopMostBids,
+  getTopHighestPrice,
 };
