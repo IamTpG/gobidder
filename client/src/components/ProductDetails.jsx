@@ -7,6 +7,7 @@ import BidControls from "./common/BidControls";
 import TabNavigation from "./common/TabNavigation";
 import AuctionSection from "./sections/AuctionSection";
 import { useAuth } from "../contexts/AuthContext";
+import useRelatedProducts from "../hooks/useRelatedProducts";
 import {
   createProductQuestion,
   answerProductQuestion,
@@ -14,60 +15,6 @@ import {
   getMyAutoBid,
 } from "../services/api";
 
-// Dữ liệu Related Products vẫn giữ lại vì nó là dữ liệu SAMPLE,
-// không liên quan trực tiếp đến sản phẩm hiện tại mà là dữ liệu gợi ý.
-const relatedProducts = [
-  {
-    id: 101,
-    lotNumber: "576894",
-    image:
-      "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=300&fit=crop",
-    title: "Premium Headphones Collection",
-    currentBid: 2458,
-    status: "live",
-    timeLeft: { days: 52, hours: 13, minutes: 32, seconds: 48 },
-  },
-  {
-    id: 102,
-    lotNumber: "679542",
-    image:
-      "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=300&fit=crop",
-    title: "Luxury Watch Limited Edition",
-    currentBid: 5200,
-    status: "live",
-    timeLeft: { days: 45, hours: 8, minutes: 15, seconds: 30 },
-  },
-  {
-    id: 103,
-    lotNumber: "467188",
-    image:
-      "https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=400&h=300&fit=crop",
-    title: "Designer Sneakers Rare",
-    currentBid: 1850,
-    status: "live",
-    timeLeft: { days: 38, hours: 22, minutes: 45, seconds: 12 },
-  },
-  {
-    id: 104,
-    lotNumber: "258967",
-    image:
-      "https://images.unsplash.com/photo-1491553895911-0055eca6402d?w=400&h=300&fit=crop",
-    title: "Vintage Camera Collection",
-    currentBid: 3100,
-    status: "live",
-    timeLeft: { days: 29, hours: 14, minutes: 28, seconds: 55 },
-  },
-  {
-    id: 105,
-    lotNumber: "238964",
-    image:
-      "https://images.unsplash.com/photo-1560343090-f0409e92791a?w=400&h=300&fit=crop",
-    title: "Modern Art Sculpture",
-    currentBid: 4750,
-    status: "live",
-    timeLeft: { days: 60, hours: 5, minutes: 38, seconds: 20 },
-  },
-];
 // Helper function để che tên người dùng
 const maskUserName = (userName) => {
   if (!userName || typeof userName !== "string") return "*****";
@@ -105,6 +52,9 @@ const ProductDetails = ({ product, onRefresh, className = "" }) => {
   const [answerText, setAnswerText] = useState({});
   const [isSubmittingQuestion, setIsSubmittingQuestion] = useState(false);
   const [isSubmittingAnswer, setIsSubmittingAnswer] = useState({});
+
+  // Related products from server (same category_id)
+  const { products: relatedProducts } = useRelatedProducts(product?.id, 5);
 
   useEffect(() => {
     if (product) {
