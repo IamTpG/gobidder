@@ -1,7 +1,7 @@
 import React from 'react';
 import Countdown from './Countdown';
 
-const Card = ({ 
+const Card = ({
   children,
   title,
   subtitle,
@@ -15,7 +15,7 @@ const Card = ({
   shadow = 'sm',
   padding = 'default',
   onClick,
-  ...props 
+  ...props
 }) => {
   // Base styles
   const baseStyles = `
@@ -31,43 +31,43 @@ const Card = ({
     default: `
       ${bordered ? 'border border-slate-200' : ''}
     `,
-    
+
     // Primary - Card với accent primary
     primary: `
       border-l-4 border-l-primary
       ${bordered ? 'border border-slate-200' : ''}
     `,
-    
+
     // Gradient - Card với gradient background (như trong giao diện)
     gradient: `
       bg-gradient-to-br from-primary/5 to-primary/10
       ${bordered ? 'border-2 border-primary/20' : ''}
     `,
-    
+
     // Success - Card màu xanh lá nhạt
     success: `
       border-l-4 border-l-green-500
       ${bordered ? 'border border-slate-200' : ''}
     `,
-    
+
     // Warning
     warning: `
       border-l-4 border-l-yellow-500
       ${bordered ? 'border border-slate-200' : ''}
     `,
-    
+
     // Danger
     danger: `
       border-l-4 border-l-red-500
       ${bordered ? 'border border-slate-200' : ''}
     `,
-    
+
     // Outlined - Card chỉ có viền
     outlined: `
       border-2 border-slate-200
       hover:border-primary
     `,
-    
+
     // Elevated - Card nổi (dùng cho auction card)
     elevated: `
       shadow-lg
@@ -93,7 +93,7 @@ const Card = ({
   };
 
   return (
-    <div 
+    <div
       className={`${baseStyles} ${variants[variant]} ${shadows[shadow]} ${className}`}
       onClick={onClick}
       {...props}
@@ -109,9 +109,9 @@ const Card = ({
       {image && (
         <div className="relative w-full h-48 overflow-hidden">
           {typeof image === 'string' ? (
-            <img 
-              src={image} 
-              alt={title || 'Card image'} 
+            <img
+              src={image}
+              alt={title || 'Card image'}
               className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
             />
           ) : (
@@ -155,7 +155,6 @@ const Card = ({
 };
 
 // AuctionCard - Card chuyên dụng cho sản phẩm đấu giá (Design giống PROBID)
-// Props khớp với DB schema
 export const AuctionCard = ({
   id,
   images, // Json array từ DB: ["url1", "url2", ...]
@@ -192,10 +191,10 @@ export const AuctionCard = ({
   const formatDate = (dateString) => {
     if (!dateString) return '';
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'short', 
-      day: 'numeric' 
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
     });
   };
 
@@ -218,7 +217,7 @@ export const AuctionCard = ({
   };
 
   const getButtonText = () => {
-    switch(status) {
+    switch (status) {
       case 'Sold': return 'Sold';
       case 'Expired': return 'Auction Ended';
       case 'Removed': return 'Removed';
@@ -227,23 +226,53 @@ export const AuctionCard = ({
     }
   };
 
+  // ===============================================
+  // START NEW LOGIC: Check for 'New' product status (within 1 hour)
+  // ===============================================
+  const isNewProduct = () => {
+    if (!created_at) return false;
+    const postedTime = new Date(created_at).getTime();
+    const oneHourInMs = 60 * 60 * 1000;
+    // Check if the difference between current time and posted time is less than 1 hour
+    return (Date.now() - postedTime) < oneHourInMs;
+  };
+
+  const isNew = isNewProduct();
+  // ===============================================
+  // END NEW LOGIC
+  // ===============================================
+
+
   return (
-    <div 
-      className={`bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 group ${onClick ? 'cursor-pointer' : ''} ${className}`} 
+    <div
+      className={` bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 group 
+      ${onClick ? 'cursor-pointer' : ''} 
+      ${className}
+      ${isNew ? 'border-2 border-amber-500 ring-4 ring-amber-300/50 shadow-lg' : ''}`}
       onClick={onClick}
       {...props}
     >
       {/* Image Container */}
       <div className="relative h-64 bg-slate-100">
-        <img 
-          src={getImageUrl()} 
+
+        {/* NEW BADGE: Display 'New' badge if posted recently */}
+        {isNew && (
+          <div className="absolute top-4 left-4 z-20">
+            <span className="inline-flex items-center rounded-full bg-red-500 px-3 py-1 text-xs font-bold text-white shadow-md ">
+              ✨ NEW 1HR
+            </span>
+          </div>
+        )}
+
+        <img
+          src={getImageUrl()}
           alt={name || 'Product'}
           className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
         />
 
         {/* Countdown Timer - Bottom overlay */}
         {end_time && (
-          <Countdown 
+          <Countdown
             endDate={end_time}
             variant="overlay"
             showLabels={true}
@@ -271,7 +300,7 @@ export const AuctionCard = ({
           ) : (
             <div className="text-slate-400 italic">No bids yet</div>
           )}
-          
+
           <div className="flex items-center gap-1 text-slate-600">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
@@ -356,12 +385,12 @@ export const ProductCard = ({
     >
       {/* Image */}
       <div className="relative group">
-        <img 
-          src={image} 
+        <img
+          src={image}
           alt={title}
           className="w-full h-48 object-cover"
         />
-        
+
         {/* Action Buttons (Hover) */}
         <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
           {onFavorite && (
@@ -428,7 +457,7 @@ export const StatCard = ({
         <div className="flex-1">
           <p className="text-sm text-slate-600 mb-1">{title}</p>
           <h3 className="text-3xl font-bold text-slate-900">{value}</h3>
-          
+
           {trend && (
             <div className={`flex items-center gap-1 mt-2 text-sm ${trend === 'up' ? 'text-green-600' : 'text-red-600'}`}>
               {trend === 'up' ? '↑' : '↓'}
@@ -436,7 +465,7 @@ export const StatCard = ({
             </div>
           )}
         </div>
-        
+
         {icon && (
           <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary text-2xl">
             {icon}
