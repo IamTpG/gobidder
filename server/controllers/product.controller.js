@@ -345,6 +345,25 @@ const getTopHighestPrice = async (req, res) => {
   }
 };
 
+// Sản phẩm liên quan (cùng parent_id của category)
+const getRelatedProducts = async (req, res) => {
+  try {
+    const productId = parseInt(req.params.id);
+    const limit = parseInt(req.query.limit) || 5;
+
+    if (isNaN(productId) || productId <= 0) {
+      return res.status(400).json({ message: "Invalid product ID" });
+    }
+
+    const products = await productService.getRelatedProducts(productId, limit);
+    const serializedProducts = serializeBigInt(products);
+    return res.status(200).json({ data: serializedProducts });
+  } catch (error) {
+    console.error("Error in getRelatedProducts:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
 module.exports = {
   getProducts,
   getProductById,
@@ -353,4 +372,5 @@ module.exports = {
   getTopEndingSoon,
   getTopMostBids,
   getTopHighestPrice,
+  getRelatedProducts,
 };
