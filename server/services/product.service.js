@@ -309,10 +309,40 @@ const getTopHighestPrice = async () => {
   return products;
 };
 
+// Lấy sản phẩm liên quan (cùng category_id)
+const getRelatedProducts = async (productId, limit = 5) => {
+  // Lấy product để biết category_id
+  const product = await prisma.product.findUnique({
+    where: { id: productId },
+    select: { category_id: true },
+  });
+
+  if (!product) return [];
+
+  // Tìm các sản phẩm khác có cùng category_id
+  const related = await prisma.product.findMany({
+    where: {
+      id: { not: productId },
+      category_id: product.category_id,
+      status: "Active",
+    },
+    take: limit,
+    orderBy: { created_at: "desc" },
+    include: {
+      seller: { select: { id: true, full_name: true, email: true } },
+      category: { select: { id: true, name: true, parent_id: true } },
+      current_bidder: { select: { id: true, full_name: true } },
+    },
+  });
+
+  return related;
+};
+
 module.exports = {
   getProducts,
   getProductById,
   getTopEndingSoon,
   getTopMostBids,
   getTopHighestPrice,
+  getRelatedProducts,
 };

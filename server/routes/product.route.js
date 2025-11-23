@@ -18,6 +18,9 @@ router.get("/top/most-bids", productController.getTopMostBids);
 // Top 5 sản phẩm có giá cao nhất
 router.get("/top/highest-price", productController.getTopHighestPrice);
 
+// Lấy sản phẩm liên quan
+router.get("/:id/related", productController.getRelatedProducts);
+
 // Lấy một sản phẩm
 router.get("/:id", productController.getProductById);
 
