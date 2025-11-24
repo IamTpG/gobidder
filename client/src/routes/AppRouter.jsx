@@ -9,6 +9,7 @@ import ProfilePage from "../pages/ProfilePage";
 import ForgotPassword from "../pages/ForgotPassword";
 import NotFound from "../pages/NotFound";
 import ProductsPage from "../pages/ProductsPage";
+import CreateProductPage from "../pages/CreateProductPage";
 import ProtectedRoute from "../components/routes/ProtectedRoute";
 import PublicRoute from "../components/routes/PublicRoute";
 
@@ -20,6 +21,7 @@ const AppRouter = () => {
         <Route index element={<Home />} />
         {/* Products Page */}
         <Route path="products" element={<ProductsPage />} />
+        <Route path="products/create" element={<CreateProductPage />} />
 
         {/* Authentication Pages - Only accessible when not logged in */}
         <Route
