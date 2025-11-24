@@ -338,6 +338,60 @@ const getRelatedProducts = async (productId, limit = 5) => {
   return related;
 };
 
+/**
+ * Tạo sản phẩm mới (Create Product)
+ * @param {Int} sellerId - ID của người bán
+ * @param {Object} data - Dữ liệu sản phẩm
+ */
+const createProduct = async (sellerId, data) => {
+  const {
+    name,
+    description,
+    images,
+    startPrice,
+    stepPrice,
+    buyNowPrice,
+    categoryId,
+    endTime,
+    autoRenew,
+  } = data;
+
+  // Chuyển đổi dữ liệu tiền tệ sang BigInt
+  const startPriceBigInt = BigInt(startPrice);
+  const stepPriceBigInt = BigInt(stepPrice);
+  const buyNowPriceBigInt = buyNowPrice ? BigInt(buyNowPrice) : null;
+
+  // Kiểm tra logic giá
+  if (buyNowPriceBigInt && buyNowPriceBigInt <= startPriceBigInt) {
+    throw new Error("Buy-now price must be greater than start price");
+  }
+
+  // Tạo sản phẩm
+  const newProduct = await prisma.product.create({
+    data: {
+      name,
+      description,
+      images: images, // Prisma hỗ trợ lưu mảng JSON trực tiếp nếu DB là Postgres
+
+      start_price: startPriceBigInt,
+      step_price: stepPriceBigInt,
+      buy_now_price: buyNowPriceBigInt,
+      current_price: 0n,
+
+      auto_renew: autoRenew || false,
+      status: "Active",
+
+      seller_id: sellerId,
+      category_id: parseInt(categoryId),
+
+      created_at: new Date(),
+      end_time: new Date(endTime),
+    },
+  });
+
+  return newProduct;
+};
+
 module.exports = {
   getProducts,
   getProductById,
@@ -345,4 +399,5 @@ module.exports = {
   getTopMostBids,
   getTopHighestPrice,
   getRelatedProducts,
+  createProduct,
 };
