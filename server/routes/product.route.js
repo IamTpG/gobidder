@@ -39,4 +39,11 @@ router.post(
   productController.answerQuestion,
 );
 
+router.post(
+  "/",
+  passport.authenticate("jwt", { session: false }),
+  authorizeRoles("Seller"),
+  productController.create,
+);
+
 module.exports = router;

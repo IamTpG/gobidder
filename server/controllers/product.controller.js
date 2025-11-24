@@ -364,6 +364,79 @@ const getRelatedProducts = async (req, res) => {
   }
 };
 
+const create = async (req, res) => {
+  const {
+    name,
+    description,
+    images,
+    startPrice,
+    stepPrice,
+    buyNowPrice,
+    categoryId,
+    endTime,
+    autoRenew,
+  } = req.body;
+
+  // Validation cơ bản
+  if (!name || !description || !categoryId || !endTime) {
+    return res.status(400).json({ message: "Missing required fields" });
+  }
+
+  // Validate Images (Bắt buộc >= 3 ảnh)
+  if (!images || !Array.isArray(images) || images.length < 3) {
+    return res
+      .status(400)
+      .json({ message: "At least 3 images are required for the product." });
+  }
+
+  // Validate Prices
+  if (!startPrice || !stepPrice) {
+    return res
+      .status(400)
+      .json({ message: "Start price and step price are required" });
+  }
+
+  if (Number(startPrice) <= 0 || Number(stepPrice) <= 0) {
+    return res.status(400).json({ message: "Prices must be positive numbers" });
+  }
+
+  // Validate EndTime
+  if (new Date(endTime) <= new Date()) {
+    return res.status(400).json({ message: "End time must be in the future" });
+  }
+
+  try {
+    // req.user đã có sẵn nhờ Passport verify thành công trước đó
+    const sellerId = req.user.id;
+
+    const newProduct = await productService.createProduct(sellerId, {
+      name,
+      description,
+      images,
+      startPrice,
+      stepPrice,
+      buyNowPrice,
+      categoryId,
+      endTime,
+      autoRenew,
+    });
+
+    // Serialize BigInt trước khi trả về JSON
+    const safeProduct = serializeBigInt(newProduct);
+
+    return res.status(201).json({
+      message: "Product created successfully",
+      product: safeProduct,
+    });
+  } catch (error) {
+    console.error("Create Product Error:", error);
+    if (error.message.includes("Buy-now price")) {
+      return res.status(400).json({ message: error.message });
+    }
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
 module.exports = {
   getProducts,
   getProductById,
@@ -373,4 +446,5 @@ module.exports = {
   getTopMostBids,
   getTopHighestPrice,
   getRelatedProducts,
+  create,
 };
