@@ -392,6 +392,103 @@ const createProduct = async (sellerId, data) => {
   return newProduct;
 };
 
+// Lấy tất cả sản phẩm cá nhân có đấu giá
+const getAllBiddedProducts = async (userId) => {
+  const allBids = await prisma.autoBid.findMany({
+    where: { user_id: userId },
+    include: {
+      product: {
+        include: {
+          seller: { select: { full_name: true } },
+        },
+      },
+    },
+    orderBy: { created_at: "desc" },
+  });
+
+  return allBids.map((item) => {
+    const product = item.product;
+    const isEnded = new Date() > new Date(product.end_time);
+    const isWinner = product.current_bidder_id === userId && isEnded;
+
+    return {
+      productId: product.id,
+      productName: product.name,
+      image: Array.isArray(product.images) ? product.images[0] : null,
+      sellerName: product.seller.full_name,
+      endTime: product.end_time,
+      currentPrice: product.current_price,
+      myMaxBid: item.max_price,
+      status: isWinner ? "Won" : !isEnded ? "Active" : "Ended",
+      isLeading: product.current_bidder_id === userId,
+    };
+  });
+};
+
+// Lấy tất cả sản phẩm cá nhân đang đấu giá
+const getUserActiveBids = async (userId) => {
+  const activeBids = await prisma.autoBid.findMany({
+    where: {
+      user_id: userId,
+      product: {
+        end_time: { gt: new Date() }, // Chưa hết hạn
+        status: { not: "Removed" }, // Chưa bị gỡ
+      },
+    },
+    include: {
+      product: {
+        include: { seller: { select: { full_name: true } } },
+      },
+    },
+    orderBy: { created_at: "desc" },
+  });
+
+  return activeBids.map((item) => {
+    const product = item.product;
+    return {
+      productId: product.id,
+      productName: product.name,
+      image: Array.isArray(product.images) ? product.images[0] : null,
+      sellerName: product.seller.full_name,
+      endTime: product.end_time,
+      currentPrice: product.current_price,
+      myMaxBid: item.max_price,
+      status: "Active",
+      isLeading: product.current_bidder_id === userId,
+    };
+  });
+};
+
+// Lấy tất cả sản phẩm cá nhân đã thắng đấu giá
+const getUserWonProducts = async (userId) => {
+  const wonProducts = await prisma.product.findMany({
+    where: {
+      current_bidder_id: userId,
+      end_time: { lte: new Date() }, // Đã hết hạn
+    },
+    include: {
+      seller: { select: { full_name: true, email: true } },
+      // Join để lấy giá max mình từng đặt
+      auto_bids: {
+        where: { user_id: userId },
+        select: { max_price: true },
+      },
+    },
+    orderBy: { end_time: "desc" },
+  });
+
+  return wonProducts.map((product) => ({
+    productId: product.id,
+    productName: product.name,
+    image: Array.isArray(product.images) ? product.images[0] : null,
+    sellerName: product.seller.full_name,
+    endTime: product.end_time,
+    finalPrice: product.current_price,
+    myMaxBid: product.auto_bids[0]?.max_price || 0n,
+    status: "Won",
+  }));
+};
+
 module.exports = {
   getProducts,
   getProductById,
@@ -400,4 +497,7 @@ module.exports = {
   getTopHighestPrice,
   getRelatedProducts,
   createProduct,
+  getAllBiddedProducts,
+  getUserActiveBids,
+  getUserWonProducts,
 };

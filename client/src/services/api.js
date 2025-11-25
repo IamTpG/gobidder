@@ -46,4 +46,14 @@ export const getMyAutoBid = async (productId) => {
   return response.data;
 };
 
+export const getMyBids = async () => {
+  const response = await api.get("/users/me/bids/active");
+  return response.data;
+};
+
+export const getMyWonProducts = async () => {
+  const response = await api.get("/users/me/bids/won");
+  return response.data;
+};
+
 export default api;

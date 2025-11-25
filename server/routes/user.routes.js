@@ -57,4 +57,25 @@ router.get(
   userController.getUserById,
 );
 
+// Lấy tất cả sản phẩm cá nhân có đấu giá
+router.get(
+  "/me/bids/history",
+  passport.authenticate("jwt", { session: false }),
+  userController.getHistoryBids,
+);
+
+// Lấy tất cả sản phẩm cá nhân đang đấu giá
+router.get(
+  "/me/bids/active",
+  passport.authenticate("jwt", { session: false }),
+  userController.getMyActiveBids,
+);
+
+// Lấy tất cả sản phẩm cá nhân đã thắng đấu giá
+router.get(
+  "/me/bids/won",
+  passport.authenticate("jwt", { session: false }),
+  userController.getMyWonProducts,
+);
+
 module.exports = router;
