@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import api from "../services/api";
 import { useAuth } from "../contexts/AuthContext";
 import ProfileSidebar from "../components/profile/ProfileSidebar";
@@ -13,6 +13,7 @@ import EmailChangeSection from "../components/profile/EmailChangeSection";
 import NotificationBanner from "../components/profile/NotificationBanner";
 import LoadingState from "../components/profile/LoadingState";
 import ErrorState from "../components/profile/ErrorState";
+import MyBidsSection from "../components/profile/MyBidsSection";
 
 const ProfilePage = () => {
   const [profile, setProfile] = useState(null);
@@ -46,7 +47,8 @@ const ProfilePage = () => {
   const [changingEmail, setChangingEmail] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
 
-  const activeNavKey = "information";
+  const [searchParams] = useSearchParams();
+  const activeNavKey = searchParams.get("tab") || "information"; // Lấy tab từ URL, mặc định là 'information'
   const isLocalAccount = profile?.can_change_credentials;
   const { logout } = useAuth();
   const navigate = useNavigate();
@@ -337,75 +339,80 @@ const ProfilePage = () => {
     }, 200);
   };
 
+  const renderContent = () => {
+    if (loading) return <LoadingState />;
+    if (error) return <ErrorState message={error} onRetry={handleRetry} />;
+    if (!profile) return null;
+
+    if (activeNavKey === "information") {
+      return (
+        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 md:p-10">
+          <ProfileHeader onLogout={handleLogout} isLoggingOut={loggingOut} />
+
+          <NotificationBanner
+            type={notification?.type}
+            message={notification?.message}
+            onClose={() => setNotification(null)}
+          />
+
+          {isEditing ? (
+            <ProfileEditForm
+              profile={profile}
+              formData={formData}
+              errors={validationErrors}
+              saving={saving}
+              onChange={handleInputChange}
+              onSubmit={handleSave}
+              onCancel={resetForm}
+            />
+          ) : (
+            <ProfileViewMode
+              profile={profile}
+              onEdit={() => setIsEditing(true)}
+            />
+          )}
+
+          {isLocalAccount && (
+            <div className="mt-12 space-y-8">
+              <PasswordChangeSection
+                formData={passwordForm}
+                errors={passwordErrors}
+                notice={passwordNotice}
+                loading={changingPassword}
+                onChange={handlePasswordInputChange}
+                onSubmit={handlePasswordSubmit}
+              />
+              <EmailChangeSection
+                formData={emailForm}
+                errors={emailErrors}
+                notice={emailNotice}
+                step={emailStep}
+                loading={changingEmail}
+                onChange={handleEmailInputChange}
+                onRequestOtp={handleRequestEmailOtp}
+                onSubmit={handleConfirmEmailChange}
+              />
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    if (activeNavKey === "bids") {
+      return <MyBidsSection />;
+    }
+
+    // Default fallback
+    return <div>Select a tab</div>;
+  };
+
   return (
     <div className="bg-gray-50 min-h-screen py-12">
       <div className="max-w-6xl mx-auto px-4">
         <div className="flex flex-col lg:flex-row gap-6">
+          {/* Sidebar nhận activeNavKey từ URL */}
           <ProfileSidebar activeKey={activeNavKey} />
-
-          <section className="flex-1">
-            <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 md:p-10">
-              <ProfileHeader
-                onLogout={handleLogout}
-                isLoggingOut={loggingOut}
-              />
-
-              <NotificationBanner
-                type={notification?.type}
-                message={notification?.message}
-                onClose={() => setNotification(null)}
-              />
-
-              {loading && <LoadingState />}
-              {!loading && error && (
-                <ErrorState message={error} onRetry={handleRetry} />
-              )}
-              {!loading && !error && profile && (
-                <div>
-                  {isEditing ? (
-                    <ProfileEditForm
-                      profile={profile}
-                      formData={formData}
-                      errors={validationErrors}
-                      saving={saving}
-                      onChange={handleInputChange}
-                      onSubmit={handleSave}
-                      onCancel={handleCancelEdit}
-                    />
-                  ) : (
-                    <ProfileViewMode
-                      profile={profile}
-                      onEdit={() => setIsEditing(true)}
-                    />
-                  )}
-
-                  {isLocalAccount && (
-                    <div className="mt-12 space-y-8">
-                      <PasswordChangeSection
-                        formData={passwordForm}
-                        errors={passwordErrors}
-                        notice={passwordNotice}
-                        loading={changingPassword}
-                        onChange={handlePasswordInputChange}
-                        onSubmit={handlePasswordSubmit}
-                      />
-
-                      <EmailChangeSection
-                        formData={emailForm}
-                        errors={emailErrors}
-                        notice={emailNotice}
-                        step={emailStep}
-                        loading={changingEmail}
-                        onChange={handleEmailInputChange}
-                        onRequestOtp={handleRequestEmailOtp}
-                        onSubmit={handleConfirmEmailChange}
-                      />
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </section>
+          <section className="flex-1">{renderContent()}</section>
         </div>
       </div>
     </div>
