@@ -1,5 +1,6 @@
 const userService = require("../services/user.service");
-const { signTokenAndSetCookie } = require("../utils/utils");
+const productService = require("../services/product.service");
+const { signTokenAndSetCookie, serializeBigInt } = require("../utils/utils");
 
 // Lấy thông tin cá nhân
 const getMe = async (req, res) => {
@@ -158,13 +159,46 @@ const getUsers = async (req, res) => {
 const getUserById = async (req, res) => {
   const { id } = req.params;
   try {
-    const user = await userService.getUserByIdService(id);
+    const user = await productService.getUserByIdService(id);
     return res.json(user);
   } catch (err) {
     if (err.message === "User not found") {
       return res.status(404).json({ message: err.message });
     }
     console.error(err);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+// Lấy tất cả sản phẩm cá nhân có đấu giá
+const getHistoryBids = async (req, res) => {
+  try {
+    const bids = await productService.getAllBiddedProducts(req.user.id);
+    return res.json(serializeBigInt(bids));
+  } catch (err) {
+    console.error("Get History Bids Error:", err);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+// Lấy tất cả sản phẩm cá nhân đang đấu giá
+const getMyActiveBids = async (req, res) => {
+  try {
+    const bids = await productService.getUserActiveBids(req.user.id);
+    return res.json(serializeBigInt(bids));
+  } catch (err) {
+    console.error("Get Active Bids Error:", err);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+// Lấy tất cả sản phẩm cá nhân đã thắng đấu giá
+const getMyWonProducts = async (req, res) => {
+  try {
+    const products = await productService.getUserWonProducts(req.user.id);
+    return res.json(serializeBigInt(products));
+  } catch (err) {
+    console.error("Get Won Products Error:", err);
     return res.status(500).json({ message: "Server error" });
   }
 };
@@ -177,4 +211,7 @@ module.exports = {
   changePassword,
   requestEmailChange,
   confirmEmailChange,
+  getHistoryBids,
+  getMyActiveBids,
+  getMyWonProducts,
 };
