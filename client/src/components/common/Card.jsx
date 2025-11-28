@@ -226,9 +226,7 @@ export const AuctionCard = ({
     }
   };
 
-  // ===============================================
-  // START NEW LOGIC: Check for 'New' product status (within 1 hour)
-  // ===============================================
+
   const isNewProduct = () => {
     if (!created_at) return false;
     const postedTime = new Date(created_at).getTime();
@@ -238,9 +236,7 @@ export const AuctionCard = ({
   };
 
   const isNew = isNewProduct();
-  // ===============================================
-  // END NEW LOGIC
-  // ===============================================
+
 
 
   return (

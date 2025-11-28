@@ -128,7 +128,7 @@ export default function CreateProductPage_EN() {
         <label className="font-medium">Description</label>
         
         {/* --- TINYMCE EDITOR (Commented Out) --- */}
-        {/* <Editor
+        <Editor
           apiKey={process.env.REACT_APP_TINYMCE_API_KEY}
           init={{
             height: 300,
@@ -139,14 +139,9 @@ export default function CreateProductPage_EN() {
           }}
           value={description}
           onEditorChange={(v) => setDescription(v)}
-        /> */}
+        />
 
-        {/* xài text area để test*/}
-        <textarea
-          className="border p-2 w-full rounded h-32" // Thêm class để khung nhập liệu đẹp hơn
-          value={description}
-          onChange={(e) => setDescription(e.target.value)} // Lưu ý: textarea dùng e.target.value
-        ></textarea>
+
 
         {errors.description && (
           <p className="text-red-500 text-sm">{errors.description}</p>
