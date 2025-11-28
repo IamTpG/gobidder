@@ -33,8 +33,8 @@ const ProfileSidebar = ({ activeKey, userRole }) => {
               to={`/profile?tab=${item.key}`}
               className={`block w-full text-left px-4 py-3 rounded-xl transition-all duration-200 font-medium ${
                 isActive
-                  ? "bg-[#00B289]/10 text-[#00B289] shadow-sm"
-                  : "text-gray-600 hover:text-[#00B289] hover:bg-gray-50"
+                  ? "bg-[#01AA85]/10 text-[#01AA85] shadow-sm"
+                  : "text-gray-600 hover:text-[#01AA85] hover:bg-gray-50"
               }`}
             >
               {item.label}

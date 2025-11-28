@@ -392,6 +392,140 @@ const createProduct = async (sellerId, data) => {
   return newProduct;
 };
 
+/**
+ * Cập nhật sản phẩm (Update Product)
+ * @param {Int} productId - ID sản phẩm
+ * @param {Int} sellerId - ID người bán (để verify quyền)
+ * @param {Object} data - Dữ liệu cập nhật
+ */
+const updateProduct = async (productId, sellerId, data) => {
+  // Kiểm tra product có tồn tại và thuộc về seller không
+  const existingProduct = await prisma.product.findUnique({
+    where: { id: productId },
+    select: { seller_id: true, bid_count: true, status: true },
+  });
+
+  if (!existingProduct) {
+    throw new Error("Product not found");
+  }
+
+  if (existingProduct.seller_id !== sellerId) {
+    throw new Error("You are not authorized to edit this product");
+  }
+
+  // Không cho phép chỉnh sửa nếu đã có người đấu giá
+  if (existingProduct.bid_count > 0) {
+    throw new Error("Cannot edit product that already has bids");
+  }
+
+  const {
+    name,
+    description,
+    images,
+    startPrice,
+    stepPrice,
+    buyNowPrice,
+    categoryId,
+    endTime,
+    autoRenew,
+  } = data;
+
+  // Chuyển đổi giá sang BigInt
+  const startPriceBigInt = startPrice ? BigInt(startPrice) : undefined;
+  const stepPriceBigInt = stepPrice ? BigInt(stepPrice) : undefined;
+  const buyNowPriceBigInt = buyNowPrice ? BigInt(buyNowPrice) : null;
+
+  // Validate logic giá
+  if (
+    buyNowPriceBigInt &&
+    startPriceBigInt &&
+    buyNowPriceBigInt <= startPriceBigInt
+  ) {
+    throw new Error("Buy-now price must be greater than start price");
+  }
+
+  // Validate end_time
+  if (endTime && new Date(endTime) <= new Date()) {
+    throw new Error("End time must be in the future");
+  }
+
+  // Cập nhật product
+  const updatedProduct = await prisma.product.update({
+    where: { id: productId },
+    data: {
+      ...(name && { name }),
+      ...(description && { description }),
+      ...(images && { images }),
+      ...(startPriceBigInt && { start_price: startPriceBigInt }),
+      ...(stepPriceBigInt && { step_price: stepPriceBigInt }),
+      ...(buyNowPriceBigInt !== undefined && {
+        buy_now_price: buyNowPriceBigInt,
+      }),
+      ...(categoryId && { category_id: parseInt(categoryId) }),
+      ...(endTime && { end_time: new Date(endTime) }),
+      ...(autoRenew !== undefined && { auto_renew: autoRenew }),
+    },
+  });
+
+  return updatedProduct;
+};
+
+/**
+ * Lấy danh sách sản phẩm của seller
+ * @param {Int} sellerId - ID của seller
+ */
+const getSellerProducts = async (sellerId) => {
+  const products = await prisma.product.findMany({
+    where: { seller_id: sellerId },
+    orderBy: { created_at: "desc" },
+    include: {
+      category: {
+        select: { id: true, name: true },
+      },
+      current_bidder: {
+        select: { id: true, full_name: true },
+      },
+    },
+  });
+
+  return products;
+};
+
+/**
+ * Append a timestamped description entry to an existing product's description
+ * @param {Int} productId
+ * @param {Int} sellerId
+ * @param {String} newText
+ */
+const appendDescription = async (productId, sellerId, newText) => {
+  const existingProduct = await prisma.product.findUnique({
+    where: { id: productId },
+    select: { seller_id: true, description: true },
+  });
+
+  if (!existingProduct) throw new Error("Product not found");
+  if (existingProduct.seller_id !== sellerId)
+    throw new Error("You are not authorized to edit this product");
+
+  // Build timestamp in DD/MM/YYYY
+  const now = new Date();
+  const day = String(now.getDate()).padStart(2, "0");
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const year = now.getFullYear();
+  const dateStr = `${day}/${month}/${year}`;
+
+  const entry = `\n\n✏️ ${dateStr}\n\n${newText}`;
+
+  const updated = await prisma.product.update({
+    where: { id: productId },
+    data: {
+      description: (existingProduct.description || "") + entry,
+    },
+  });
+
+  return updated;
+};
+
 // Lấy tất cả sản phẩm cá nhân có đấu giá
 const getAllBiddedProducts = async (userId) => {
   const allBids = await prisma.autoBid.findMany({
@@ -594,8 +728,11 @@ module.exports = {
   getTopHighestPrice,
   getRelatedProducts,
   createProduct,
+  updateProduct,
+  getSellerProducts,
   getAllBiddedProducts,
   getUserActiveBids,
   getUserWonProducts,
   getProductsBySellerId,
+  appendDescription,
 };

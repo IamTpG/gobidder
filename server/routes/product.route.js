@@ -3,7 +3,7 @@ const passport = require("passport");
 
 const productController = require("../controllers/product.controller");
 const { authorizeRoles } = require("../middlewares/auth.middleware");
-
+const { upload, create } = require('../controllers/product.controller');
 const router = express.Router();
 
 // Lấy tất cả sản phẩm
@@ -31,6 +31,14 @@ router.post(
   productController.createQuestion,
 );
 
+// Append description (Seller only)
+router.post(
+  "/:id/append-description",
+  passport.authenticate("jwt", { session: false }),
+  authorizeRoles("Seller"),
+  productController.appendDescription,
+);
+
 // Trả lời câu hỏi (yêu cầu login và là seller)
 router.post(
   "/:id/questions/:questionId/answer",
@@ -43,7 +51,24 @@ router.post(
   "/",
   passport.authenticate("jwt", { session: false }),
   authorizeRoles("Seller"),
-  productController.create,
+  upload.array('images', 10), 
+  create,
+);
+
+// Cập nhật sản phẩm (Seller only)
+router.put(
+  "/:id",
+  passport.authenticate("jwt", { session: false }),
+  authorizeRoles("Seller"),
+  productController.update,
+);
+
+// Lấy danh sách sản phẩm của seller đang login
+router.get(
+  "/seller/my-products",
+  passport.authenticate("jwt", { session: false }),
+  authorizeRoles("Seller"),
+  productController.getSellerProducts,
 );
 
 module.exports = router;

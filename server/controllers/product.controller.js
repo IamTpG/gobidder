@@ -364,7 +364,132 @@ const getRelatedProducts = async (req, res) => {
   }
 };
 
+//multer cho upload lên cloudinary
+
+const multer = require("multer");
+const fs = require("fs");
+const cloudinary = require("../config/cloudinary");
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "uploads/");
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + "-" + file.originalname);
+  },
+});
+const upload = multer({ storage: storage });
+
+// Xóa file sau khi đã tải lên Cloudinary
+const deleteLocalFiles = (files) => {
+  files.forEach((file) => {
+    try {
+      fs.unlinkSync(file.path);
+    } catch (e) {
+      console.error("Error deleting temp file:", e);
+    }
+  });
+};
 const create = async (req, res) => {
+  const {
+    name,
+    description,
+    startPrice,
+    stepPrice,
+    buyNowPrice,
+    categoryId,
+    endTime,
+    autoRenew,
+  } = req.body;
+
+  // Lấy mảng tệp đã được Multer xử lý
+  const files = req.files;
+  let imageUrls = [];
+
+  // --- VALIDATION (Giữ nguyên) ---
+  if (!name || !description || !categoryId || !endTime) {
+    if (files) deleteLocalFiles(files);
+    return res.status(400).json({ message: "Missing required fields" });
+  }
+
+  if (!files || !Array.isArray(files) || files.length < 3) {
+    if (files) deleteLocalFiles(files);
+    return res.status(400).json({ message: "At least 3 images are required for the product." });
+  }
+
+  if (!startPrice || !stepPrice) {
+    if (files) deleteLocalFiles(files);
+    return res.status(400).json({ message: "Start price and step price are required" });
+  }
+
+  if (Number(startPrice) <= 0 || Number(stepPrice) <= 0) {
+    if (files) deleteLocalFiles(files);
+    return res.status(400).json({ message: "Prices must be positive numbers" });
+  }
+
+  if (new Date(endTime) <= new Date()) {
+    if (files) deleteLocalFiles(files);
+    return res.status(400).json({ message: "End time must be in the future" });
+  }
+
+  try {
+    const sellerId = req.user.id;
+
+    // 1. Tải Từng Tệp Lên Cloudinary
+    for (const file of files) {
+      const uploadResult = await cloudinary.uploader.upload(file.path, {
+        folder: "auction_products",
+      });
+      imageUrls.push(uploadResult.secure_url);
+    }
+
+    // 2. Dọn dẹp File Tạm thời
+    deleteLocalFiles(files);
+    
+    // Xử lý buyNowPrice để tránh lỗi BigInt với chuỗi rỗng hoặc "null"
+    let safeBuyNowPrice = null;
+    if (buyNowPrice && buyNowPrice !== 'null' && buyNowPrice.trim() !== '') {
+        safeBuyNowPrice = buyNowPrice;
+    }
+
+    const productData = {
+      name,
+      description,
+      images: imageUrls, // Lúc này mảng đã có link ảnh
+      startPrice,
+      stepPrice,
+      buyNowPrice: safeBuyNowPrice, // Dùng biến đã làm sạch
+      categoryId: Number(categoryId), // Đảm bảo là số
+      endTime,
+      autoRenew: autoRenew === "true", // Chuyển chuỗi sang boolean
+    };
+
+    const newProduct = await productService.createProduct(
+      sellerId,
+      productData
+    );
+
+    const safeProduct = serializeBigInt(newProduct);
+
+    return res.status(201).json({
+      message: "Product created successfully",
+      product: safeProduct,
+    });
+  } catch (error) {
+    console.error("Create Product Error:", error);
+    if (files) deleteLocalFiles(files);
+    if (error.message.includes("Buy-now price")) {
+      return res.status(400).json({ message: error.message });
+    }
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// Cập nhật sản phẩm (Seller edit)
+const update = async (req, res) => {
+  const productId = parseInt(req.params.id);
+  const sellerId = req.user.id;
+
   const {
     name,
     description,
@@ -406,34 +531,68 @@ const create = async (req, res) => {
   }
 
   try {
-    // req.user đã có sẵn nhờ Passport verify thành công trước đó
-    const sellerId = req.user.id;
+    const updatedProduct = await productService.updateProduct(
+      productId,
+      sellerId,
+      {
+        name,
+        description,
+        images,
+        startPrice,
+        stepPrice,
+        buyNowPrice,
+        categoryId,
+        endTime,
+        autoRenew,
+      },
+    );
 
-    const newProduct = await productService.createProduct(sellerId, {
-      name,
-      description,
-      images,
-      startPrice,
-      stepPrice,
-      buyNowPrice,
-      categoryId,
-      endTime,
-      autoRenew,
-    });
-
-    // Serialize BigInt trước khi trả về JSON
-    const safeProduct = serializeBigInt(newProduct);
-
-    return res.status(201).json({
-      message: "Product created successfully",
-      product: safeProduct,
-    });
+    const serialized = serializeBigInt(updatedProduct);
+    return res.status(200).json({ success: true, product: serialized });
   } catch (error) {
-    console.error("Create Product Error:", error);
-    if (error.message.includes("Buy-now price")) {
-      return res.status(400).json({ message: error.message });
-    }
+    console.error("Error in update product:", error);
+    return res
+      .status(400)
+      .json({ message: error.message || "Failed to update product" });
+  }
+};
+
+// Lấy danh sách sản phẩm của seller
+const getSellerProducts = async (req, res) => {
+  try {
+    const sellerId = req.user.id;
+    const products = await productService.getSellerProducts(sellerId);
+    const serialized = serializeBigInt(products);
+    return res.status(200).json({ success: true, data: serialized });
+  } catch (error) {
+    console.error("Error in getSellerProducts:", error);
     return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// Append description entry (Seller only)
+const appendDescription = async (req, res) => {
+  try {
+    const productId = parseInt(req.params.id);
+    const sellerId = req.user.id;
+    const { text } = req.body;
+
+    if (!text || !text.trim()) {
+      return res.status(400).json({ message: "Description text is required" });
+    }
+
+    const updated = await productService.appendDescription(
+      productId,
+      sellerId,
+      text.trim(),
+    );
+    const serialized = serializeBigInt(updated);
+    return res.status(200).json({ success: true, product: serialized });
+  } catch (error) {
+    console.error("Error in appendDescription:", error);
+    return res
+      .status(400)
+      .json({ message: error.message || "Failed to append description" });
   }
 };
 
@@ -447,4 +606,8 @@ module.exports = {
   getTopHighestPrice,
   getRelatedProducts,
   create,
+  upload,
+  update,
+  getSellerProducts,
+  appendDescription,
 };
