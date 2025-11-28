@@ -6,7 +6,6 @@ const EmptyState = ({
 }) => {
   return (
     <div className="mt-12 text-center text-slate-500">
-      <div className="text-4xl mb-3">📭</div>
       <p className="text-lg font-medium">{title}</p>
       <p className="text-sm mt-1">{message}</p>
     </div>
