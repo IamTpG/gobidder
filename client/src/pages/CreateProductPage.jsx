@@ -20,6 +20,7 @@ export default function CreateProductPage_EN() {
   const [endTime, setEndTime] = useState("");
   const [autoRenew, setAutoRenew] = useState(false);
   const [images, setImages] = useState([]);
+  const [filesToUpload, setFilesToUpload] = useState([]);
   const [imageUrlInput, setImageUrlInput] = useState("");
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
@@ -34,7 +35,9 @@ export default function CreateProductPage_EN() {
     if (new Date(endTime) <= new Date())
       newErrors.endTime = "End time must be in the future";
 
-    if (images.length < 3) newErrors.images = "At least 3 images are required";
+    if (filesToUpload.length < 3)
+      newErrors.images =
+        "At least 3 uploaded images are required";
 
     if (!startPrice || Number(startPrice) <= 0)
       newErrors.startPrice = "Start price must be greater than 0";
@@ -56,8 +59,9 @@ export default function CreateProductPage_EN() {
   };
 
   const handleImages = (e) => {
-    const files = [...e.target.files];
-    files.forEach((file) => {
+    const selectedFiles = [...e.target.files];
+    setFilesToUpload((prev) => [...prev, ...selectedFiles]);
+    selectedFiles.forEach((file) => {
       const reader = new FileReader();
       reader.onload = () => {
         setImages((prev) => [...prev, reader.result]);
@@ -68,30 +72,37 @@ export default function CreateProductPage_EN() {
 
   const removeImage = (index) => {
     setImages((prev) => prev.filter((_, i) => i !== index));
+    setFilesToUpload((prev) => prev.filter((_, i) => i !== index));
   };
-
   const submit = async () => {
     if (!validate()) return;
     setLoading(true);
 
     try {
-      const payload = {
-        name,
-        description,
-        images,
-        startPrice: Number(startPrice),
-        stepPrice: Number(stepPrice),
-        buyNowPrice: buyNowPrice ? Number(buyNowPrice) : null,
-        categoryId: Number(categoryId),
-        endTime: new Date(endTime).toISOString(),
-        autoRenew,
-      };
+      const formData = new FormData();
 
-      const res = await api.post("/products", payload);
+      formData.append("name", name);
+      formData.append("description", description);
+      formData.append("startPrice", startPrice);
+      formData.append("stepPrice", stepPrice);
+      if (buyNowPrice) formData.append("buyNowPrice", buyNowPrice);
+      formData.append("categoryId", categoryId);
+      formData.append("endTime", new Date(endTime).toISOString());
+      formData.append("autoRenew", autoRenew);
+      filesToUpload.forEach((file) => {
+        formData.append("images", file);
+      });
+
+      const res = await api.post("/products", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
       navigate(`/products/${res.data.product.id}`);
     } catch (error) {
       console.error(error);
-      alert("Failed to create product");
+      alert(error.response?.data?.message || "Failed to create product");
     } finally {
       setLoading(false);
     }
@@ -112,10 +123,12 @@ export default function CreateProductPage_EN() {
         {errors.name && <p className="text-red-500 text-sm">{errors.name}</p>}
       </div>
 
-      {/* DESCRIPTION (TinyMCE) */}
+      {/* DESCRIPTION */}
       <div>
         <label className="font-medium">Description</label>
-        <Editor
+        
+        {/* --- TINYMCE EDITOR (Commented Out) --- */}
+        {/* <Editor
           apiKey={process.env.REACT_APP_TINYMCE_API_KEY}
           init={{
             height: 300,
@@ -126,7 +139,15 @@ export default function CreateProductPage_EN() {
           }}
           value={description}
           onEditorChange={(v) => setDescription(v)}
-        />
+        /> */}
+
+        {/* xài text area để test*/}
+        <textarea
+          className="border p-2 w-full rounded h-32" // Thêm class để khung nhập liệu đẹp hơn
+          value={description}
+          onChange={(e) => setDescription(e.target.value)} // Lưu ý: textarea dùng e.target.value
+        ></textarea>
+
         {errors.description && (
           <p className="text-red-500 text-sm">{errors.description}</p>
         )}

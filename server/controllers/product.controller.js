@@ -364,11 +364,36 @@ const getRelatedProducts = async (req, res) => {
   }
 };
 
+//multer cho upload lên cloudinary
+
+const multer = require("multer");
+const fs = require("fs");
+const cloudinary = require("../config/cloudinary");
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "uploads/");
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + "-" + file.originalname);
+  },
+});
+const upload = multer({ storage: storage });
+
+// Xóa file sau khi đã tải lên Cloudinary
+const deleteLocalFiles = (files) => {
+  files.forEach((file) => {
+    try {
+      fs.unlinkSync(file.path);
+    } catch (e) {
+      console.error("Error deleting temp file:", e);
+    }
+  });
+};
 const create = async (req, res) => {
   const {
     name,
     description,
-    images,
     startPrice,
     stepPrice,
     buyNowPrice,
@@ -377,51 +402,75 @@ const create = async (req, res) => {
     autoRenew,
   } = req.body;
 
-  // Validation cơ bản
+  // Lấy mảng tệp đã được Multer xử lý
+  const files = req.files;
+  let imageUrls = [];
+
+  // --- VALIDATION (Giữ nguyên) ---
   if (!name || !description || !categoryId || !endTime) {
+    if (files) deleteLocalFiles(files);
     return res.status(400).json({ message: "Missing required fields" });
   }
 
-  // Validate Images (Bắt buộc >= 3 ảnh)
-  if (!images || !Array.isArray(images) || images.length < 3) {
-    return res
-      .status(400)
-      .json({ message: "At least 3 images are required for the product." });
+  if (!files || !Array.isArray(files) || files.length < 3) {
+    if (files) deleteLocalFiles(files);
+    return res.status(400).json({ message: "At least 3 images are required for the product." });
   }
 
-  // Validate Prices
   if (!startPrice || !stepPrice) {
-    return res
-      .status(400)
-      .json({ message: "Start price and step price are required" });
+    if (files) deleteLocalFiles(files);
+    return res.status(400).json({ message: "Start price and step price are required" });
   }
 
   if (Number(startPrice) <= 0 || Number(stepPrice) <= 0) {
+    if (files) deleteLocalFiles(files);
     return res.status(400).json({ message: "Prices must be positive numbers" });
   }
 
-  // Validate EndTime
   if (new Date(endTime) <= new Date()) {
+    if (files) deleteLocalFiles(files);
     return res.status(400).json({ message: "End time must be in the future" });
   }
 
   try {
-    // req.user đã có sẵn nhờ Passport verify thành công trước đó
     const sellerId = req.user.id;
 
-    const newProduct = await productService.createProduct(sellerId, {
+    // 1. Tải Từng Tệp Lên Cloudinary
+    for (const file of files) {
+      const uploadResult = await cloudinary.uploader.upload(file.path, {
+        folder: "auction_products",
+      });
+      imageUrls.push(uploadResult.secure_url);
+    }
+
+    // 2. Dọn dẹp File Tạm thời
+    deleteLocalFiles(files);
+
+    // ⭐ SỬA Ở ĐÂY: Di chuyển logic tạo data vào sau khi đã có imageUrls ⭐
+    
+    // Xử lý buyNowPrice để tránh lỗi BigInt với chuỗi rỗng hoặc "null"
+    let safeBuyNowPrice = null;
+    if (buyNowPrice && buyNowPrice !== 'null' && buyNowPrice.trim() !== '') {
+        safeBuyNowPrice = buyNowPrice;
+    }
+
+    const productData = {
       name,
       description,
-      images,
+      images: imageUrls, // Lúc này mảng đã có link ảnh
       startPrice,
       stepPrice,
-      buyNowPrice,
-      categoryId,
+      buyNowPrice: safeBuyNowPrice, // Dùng biến đã làm sạch
+      categoryId: Number(categoryId), // Đảm bảo là số
       endTime,
-      autoRenew,
-    });
+      autoRenew: autoRenew === "true", // Chuyển chuỗi sang boolean
+    };
 
-    // Serialize BigInt trước khi trả về JSON
+    const newProduct = await productService.createProduct(
+      sellerId,
+      productData
+    );
+
     const safeProduct = serializeBigInt(newProduct);
 
     return res.status(201).json({
@@ -430,6 +479,7 @@ const create = async (req, res) => {
     });
   } catch (error) {
     console.error("Create Product Error:", error);
+    if (files) deleteLocalFiles(files);
     if (error.message.includes("Buy-now price")) {
       return res.status(400).json({ message: error.message });
     }
@@ -447,4 +497,5 @@ module.exports = {
   getTopHighestPrice,
   getRelatedProducts,
   create,
+  upload,
 };
