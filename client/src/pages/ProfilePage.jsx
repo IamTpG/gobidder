@@ -14,7 +14,7 @@ import NotificationBanner from "../components/profile/NotificationBanner";
 import LoadingState from "../components/profile/LoadingState";
 import ErrorState from "../components/profile/ErrorState";
 import MyBidsSection from "../components/profile/MyBidsSection";
-import MyProductsList from "../components/profile/MyProductsList";
+import MyProductsSection from "../components/profile/MyProductsSection";
 
 const ProfilePage = () => {
   const [profile, setProfile] = useState(null);
@@ -364,7 +364,7 @@ const ProfilePage = () => {
               saving={saving}
               onChange={handleInputChange}
               onSubmit={handleSave}
-              onCancel={resetForm}
+              onCancel={handleCancelEdit}
             />
           ) : (
             <ProfileViewMode
@@ -403,12 +403,8 @@ const ProfilePage = () => {
       return <MyBidsSection />;
     }
 
-    if (activeNavKey === "my-products") {
-      return (
-        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 md:p-10">
-          <MyProductsList />
-        </div>
-      );
+    if (activeNavKey === "products") {
+      return <MyProductsSection />;
     }
 
     // Default fallback

@@ -49,14 +49,6 @@ router.get(
   userController.getUsers,
 );
 
-// Lấy thông tin người dùng bằng id
-router.get(
-  "/:id",
-  passport.authenticate("jwt", { session: false }),
-  authorizeRoles("Admin"),
-  userController.getUserById,
-);
-
 // Lấy tất cả sản phẩm cá nhân có đấu giá
 router.get(
   "/me/bids/history",
@@ -76,6 +68,22 @@ router.get(
   "/me/bids/won",
   passport.authenticate("jwt", { session: false }),
   userController.getMyWonProducts,
+);
+
+// Lấy danh sách sản phẩm của seller
+router.get(
+  "/me/products",
+  passport.authenticate("jwt", { session: false }),
+  authorizeRoles("Seller"),
+  userController.getMyProducts,
+);
+
+// Lấy thông tin người dùng bằng id
+router.get(
+  "/:id",
+  passport.authenticate("jwt", { session: false }),
+  authorizeRoles("Admin"),
+  userController.getUserById,
 );
 
 module.exports = router;

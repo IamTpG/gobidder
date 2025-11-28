@@ -1,31 +1,23 @@
 import React from "react";
 import { Link } from "react-router-dom";
 
-const ProfileSidebar = ({ activeKey, userRole }) => {
-  const SIDEBAR_ITEMS = [
-    {
-      key: "information",
-      label: "Personal Information",
-      roles: ["Bidder", "Seller", "Admin"],
-    },
-    { key: "bids", label: "My Bids", roles: ["Bidder", "Seller"] },
-    { key: "my-products", label: "My Products", roles: ["Seller"] },
-    {
-      key: "security",
-      label: "Security",
-      roles: ["Bidder", "Seller", "Admin"],
-    },
-    {
-      key: "notifications",
-      label: "Notifications",
-      roles: ["Bidder", "Seller", "Admin"],
-    },
-    { key: "billing", label: "Billing", roles: ["Bidder", "Seller", "Admin"] },
-  ];
+const SIDEBAR_ITEMS = [
+  { key: "information", label: "Personal Information" },
+  { key: "bids", label: "My Bids" },
+  { key: "products", label: "My Products", requireRole: "Seller" },
+  { key: "security", label: "Security" },
+  { key: "notifications", label: "Notifications" },
+  { key: "billing", label: "Billing" },
+];
 
-  const visibleItems = SIDEBAR_ITEMS.filter(
-    (item) => !item.roles || item.roles.includes(userRole),
-  );
+const ProfileSidebar = ({ activeKey, userRole }) => {
+  // Filter items dựa trên role
+  const visibleItems = SIDEBAR_ITEMS.filter((item) => {
+    if (item.requireRole) {
+      return userRole === item.requireRole;
+    }
+    return true;
+  });
 
   return (
     <aside className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 lg:w-64 h-fit sticky top-24">

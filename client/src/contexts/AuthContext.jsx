@@ -120,8 +120,19 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const refreshUser = async () => {
+    try {
+      const { data } = await api.get("/users/me");
+      setUser(data);
+      return data;
+    } catch (error) {
+      console.error("Failed to refresh user:", error);
+      throw error;
+    }
+  };
+
   const value = useMemo(
-    () => ({ user, loading, login, register, logout, verifyOtp }),
+    () => ({ user, loading, login, register, logout, verifyOtp, refreshUser }),
     [user, loading],
   );
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
