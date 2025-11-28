@@ -14,6 +14,7 @@ import NotificationBanner from "../components/profile/NotificationBanner";
 import LoadingState from "../components/profile/LoadingState";
 import ErrorState from "../components/profile/ErrorState";
 import MyBidsSection from "../components/profile/MyBidsSection";
+import MyProductsList from "../components/profile/MyProductsList";
 
 const ProfilePage = () => {
   const [profile, setProfile] = useState(null);
@@ -402,6 +403,14 @@ const ProfilePage = () => {
       return <MyBidsSection />;
     }
 
+    if (activeNavKey === "my-products") {
+      return (
+        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 md:p-10">
+          <MyProductsList />
+        </div>
+      );
+    }
+
     // Default fallback
     return <div>Select a tab</div>;
   };
@@ -411,7 +420,7 @@ const ProfilePage = () => {
       <div className="max-w-6xl mx-auto px-4">
         <div className="flex flex-col lg:flex-row gap-6">
           {/* Sidebar nhận activeNavKey từ URL */}
-          <ProfileSidebar activeKey={activeNavKey} />
+          <ProfileSidebar activeKey={activeNavKey} userRole={profile?.role} />
           <section className="flex-1">{renderContent()}</section>
         </div>
       </div>

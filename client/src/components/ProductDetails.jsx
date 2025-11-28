@@ -264,9 +264,6 @@ const ProductDetails = ({ product, onRefresh, className = "" }) => {
             <h2 className="text-xl lg:text-2xl font-bold text-gray-900 mb-1.5">
               {product.name}
             </h2>
-            <p className="text-xs text-gray-600 leading-relaxed">
-              {product.description}
-            </p>
           </div>
 
           {/* Current Bid & Buy Now Price */}
@@ -505,13 +502,14 @@ const ProductDetails = ({ product, onRefresh, className = "" }) => {
                 Product Description
               </h2>
 
-              <div className="space-y-4 text-sm text-gray-600 leading-relaxed">
-                {product.fullDescription
-                  ?.split("\n\n") // Sử dụng optional chaining (?) để đề phòng fullDescription là null/undefined
-                  .map((paragraph, index) => (
-                    <p key={index}>{paragraph}</p>
-                  )) || <p>No detailed description available.</p>}
-              </div>
+              <div
+                className="space-y-4 text-sm text-gray-600 leading-relaxed prose max-w-none"
+                dangerouslySetInnerHTML={{
+                  __html: product.fullDescription
+                    ? product.fullDescription.replace(/\r?\n/g, "<br />")
+                    : "No detailed description available.",
+                }}
+              />
             </div>
           )}
 
