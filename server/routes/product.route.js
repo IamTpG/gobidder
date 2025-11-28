@@ -3,7 +3,7 @@ const passport = require("passport");
 
 const productController = require("../controllers/product.controller");
 const { authorizeRoles } = require("../middlewares/auth.middleware");
-
+const { upload, create } = require('../controllers/product.controller');
 const router = express.Router();
 
 // Lấy tất cả sản phẩm
@@ -51,7 +51,8 @@ router.post(
   "/",
   passport.authenticate("jwt", { session: false }),
   authorizeRoles("Seller"),
-  productController.create,
+  upload.array('images', 10), 
+  create,
 );
 
 // Cập nhật sản phẩm (Seller only)
