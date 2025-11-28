@@ -437,6 +437,117 @@ const create = async (req, res) => {
   }
 };
 
+// Cập nhật sản phẩm (Seller edit)
+const update = async (req, res) => {
+  const productId = parseInt(req.params.id);
+  const sellerId = req.user.id;
+
+  const {
+    name,
+    description,
+    images,
+    startPrice,
+    stepPrice,
+    buyNowPrice,
+    categoryId,
+    endTime,
+    autoRenew,
+  } = req.body;
+
+  // Validation cơ bản
+  if (!name || !description || !categoryId || !endTime) {
+    return res.status(400).json({ message: "Missing required fields" });
+  }
+
+  // Validate Images (Bắt buộc >= 3 ảnh)
+  if (!images || !Array.isArray(images) || images.length < 3) {
+    return res
+      .status(400)
+      .json({ message: "At least 3 images are required for the product." });
+  }
+
+  // Validate Prices
+  if (!startPrice || !stepPrice) {
+    return res
+      .status(400)
+      .json({ message: "Start price and step price are required" });
+  }
+
+  if (Number(startPrice) <= 0 || Number(stepPrice) <= 0) {
+    return res.status(400).json({ message: "Prices must be positive numbers" });
+  }
+
+  // Validate EndTime
+  if (new Date(endTime) <= new Date()) {
+    return res.status(400).json({ message: "End time must be in the future" });
+  }
+
+  try {
+    const updatedProduct = await productService.updateProduct(
+      productId,
+      sellerId,
+      {
+        name,
+        description,
+        images,
+        startPrice,
+        stepPrice,
+        buyNowPrice,
+        categoryId,
+        endTime,
+        autoRenew,
+      },
+    );
+
+    const serialized = serializeBigInt(updatedProduct);
+    return res.status(200).json({ success: true, product: serialized });
+  } catch (error) {
+    console.error("Error in update product:", error);
+    return res
+      .status(400)
+      .json({ message: error.message || "Failed to update product" });
+  }
+};
+
+// Lấy danh sách sản phẩm của seller
+const getSellerProducts = async (req, res) => {
+  try {
+    const sellerId = req.user.id;
+    const products = await productService.getSellerProducts(sellerId);
+    const serialized = serializeBigInt(products);
+    return res.status(200).json({ success: true, data: serialized });
+  } catch (error) {
+    console.error("Error in getSellerProducts:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// Append description entry (Seller only)
+const appendDescription = async (req, res) => {
+  try {
+    const productId = parseInt(req.params.id);
+    const sellerId = req.user.id;
+    const { text } = req.body;
+
+    if (!text || !text.trim()) {
+      return res.status(400).json({ message: "Description text is required" });
+    }
+
+    const updated = await productService.appendDescription(
+      productId,
+      sellerId,
+      text.trim(),
+    );
+    const serialized = serializeBigInt(updated);
+    return res.status(200).json({ success: true, product: serialized });
+  } catch (error) {
+    console.error("Error in appendDescription:", error);
+    return res
+      .status(400)
+      .json({ message: error.message || "Failed to append description" });
+  }
+};
+
 module.exports = {
   getProducts,
   getProductById,
@@ -447,4 +558,7 @@ module.exports = {
   getTopHighestPrice,
   getRelatedProducts,
   create,
+  update,
+  getSellerProducts,
+  appendDescription,
 };
