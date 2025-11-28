@@ -4,19 +4,28 @@ import { Link } from "react-router-dom";
 const SIDEBAR_ITEMS = [
   { key: "information", label: "Personal Information" },
   { key: "bids", label: "My Bids" },
+  { key: "products", label: "My Products", requireRole: "Seller" },
   { key: "security", label: "Security" },
   { key: "notifications", label: "Notifications" },
   { key: "billing", label: "Billing" },
 ];
 
-const ProfileSidebar = ({ activeKey }) => {
+const ProfileSidebar = ({ activeKey, userRole }) => {
+  // Filter items dựa trên role
+  const visibleItems = SIDEBAR_ITEMS.filter((item) => {
+    if (item.requireRole) {
+      return userRole === item.requireRole;
+    }
+    return true;
+  });
+
   return (
     <aside className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 lg:w-64 h-fit sticky top-24">
       <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4 pl-4">
         Account Settings
       </h3>
       <nav className="space-y-1">
-        {SIDEBAR_ITEMS.map((item) => {
+        {visibleItems.map((item) => {
           const isActive = item.key === activeKey;
           return (
             <Link

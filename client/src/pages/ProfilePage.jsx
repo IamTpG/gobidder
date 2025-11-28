@@ -14,6 +14,7 @@ import NotificationBanner from "../components/profile/NotificationBanner";
 import LoadingState from "../components/profile/LoadingState";
 import ErrorState from "../components/profile/ErrorState";
 import MyBidsSection from "../components/profile/MyBidsSection";
+import MyProductsSection from "../components/profile/MyProductsSection";
 
 const ProfilePage = () => {
   const [profile, setProfile] = useState(null);
@@ -363,7 +364,7 @@ const ProfilePage = () => {
               saving={saving}
               onChange={handleInputChange}
               onSubmit={handleSave}
-              onCancel={resetForm}
+              onCancel={handleCancelEdit}
             />
           ) : (
             <ProfileViewMode
@@ -402,6 +403,10 @@ const ProfilePage = () => {
       return <MyBidsSection />;
     }
 
+    if (activeNavKey === "products") {
+      return <MyProductsSection />;
+    }
+
     // Default fallback
     return <div>Select a tab</div>;
   };
@@ -411,7 +416,7 @@ const ProfilePage = () => {
       <div className="max-w-6xl mx-auto px-4">
         <div className="flex flex-col lg:flex-row gap-6">
           {/* Sidebar nhận activeNavKey từ URL */}
-          <ProfileSidebar activeKey={activeNavKey} />
+          <ProfileSidebar activeKey={activeNavKey} userRole={profile?.role} />
           <section className="flex-1">{renderContent()}</section>
         </div>
       </div>
