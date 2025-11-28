@@ -445,8 +445,6 @@ const create = async (req, res) => {
 
     // 2. Dọn dẹp File Tạm thời
     deleteLocalFiles(files);
-
-    // ⭐ SỬA Ở ĐÂY: Di chuyển logic tạo data vào sau khi đã có imageUrls ⭐
     
     // Xử lý buyNowPrice để tránh lỗi BigInt với chuỗi rỗng hoặc "null"
     let safeBuyNowPrice = null;
