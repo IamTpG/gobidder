@@ -1,7 +1,7 @@
 const productService = require("../services/product.service");
 const { serializeBigInt, sendMail } = require("../utils/utils");
 const prisma = require("../config/prisma");
-
+const path = require('path');
 // Lấy tất cả sản phẩm
 const getProducts = async (req, res) => {
   try {
@@ -369,6 +369,11 @@ const getRelatedProducts = async (req, res) => {
 const multer = require("multer");
 const fs = require("fs");
 const cloudinary = require("../config/cloudinary");
+
+const uploadDir = path.join(__dirname, '../uploads'); 
+if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+}
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
