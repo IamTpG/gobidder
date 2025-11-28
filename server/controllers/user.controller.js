@@ -203,6 +203,52 @@ const getMyWonProducts = async (req, res) => {
   }
 };
 
+// Lấy tất cả sản phẩm cá nhân của seller
+const getMyProducts = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const categoryIdParam = req.query.categoryId ?? req.query.category;
+    const categoryId = categoryIdParam ? Number(categoryIdParam) : undefined;
+    const sort = req.query.sort || "created_at";
+    const q = req.query.q || "";
+    const status = req.query.status; // Có thể filter theo status (Active, Sold, Expired, etc.)
+
+    const maxLimit = 50;
+    const validateLimit = Math.min(limit, maxLimit);
+    const validatePage = Math.max(page, 1);
+    const skip = (validatePage - 1) * validateLimit;
+
+    const result = await productService.getProductsBySellerId({
+      sellerId: req.user.id,
+      page: validatePage,
+      limit: validateLimit,
+      categoryId,
+      sort,
+      q,
+      skip,
+      status,
+    });
+
+    const serializedData = serializeBigInt(result.data);
+
+    return res.status(200).json({
+      data: serializedData,
+      pagination: {
+        page: validatePage,
+        limit: validateLimit,
+        totalItems: result.totalItems,
+        totalPages: result.totalPages,
+        hasNextPage: result.hasNextPage,
+        hasPreviousPage: result.hasPreviousPage,
+      },
+    });
+  } catch (err) {
+    console.error("Get My Products Error:", err);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
 module.exports = {
   getMe,
   getUsers,
@@ -214,4 +260,5 @@ module.exports = {
   getHistoryBids,
   getMyActiveBids,
   getMyWonProducts,
+  getMyProducts,
 };
