@@ -105,16 +105,23 @@ const placeAutoBid = async (userId, productId, inputMaxPrice) => {
       }
     }
 
-    // Xử lý tự động gia hạn (Nếu bid vào 5 phút cuối)
+    // Xử lý tự động gia hạn (Anti-sniping)
+    // Read system config so admins can control trigger and extension values.
+    const cfg = (await tx.systemConfig.findFirst({ where: { id: 1 } })) || {};
+    // fallback defaults keep previous behavior: trigger 5 (minutes), extension 10 (minutes)
+    const triggerMinutes = typeof cfg.anti_sniping_trigger === 'number' ? cfg.anti_sniping_trigger : 5;
+    const extensionMinutes = typeof cfg.anti_sniping_extension === 'number' ? cfg.anti_sniping_extension : 10;
+
     const now = new Date();
     const timeRemaining = product.end_time.getTime() - now.getTime();
     let newEndTime = product.end_time;
     let isExtended = false;
 
-    // 5 phút = 5 * 60 * 1000 ms
-    if (timeRemaining > 0 && timeRemaining <= 5 * 60 * 1000) {
-      // Cộng thêm 10 phút
-      newEndTime = new Date(product.end_time.getTime() + 10 * 60 * 1000);
+    const triggerMs = triggerMinutes * 60 * 1000;
+    const extensionMs = extensionMinutes * 60 * 1000;
+
+    if (timeRemaining > 0 && timeRemaining <= triggerMs) {
+      newEndTime = new Date(product.end_time.getTime() + extensionMs);
       isExtended = true;
     }
 
