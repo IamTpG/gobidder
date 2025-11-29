@@ -258,3 +258,17 @@ enum TransactionStatus {
   Completed
   Cancelled
 }
+
+
+model SystemConfig {
+  id                     Int      @id @default(autoincrement())
+  
+  // 1. Cấu hình New Product sẽ highlight bao lâu
+  new_product_duration   Int      @default(60) // Đơn vị: Phút
+  
+  // 2. Cấu hình Anti-Sniping (Bù giờ)
+  anti_sniping_trigger   Int      @default(5)  // Kích hoạt khi còn X phút cuối
+  anti_sniping_extension Int      @default(3)  // Cộng thêm Y phút
+  
+  updated_at             DateTime @updatedAt
+}

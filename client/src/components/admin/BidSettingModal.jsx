@@ -1,44 +1,104 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+
+const API_BASE_URL = "http://localhost:5000";
 
 const BidSettingModal = ({ isOpen, onClose }) => {
   const [highlightDuration, setHighlightDuration] = useState(60);
   const [snipingTime, setSnipingTime] = useState(5);
   const [extendTime, setExtendTime] = useState(3);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      const fetchConfig = async () => {
+        setIsLoading(true);
+        try {
+          const response = await fetch(`${API_BASE_URL}/api/admin/system-config`);
+          
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          const data = await response.json();
+
+          if (data) {
+            setHighlightDuration(data.new_product_duration || 60);
+            setSnipingTime(data.anti_sniping_trigger || 5);
+            setExtendTime(data.anti_sniping_extension || 3);
+          }
+        } catch (error) {
+          console.error("Failed to load settings:", error);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+
+      fetchConfig();
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
-  const handleSave = () => {
-    console.log({
-      highlight_duration: highlightDuration,
-      anti_sniping_trigger: snipingTime,
-      anti_sniping_extension: extendTime
-    });
-    onClose();
+  const handleSave = async () => {
+    setIsLoading(true);
+    try {
+      const payload = {
+        highlight_duration: parseInt(highlightDuration),
+        anti_sniping_trigger: parseInt(snipingTime),
+        anti_sniping_extension: parseInt(extendTime)
+      };
+
+      const response = await fetch(`${API_BASE_URL}/api/admin/system-config`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || 'Failed to save');
+      }
+
+      const result = await response.json();
+
+      console.log("Cập nhật cấu hình thành công!", result);
+      onClose();
+
+    } catch (error) {
+      console.error("Save error:", error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
     <>
-      {/* CSS để ẩn scrollbar nhưng vẫn giữ chức năng cuộn */}
       <style>{`
         .scrollbar-hide::-webkit-scrollbar {
             display: none;
         }
         .scrollbar-hide {
-            -ms-overflow-style: none;  /* IE and Edge */
-            scrollbar-width: none;  /* Firefox */
+            -ms-overflow-style: none;
+            scrollbar-width: none;
         }
       `}</style>
 
-      {/* Backdrop */}
       <div
         className="fixed inset-0 bg-black/50 z-[60]"
         onClick={onClose}
       />
 
-      {/* Modal */}
       <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[70] w-full max-w-2xl max-h-[90vh] overflow-y-auto scrollbar-hide">
-        <div className="bg-white rounded-2xl shadow-2xl p-6 md:p-8 m-4">
-          {/* Header */}
+        <div className="bg-white rounded-2xl shadow-2xl p-6 md:p-8 m-4 relative">
+          
+          {isLoading && (
+            <div className="absolute inset-0 bg-white/60 z-10 flex items-center justify-center rounded-2xl">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            </div>
+          )}
+
           <div className="flex items-center justify-between mb-6">
             <div>
               <h2 className="text-2xl font-bold text-gray-900">System Settings</h2>
@@ -47,15 +107,14 @@ const BidSettingModal = ({ isOpen, onClose }) => {
             <button
               onClick={onClose}
               className="text-gray-400 hover:text-gray-600 text-3xl font-bold leading-none"
+              disabled={isLoading}
             >
               ×
             </button>
           </div>
 
-          {/* Content */}
           <div className="space-y-8">
             
-            {/* 1. SETTING THỜI GIAN HIGHLIGHT SẢN PHẨM MỚI */}
             <div className="bg-blue-50 p-5 rounded-xl border border-blue-100">
               <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
                 <span className="bg-blue-500 w-2 h-2 rounded-full mr-2"></span>
@@ -84,7 +143,6 @@ const BidSettingModal = ({ isOpen, onClose }) => {
               </div>
             </div>
 
-            {/* 2. SETTING ĐẤU GIÁ BÙ GIỜ (ANTI-SNIPING) */}
             <div className="bg-orange-50 p-5 rounded-xl border border-orange-100">
               <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
                 <span className="bg-orange-500 w-2 h-2 rounded-full mr-2"></span>
@@ -92,7 +150,6 @@ const BidSettingModal = ({ isOpen, onClose }) => {
               </h3>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Điều kiện kích hoạt */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Trigger Window (Last minutes)
@@ -105,7 +162,7 @@ const BidSettingModal = ({ isOpen, onClose }) => {
                       onChange={(e) => setSnipingTime(e.target.value)}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none pr-16"
                     />
-                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm">
+                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm">
                       mins left
                     </span>
                   </div>
@@ -114,7 +171,6 @@ const BidSettingModal = ({ isOpen, onClose }) => {
                   </p>
                 </div>
 
-                {/* Thời gian cộng thêm */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Time Extension (Add minutes)
@@ -140,19 +196,20 @@ const BidSettingModal = ({ isOpen, onClose }) => {
 
           </div>
 
-          {/* Footer */}
           <div className="flex justify-end gap-3 mt-8 pt-6 border-t border-gray-100">
             <button
               onClick={onClose}
               className="px-6 py-2.5 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors font-medium"
+              disabled={isLoading}
             >
               Cancel
             </button>
             <button
               onClick={handleSave}
-              className="px-6 py-2.5 bg-primary hover:bg-primary/90 text-white rounded-lg transition-colors font-medium shadow-sm"
+              disabled={isLoading}
+              className={`px-6 py-2.5 bg-primary hover:bg-primary/90 text-white rounded-lg transition-colors font-medium shadow-sm flex items-center ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
             >
-              Save Configuration
+              {isLoading ? 'Saving...' : 'Save Configuration'}
             </button>
           </div>
         </div>
