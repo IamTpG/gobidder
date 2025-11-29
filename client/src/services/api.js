@@ -57,3 +57,58 @@ export const getMyWonProducts = async () => {
 };
 
 export default api;
+
+// Transaction endpoints (simulated payments)
+export const createTransactionForProduct = async (productId) => {
+  const response = await api.post(`/transactions/create-for-product/${productId}`);
+  return response.data;
+};
+
+export const getTransactionByProduct = async (productId) => {
+  const response = await api.get(`/transactions/product/${productId}`);
+  return response.data;
+};
+
+export const getTransaction = async (transactionId) => {
+  const response = await api.get(`/transactions/${transactionId}`);
+  return response.data;
+};
+
+export const uploadPayment = async (transactionId, formData) => {
+  const response = await api.post(`/transactions/${transactionId}/payment`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return response.data;
+};
+
+export const uploadShipping = async (transactionId, formData) => {
+  const response = await api.post(`/transactions/${transactionId}/shipping`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return response.data;
+};
+
+export const confirmReceipt = async (transactionId) => {
+  const response = await api.post(`/transactions/${transactionId}/confirm-receipt`);
+  return response.data;
+};
+
+export const cancelTransaction = async (transactionId, reason) => {
+  const response = await api.post(`/transactions/${transactionId}/cancel`, { reason });
+  return response.data;
+};
+
+export const fetchTransactionMessages = async (transactionId) => {
+  const response = await api.get(`/transactions/${transactionId}/messages`);
+  return response.data;
+};
+
+export const sendTransactionMessage = async (transactionId, payload) => {
+  const response = await api.post(`/transactions/${transactionId}/messages`, payload);
+  return response.data;
+};
+
+export const postTransactionRating = async (transactionId, payload) => {
+  const response = await api.post(`/transactions/${transactionId}/rating`, payload);
+  return response.data;
+};
