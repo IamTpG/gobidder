@@ -59,11 +59,17 @@ const Home = () => {
             ? images[0]
             : "https://via.placeholder.com/400x300?text=No+Image",
         title: product.name,
-        currentBid: parseFloat(product.current_price) || 0,
+        currentBid: typeof product.current_price === 'number' 
+          ? product.current_price 
+          : parseFloat(product.current_price) || 0,
         buyNowPrice: product.buy_now_price
-          ? parseFloat(product.buy_now_price)
+          ? (typeof product.buy_now_price === 'number' 
+              ? product.buy_now_price 
+              : parseFloat(product.buy_now_price))
           : undefined,
-        startingBid: parseFloat(product.start_price) || 0,
+        startingBid: typeof product.start_price === 'number'
+          ? product.start_price
+          : parseFloat(product.start_price) || 0,
         highestBidder: product.current_bidder?.full_name || null,
         bidCount: product.bid_count || 0,
         createdAt: product.created_at,

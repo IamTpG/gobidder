@@ -77,12 +77,12 @@ model Product {
   images            Json
   created_at        DateTime       @default(now())
   end_time          DateTime
-  start_price       BigInt
-  step_price        BigInt
-  buy_now_price     BigInt?
+  start_price       Float
+  step_price        Float
+  buy_now_price     Float?
   auto_renew        Boolean        @default(false)
   status            ProductStatus  @default(Pending)
-  current_price     BigInt
+  current_price     Float
   bid_count         Int            @default(0)
   seller_id         Int
   category_id       Int
@@ -108,7 +108,7 @@ model AutoBid {
   id         Int      @id @default(autoincrement())
   user_id    Int
   product_id Int
-  max_price  BigInt
+  max_price  Float
   created_at DateTime @default(now())
   product    Product  @relation(fields: [product_id], references: [id], onDelete: Cascade)
   user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
@@ -121,7 +121,7 @@ model BidHistory {
   id         Int      @id @default(autoincrement())
   product_id Int
   user_id    Int
-  bid_price  BigInt
+  bid_price  Float
   created_at DateTime @default(now())
   product    Product  @relation(fields: [product_id], references: [id], onDelete: Cascade)
   user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
@@ -166,7 +166,7 @@ model Transaction {
   product_id           Int               @unique
   winner_id            Int
   seller_id            Int
-  final_price          BigInt
+  final_price          Float
   status               TransactionStatus @default(PendingPayment)
   created_at           DateTime          @default(now())
   shipping_address     String?

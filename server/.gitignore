@@ -4,3 +4,7 @@
 .env
 
 /generated/prisma
+
+# Database backups (contains sensitive data)
+/backups/*.sql
+/backups/**/*.sql

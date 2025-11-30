@@ -30,13 +30,22 @@ const transformProductForCard = (product, navigate) => {
         }
       : null);
 
-  // Ensure prices là string (AuctionCard expects string từ BigInt)
-  const currentPrice =
-    product.current_price?.toString() || product.current_price || "0";
-  const startPrice =
-    product.start_price?.toString() ||
-    product.starting_price?.toString() ||
-    currentPrice;
+  // Xử lý prices - Float từ DB, chuyển sang number nếu là string
+  const currentPrice = 
+    typeof product.current_price === 'string' 
+      ? parseFloat(product.current_price) 
+      : (product.current_price || 0);
+  
+  const startPrice = 
+    typeof product.start_price === 'string'
+      ? parseFloat(product.start_price)
+      : (product.start_price || product.starting_price || currentPrice);
+  
+  const buyNowPrice = product.buy_now_price
+    ? (typeof product.buy_now_price === 'string' 
+        ? parseFloat(product.buy_now_price) 
+        : product.buy_now_price)
+    : null;
 
   return {
     id: product.id,
@@ -44,7 +53,7 @@ const transformProductForCard = (product, navigate) => {
     name: product.name || product.title || "Untitled Product",
     current_price: currentPrice,
     start_price: startPrice,
-    buy_now_price: product.buy_now_price?.toString(),
+    buy_now_price: buyNowPrice,
     current_bidder: currentBidder,
     bid_count: product.bid_count || 0,
     created_at: product.created_at,

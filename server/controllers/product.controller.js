@@ -1,5 +1,5 @@
 const productService = require("../services/product.service");
-const { serializeBigInt, sendMail } = require("../utils/utils");
+const { sendMail } = require("../utils/utils");
 const prisma = require("../config/prisma");
 const path = require('path');
 // Lấy tất cả sản phẩm
@@ -26,10 +26,8 @@ const getProducts = async (req, res) => {
       skip,
     });
 
-    const serializedData = serializeBigInt(result.data);
-
     return res.status(200).json({
-      data: serializedData,
+      data: result.data,
       pagination: {
         page: validatePage,
         limit: validateLimit,
@@ -76,7 +74,7 @@ const getProductById = async (req, res) => {
           // If request is authenticated and user is seller or winner -> include full tx
           const userId = req.user?.id;
           if (userId && (userId === tx.seller_id || userId === tx.winner_id)) {
-            transaction = serializeBigInt(tx);
+            transaction = tx;
           } else {
             // For other users, expose only status and a generic note
             transaction = { status: tx.status, message: "Sản phẩm đã kết thúc" };
@@ -87,11 +85,10 @@ const getProductById = async (req, res) => {
         console.error('Transaction lookup error', e);
       }
 
-      const serializedProduct = serializeBigInt(product);
-      if (transaction) serializedProduct.transaction = transaction;
+      if (transaction) product.transaction = transaction;
 
     return res.status(200).json({
-      data: serializedProduct,
+      data: product,
     });
   } catch (error) {
     console.error("Error in getProductById:", error);
@@ -342,8 +339,7 @@ const answerQuestion = async (req, res) => {
 const getTopEndingSoon = async (req, res) => {
   try {
     const products = await productService.getTopEndingSoon();
-    const serializedProducts = serializeBigInt(products);
-    return res.status(200).json({ data: serializedProducts });
+    return res.status(200).json({ data: products });
   } catch (error) {
     console.error("Error in getTopEndingSoon:", error);
     return res.status(500).json({ message: "Internal server error" });
@@ -354,8 +350,7 @@ const getTopEndingSoon = async (req, res) => {
 const getTopMostBids = async (req, res) => {
   try {
     const products = await productService.getTopMostBids();
-    const serializedProducts = serializeBigInt(products);
-    return res.status(200).json({ data: serializedProducts });
+    return res.status(200).json({ data: products });
   } catch (error) {
     console.error("Error in getTopMostBids:", error);
     return res.status(500).json({ message: "Internal server error" });
@@ -366,8 +361,7 @@ const getTopMostBids = async (req, res) => {
 const getTopHighestPrice = async (req, res) => {
   try {
     const products = await productService.getTopHighestPrice();
-    const serializedProducts = serializeBigInt(products);
-    return res.status(200).json({ data: serializedProducts });
+    return res.status(200).json({ data: products });
   } catch (error) {
     console.error("Error in getTopHighestPrice:", error);
     return res.status(500).json({ message: "Internal server error" });
@@ -385,8 +379,7 @@ const getRelatedProducts = async (req, res) => {
     }
 
     const products = await productService.getRelatedProducts(productId, limit);
-    const serializedProducts = serializeBigInt(products);
-    return res.status(200).json({ data: serializedProducts });
+    return res.status(200).json({ data: products });
   } catch (error) {
     console.error("Error in getRelatedProducts:", error);
     return res.status(500).json({ message: "Internal server error" });
@@ -503,11 +496,9 @@ const create = async (req, res) => {
       productData
     );
 
-    const safeProduct = serializeBigInt(newProduct);
-
     return res.status(201).json({
       message: "Product created successfully",
-      product: safeProduct,
+      product: newProduct,
     });
   } catch (error) {
     console.error("Create Product Error:", error);
@@ -581,8 +572,7 @@ const update = async (req, res) => {
       },
     );
 
-    const serialized = serializeBigInt(updatedProduct);
-    return res.status(200).json({ success: true, product: serialized });
+    return res.status(200).json({ success: true, product: updatedProduct });
   } catch (error) {
     console.error("Error in update product:", error);
     return res
@@ -596,8 +586,7 @@ const getSellerProducts = async (req, res) => {
   try {
     const sellerId = req.user.id;
     const products = await productService.getSellerProducts(sellerId);
-    const serialized = serializeBigInt(products);
-    return res.status(200).json({ success: true, data: serialized });
+    return res.status(200).json({ success: true, data: products });
   } catch (error) {
     console.error("Error in getSellerProducts:", error);
     return res.status(500).json({ message: "Internal server error" });
@@ -620,8 +609,7 @@ const appendDescription = async (req, res) => {
       sellerId,
       text.trim(),
     );
-    const serialized = serializeBigInt(updated);
-    return res.status(200).json({ success: true, product: serialized });
+    return res.status(200).json({ success: true, product: updated });
   } catch (error) {
     console.error("Error in appendDescription:", error);
     return res

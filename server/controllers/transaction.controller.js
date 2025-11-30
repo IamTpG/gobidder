@@ -1,5 +1,4 @@
 const transactionService = require("../services/transaction.service");
-const { serializeBigInt } = require("../utils/utils");
 const prisma = require("../config/prisma");
 
 // Multer + cloudinary for uploading proof images
@@ -29,7 +28,7 @@ const createForProduct = async (req, res) => {
     if (isNaN(productId)) return res.status(400).json({ message: "Invalid product ID" });
 
     const tx = await transactionService.createTransactionForProduct(productId);
-    return res.status(201).json({ data: serializeBigInt(tx) });
+    return res.status(201).json({ data: tx });
   } catch (error) {
     console.error("createForProduct error:", error);
     return res.status(400).json({ message: error.message || "Failed" });
@@ -40,7 +39,7 @@ const getByProduct = async (req, res) => {
   try {
     const productId = parseInt(req.params.productId);
     const tx = await transactionService.getTransactionByProduct(productId);
-    return res.status(200).json({ data: serializeBigInt(tx) });
+    return res.status(200).json({ data: tx });
   } catch (error) {
     console.error("getByProduct error:", error);
     return res.status(404).json({ message: error.message || "Not found" });
@@ -51,7 +50,7 @@ const getById = async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     const tx = await transactionService.getTransactionById(id);
-    return res.status(200).json({ data: serializeBigInt(tx) });
+    return res.status(200).json({ data: tx });
   } catch (error) {
     console.error("getById error:", error);
     return res.status(404).json({ message: error.message || "Not found" });
@@ -73,7 +72,7 @@ const postPayment = [upload.single("invoice"), async (req, res) => {
 
     const { shipping_address } = req.body;
     const updated = await transactionService.buyerUploadPayment(id, buyerId, { shippingAddress: shipping_address, paymentInvoiceUrl });
-    return res.status(200).json({ data: serializeBigInt(updated) });
+    return res.status(200).json({ data: updated });
   } catch (error) {
     console.error("postPayment error:", error);
     return res.status(400).json({ message: error.message || "Failed" });
@@ -94,7 +93,7 @@ const postShipping = [upload.single("invoice"), async (req, res) => {
     }
 
     const updated = await transactionService.sellerConfirmShipping(id, sellerId, { shippingInvoiceUrl });
-    return res.status(200).json({ data: serializeBigInt(updated) });
+    return res.status(200).json({ data: updated });
   } catch (error) {
     console.error("postShipping error:", error);
     return res.status(400).json({ message: error.message || "Failed" });
@@ -106,7 +105,7 @@ const postConfirmReceipt = async (req, res) => {
     const id = parseInt(req.params.id);
     const buyerId = req.user.id;
     const updated = await transactionService.buyerConfirmReceipt(id, buyerId);
-    return res.status(200).json({ data: serializeBigInt(updated) });
+    return res.status(200).json({ data: updated });
   } catch (error) {
     console.error("postConfirmReceipt error:", error);
     return res.status(400).json({ message: error.message || "Failed" });
@@ -119,7 +118,7 @@ const postCancel = async (req, res) => {
     const sellerId = req.user.id;
     const { reason } = req.body;
     const updated = await transactionService.sellerCancel(id, sellerId, { reason });
-    return res.status(200).json({ data: serializeBigInt(updated) });
+    return res.status(200).json({ data: updated });
   } catch (error) {
     console.error("postCancel error:", error);
     return res.status(400).json({ message: error.message || "Failed" });
