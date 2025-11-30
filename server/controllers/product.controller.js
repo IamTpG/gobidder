@@ -1,7 +1,7 @@
 const productService = require("../services/product.service");
 const { serializeBigInt, sendMail } = require("../utils/utils");
 const prisma = require("../config/prisma");
-
+const path = require('path');
 // Lấy tất cả sản phẩm
 const getProducts = async (req, res) => {
   try {
@@ -59,7 +59,36 @@ const getProductById = async (req, res) => {
       return res.status(404).json({ message: "Product not found" });
     }
 
-    const serializedProduct = serializeBigInt(product);
+      // Attach transaction info if exists. Only show full transaction details to seller or winner.
+      let transaction = null;
+      try {
+        const tx = await prisma.transaction.findUnique({
+          where: { product_id: productId },
+          include: {
+            seller: { select: { id: true, full_name: true } },
+            winner: { select: { id: true, full_name: true } },
+            messages: true,
+            ratings: true,
+          },
+        });
+
+        if (tx) {
+          // If request is authenticated and user is seller or winner -> include full tx
+          const userId = req.user?.id;
+          if (userId && (userId === tx.seller_id || userId === tx.winner_id)) {
+            transaction = serializeBigInt(tx);
+          } else {
+            // For other users, expose only status and a generic note
+            transaction = { status: tx.status, message: "Sản phẩm đã kết thúc" };
+          }
+        }
+      } catch (e) {
+        // ignore transaction lookup errors
+        console.error('Transaction lookup error', e);
+      }
+
+      const serializedProduct = serializeBigInt(product);
+      if (transaction) serializedProduct.transaction = transaction;
 
     return res.status(200).json({
       data: serializedProduct,
@@ -369,6 +398,11 @@ const getRelatedProducts = async (req, res) => {
 const multer = require("multer");
 const fs = require("fs");
 const cloudinary = require("../config/cloudinary");
+
+const uploadDir = path.join(__dirname, '../uploads'); 
+if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+}
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {

@@ -14,6 +14,10 @@ const categoryRoutes = require("./routes/category.routes.js");
 const userRoutes = require("./routes/user.routes.js");
 const bidHistoryRoutes = require("./routes/bidHistory.route.js");
 const biddingRoutes = require("./routes/bidding.route");
+const adminRoutes = require('./routes/adminConfig.route.js');
+const transactionsRoutes = require("./routes/transaction.route");
+
+
 const app = express();
 
 // Middlewares
@@ -35,7 +39,8 @@ app.use("/api/categories", categoryRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/bid-history", bidHistoryRoutes);
 app.use("/api/", biddingRoutes);
-
+app.use('/api/admin', adminRoutes); 
+app.use('/api/transactions', transactionsRoutes);
 app.get("/", (req, res) => {
   res.send("Server is running!");
 });

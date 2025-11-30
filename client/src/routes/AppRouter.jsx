@@ -4,6 +4,7 @@ import Layout from "../layouts/Layout";
 import Home from "../pages/Home";
 import Auth from "../pages/Auth";
 import ProductDetailsPage from "../pages/ProductDetailsPage";
+import TransactionPage from "../pages/TransactionPage";
 import OtpVerification from "../pages/OtpVerification";
 import ProfilePage from "../pages/ProfilePage";
 import ForgotPassword from "../pages/ForgotPassword";
@@ -69,6 +70,7 @@ const AppRouter = () => {
 
         {/* Product Details - unified route */}
         <Route path="products/:id" element={<ProductDetailsPage />} />
+        <Route path="transactions/:id" element={<TransactionPage />} />
 
         {/* TODO: Add more routes as needed */}
         {/* <Route path="auctions" element={<Auctions />} /> */}

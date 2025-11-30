@@ -13,6 +13,7 @@ import {
   answerProductQuestion,
   placeBid,
   getMyAutoBid,
+  createTransactionForProduct,
 } from "../services/api";
 
 // Helper function để che tên người dùng
@@ -475,6 +476,31 @@ const ProductDetails = ({ product, onRefresh, className = "" }) => {
                 </p>
               ) : (
                 <p className="text-sm text-gray-500 mt-1">No winner</p>
+              )}
+              {(isSeller || isWinner) && (
+                <div className="mt-3">
+                  <button
+                    onClick={async () => {
+                      try {
+                        if (product.transaction?.id) {
+                          navigate(`/transactions/${product.transaction.id}`);
+                        } else {
+                          const res = await createTransactionForProduct(product.id);
+                          const tx = res.data || res; // support different shapes
+                          // prefer numeric id
+                          const txId = tx?.id || tx?.product_id || null;
+                          if (txId) navigate(`/transactions/${txId}`);
+                          else if (onRefresh) await onRefresh();
+                        }
+                      } catch (err) {
+                        console.error("Failed to open transaction", err);
+                      }
+                    }}
+                    className="mt-3 inline-flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/80 transition-colors"
+                  >
+                    Finish Payment
+                  </button>
+                </div>
               )}
             </div>
           )}
