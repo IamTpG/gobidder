@@ -148,9 +148,9 @@ export const AuctionCard = ({
   id,
   images, // Json array từ DB: ["url1", "url2", ...]
   name, // Tên sản phẩm từ DB
-  current_price, // BigInt -> String từ DB
-  start_price, // BigInt -> String từ DB
-  buy_now_price, // BigInt -> String từ DB (optional)
+  current_price, // Float từ DB (DOUBLE PRECISION) - Hỗ trợ 2 chữ số thập phân
+  start_price, // Float từ DB (DOUBLE PRECISION)
+  buy_now_price, // Float từ DB (DOUBLE PRECISION) - nullable
   current_bidder, // Object từ DB: { id, full_name } hoặc null
   bid_count = 0, // Integer từ DB
   created_at, // DateTime từ DB
@@ -187,11 +187,18 @@ export const AuctionCard = ({
     });
   };
 
-  // Format price from string (BigInt converted to string in API)
-  const formatPrice = (priceString) => {
-    if (!priceString) return "0.00";
-    const price = parseFloat(priceString);
-    return price.toLocaleString("en-US", {
+  // Format price for Float with 2 decimal places (USD format)
+  const formatPrice = (price) => {
+    if (!price && price !== 0) return "0.00";
+    
+    // Convert string to number if needed (for backward compatibility)
+    const numPrice = typeof price === 'string' ? parseFloat(price) : price;
+    
+    // Validate number
+    if (isNaN(numPrice)) return "0.00";
+    
+    // Format with exactly 2 decimal places and thousands separator
+    return numPrice.toLocaleString("en-US", {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     });

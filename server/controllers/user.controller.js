@@ -1,6 +1,6 @@
 const userService = require("../services/user.service");
 const productService = require("../services/product.service");
-const { signTokenAndSetCookie, serializeBigInt } = require("../utils/utils");
+const { signTokenAndSetCookie } = require("../utils/utils");
 
 // Lấy thông tin cá nhân
 const getMe = async (req, res) => {
@@ -174,7 +174,7 @@ const getUserById = async (req, res) => {
 const getHistoryBids = async (req, res) => {
   try {
     const bids = await productService.getAllBiddedProducts(req.user.id);
-    return res.json(serializeBigInt(bids));
+    return res.json(bids);
   } catch (err) {
     console.error("Get History Bids Error:", err);
     return res.status(500).json({ message: "Server error" });
@@ -185,7 +185,7 @@ const getHistoryBids = async (req, res) => {
 const getMyActiveBids = async (req, res) => {
   try {
     const bids = await productService.getUserActiveBids(req.user.id);
-    return res.json(serializeBigInt(bids));
+    return res.json(bids);
   } catch (err) {
     console.error("Get Active Bids Error:", err);
     return res.status(500).json({ message: "Server error" });
@@ -196,7 +196,7 @@ const getMyActiveBids = async (req, res) => {
 const getMyWonProducts = async (req, res) => {
   try {
     const products = await productService.getUserWonProducts(req.user.id);
-    return res.json(serializeBigInt(products));
+    return res.json(products);
   } catch (err) {
     console.error("Get Won Products Error:", err);
     return res.status(500).json({ message: "Server error" });
@@ -230,10 +230,8 @@ const getMyProducts = async (req, res) => {
       status,
     });
 
-    const serializedData = serializeBigInt(result.data);
-
     return res.status(200).json({
-      data: serializedData,
+      data: result.data,
       pagination: {
         page: validatePage,
         limit: validateLimit,
