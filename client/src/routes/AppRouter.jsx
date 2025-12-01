@@ -1,7 +1,8 @@
 import React from "react";
 import { Routes, Route } from "react-router-dom";
+
 import Layout from "../layouts/Layout";
-import Home from "../pages/Home";
+import HomePage from "../pages/HomePage";
 import Auth from "../pages/Auth";
 import ProductDetailsPage from "../pages/ProductDetailsPage";
 import TransactionPage from "../pages/TransactionPage";
@@ -19,12 +20,10 @@ const AppRouter = () => {
   return (
     <Routes>
       <Route path="/" element={<Layout />}>
-        {/* Home Page */}
-        <Route index element={<Home />} />
-        {/* Products Page */}
+        <Route index element={<HomePage />} />
         <Route path="products" element={<ProductsPage />} />
-        <Route path="products/create" element={<CreateProductPage />} />
-        <Route path="products/:id/edit" element={<EditProductPage />} />
+        <Route path="products/:id" element={<ProductDetailsPage />} />
+        <Route path="transactions/:id" element={<TransactionPage />} />
 
         {/* Authentication Pages - Only accessible when not logged in */}
         <Route
@@ -68,22 +67,28 @@ const AppRouter = () => {
           }
         />
 
-        {/* Product Details - unified route */}
-        <Route path="products/:id" element={<ProductDetailsPage />} />
-        <Route path="transactions/:id" element={<TransactionPage />} />
-
-        {/* TODO: Add more routes as needed */}
-        {/* <Route path="auctions" element={<Auctions />} /> */}
-        {/* <Route path="auctions/:id" element={<AuctionDetails />} /> */}
-        {/* <Route path="profile" element={<Profile />} /> */}
-        {/* <Route path="dashboard" element={<Dashboard />} /> */}
-
         {/* Protected Routes - Only accessible when logged in */}
         <Route
           path="profile"
           element={
             <ProtectedRoute>
               <ProfilePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="products/create"
+          element={
+            <ProtectedRoute>
+              <CreateProductPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="products/:id/edit"
+          element={
+            <ProtectedRoute>
+              <EditProductPage />
             </ProtectedRoute>
           }
         />

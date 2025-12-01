@@ -1,13 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 
-const Countdown = ({ 
-  endDate,
-  variant = 'overlay', 
-  size = 'md',
+const Countdown = ({
+  endTime,
+  variant = "overlay",
+  size = "md",
   showLabels = true,
   onComplete,
-  className = '',
-  ...props 
+  className = "",
+  ...props
 }) => {
   const [timeLeft, setTimeLeft] = useState({
     days: 0,
@@ -18,8 +18,7 @@ const Countdown = ({
 
   useEffect(() => {
     const calculateTimeLeft = () => {
-      const difference = new Date(endDate) - new Date();
-      
+      const difference = new Date(endTime) - new Date();
       if (difference > 0) {
         return {
           days: Math.floor(difference / (1000 * 60 * 60 * 24)),
@@ -40,13 +39,13 @@ const Countdown = ({
     setTimeLeft(calculateTimeLeft());
 
     return () => clearInterval(timer);
-  }, [endDate, onComplete]);
+  }, [endTime, onComplete]);
 
-  const formatNumber = (num) => String(num).padStart(2, '0');
+  const formatNumber = (num) => String(num).padStart(2, "0");
 
-  if (variant === 'overlay') {
+  if (variant === "overlay") {
     return (
-      <div 
+      <div
         className={`
           absolute left-0 right-0 bottom-0
           bg-white/95 backdrop-blur-sm
@@ -58,10 +57,10 @@ const Countdown = ({
       >
         <div className="grid grid-cols-4 gap-2 text-center">
           {[
-            { value: timeLeft.days, label: 'Days' },
-            { value: timeLeft.hours, label: 'Hours' },
-            { value: timeLeft.minutes, label: 'Minutes' },
-            { value: timeLeft.seconds, label: 'Seconds' },
+            { value: timeLeft.days, label: "Days" },
+            { value: timeLeft.hours, label: "Hours" },
+            { value: timeLeft.minutes, label: "Minutes" },
+            { value: timeLeft.seconds, label: "Seconds" },
           ].map((item, index) => (
             <div key={index}>
               <div className="text-xl font-black text-slate-900 leading-none mb-0.5">
@@ -80,21 +79,21 @@ const Countdown = ({
   }
 
   const sizeStyles = {
-    sm: 'text-lg',
-    md: 'text-2xl',
-    lg: 'text-3xl',
+    sm: "text-lg",
+    md: "text-2xl",
+    lg: "text-3xl",
   };
 
   return (
-    <div 
+    <div
       className={`flex items-center justify-center gap-2 ${className}`}
       {...props}
     >
       {[
-        { value: timeLeft.days, label: 'D' },
-        { value: timeLeft.hours, label: 'H' },
-        { value: timeLeft.minutes, label: 'M' },
-        { value: timeLeft.seconds, label: 'S' },
+        { value: timeLeft.days, label: "D" },
+        { value: timeLeft.hours, label: "H" },
+        { value: timeLeft.minutes, label: "M" },
+        { value: timeLeft.seconds, label: "S" },
       ].map((item, index) => (
         <React.Fragment key={index}>
           <div className="text-center">
@@ -106,7 +105,9 @@ const Countdown = ({
             )}
           </div>
           {index < 3 && (
-            <div className={`font-bold text-slate-400 ${sizeStyles[size]}`}>:</div>
+            <div className={`font-bold text-slate-400 ${sizeStyles[size]}`}>
+              :
+            </div>
           )}
         </React.Fragment>
       ))}

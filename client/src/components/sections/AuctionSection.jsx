@@ -1,13 +1,13 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+
 import { AuctionCard } from "../common";
-import { CategoryFilter } from "../common";
+// import { CategoryFilter } from "../common";
 
 const AuctionSection = ({
   title,
   subtitle,
   items = [],
-  showFilter = false,
   itemsPerView = 5,
   className = "",
 }) => {
@@ -195,12 +195,10 @@ const AuctionSection = ({
           )}
         </div>
 
-        {/* Optional Filter */}
-        {showFilter && (
-          <div className="mb-8">
-            <CategoryFilter />
-          </div>
-        )}
+        {/* Filter (Optional) */}
+        {/* <div className="mb-8">
+          <CategoryFilter />
+        </div> */}
 
         {/* Auction Cards Carousel */}
         {items.length > 0 ? (
@@ -217,31 +215,22 @@ const AuctionSection = ({
               }}
             >
               <div className="flex gap-3 sm:gap-4 md:gap-6">
-                {items.map((item, index) => (
+                {items.map((item) => (
                   <div
-                    key={item.id || index}
+                    key={item.id}
                     className="flex-shrink-0 w-full sm:w-[calc(50%-0.5rem)] md:w-[calc(33.333%-1rem)] lg:w-[calc(25%-1.125rem)] xl:w-[calc(20%-1.2rem)] snap-start snap-always"
                   >
                     <AuctionCard
                       id={item.id}
-                      images={item.images || item.image}
-                      name={item.name || item.title}
-                      current_price={
-                        item.current_price ||
-                        item.currentBid ||
-                        item.startingBid
-                      }
-                      start_price={item.start_price || item.startingBid}
-                      buy_now_price={item.buy_now_price || item.buyNowPrice}
-                      current_bidder={
-                        item.current_bidder ||
-                        (item.highestBidder
-                          ? { full_name: item.highestBidder }
-                          : null)
-                      }
-                      bid_count={item.bid_count || item.bidCount || 0}
-                      created_at={item.created_at || item.createdAt}
-                      end_time={item.end_time || item.endDate}
+                      images={item.images}
+                      name={item.name}
+                      current_price={item.current_price}
+                      start_price={item.start_price}
+                      buy_now_price={item.buy_now_price}
+                      current_bidder={item.current_bidder}
+                      bid_count={item.bid_count}
+                      created_at={item.created_at}
+                      end_time={item.end_time}
                       status={item.status}
                       onClick={() => navigate(`/products/${item.id}`)}
                       onBid={() =>
