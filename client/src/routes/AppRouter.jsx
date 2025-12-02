@@ -3,12 +3,13 @@ import { Routes, Route } from "react-router-dom";
 
 import Layout from "../layouts/Layout";
 import HomePage from "../pages/HomePage";
-import Auth from "../pages/Auth";
+import AuthPage from "../pages/AuthPage";
+import ForgotPasswordPage from "../pages/ForgotPasswordPage";
+import OtpVerificationPage from "../pages/OtpVerificationPage";
+
 import ProductDetailsPage from "../pages/ProductDetailsPage";
 import TransactionPage from "../pages/TransactionPage";
-import OtpVerification from "../pages/OtpVerification";
 import ProfilePage from "../pages/ProfilePage";
-import ForgotPassword from "../pages/ForgotPassword";
 import NotFound from "../pages/NotFound";
 import ProductsPage from "../pages/ProductsPage";
 import CreateProductPage from "../pages/CreateProductPage";
@@ -30,7 +31,7 @@ const AppRouter = () => {
           path="auth"
           element={
             <PublicRoute>
-              <Auth />
+              <AuthPage />
             </PublicRoute>
           }
         />
@@ -38,7 +39,7 @@ const AppRouter = () => {
           path="login"
           element={
             <PublicRoute>
-              <Auth />
+              <AuthPage />
             </PublicRoute>
           }
         />
@@ -46,7 +47,7 @@ const AppRouter = () => {
           path="register"
           element={
             <PublicRoute>
-              <Auth />
+              <AuthPage />
             </PublicRoute>
           }
         />
@@ -54,7 +55,7 @@ const AppRouter = () => {
           path="verify-otp"
           element={
             <PublicRoute>
-              <OtpVerification />
+              <OtpVerificationPage />
             </PublicRoute>
           }
         />
@@ -62,7 +63,7 @@ const AppRouter = () => {
           path="forgot-password"
           element={
             <PublicRoute>
-              <ForgotPassword />
+              <ForgotPasswordPage />
             </PublicRoute>
           }
         />

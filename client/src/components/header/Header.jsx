@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 
-import { useCategories } from "../hooks/useCategories";
-import { useAuth } from "../contexts/AuthContext";
-import BidSettingModal from "./admin/BidSettingModal";
-import DesktopNav from "./header/DesktopNav";
-import MobileMenu from "./header/MobileMenu";
-import Logo from "./header/Logo";
+import { useCategories } from "../../hooks/useCategories";
+import { useAuth } from "../../contexts/AuthContext";
+import BidSettingModal from "../admin/BidSettingModal";
+import DesktopNav from "./DesktopNav";
+import MobileMenu from "./MobileMenu";
+import Logo from "./Logo";
 
 /**
  * @typedef {object} Category

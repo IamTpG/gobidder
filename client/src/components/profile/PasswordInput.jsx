@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { EyeIcon, EyeOffIcon } from "../sections/LoginSection";
+
+import { EyeIcon, EyeOffIcon } from "../common/Icons";
 
 const PasswordInput = ({
   label,

@@ -1,39 +1,13 @@
 import React, { useState, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import ReCAPTCHA from "react-google-recaptcha";
+
 import { useAuth } from "../../contexts/AuthContext";
 import Button from "../common/Button";
 import Spinner from "../common/Spinner";
-import ReCAPTCHA from "react-google-recaptcha";
-import { useNavigate } from "react-router-dom";
+import { EyeIcon, EyeOffIcon } from "../common/Icons";
 
-const EyeIcon = () => (
-  <svg
-    width="20"
-    height="20"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-  >
-    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-    <circle cx="12" cy="12" r="3" />
-  </svg>
-);
-
-const EyeOffIcon = () => (
-  <svg
-    width="20"
-    height="20"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-  >
-    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
-    <line x1="1" y1="1" x2="23" y2="23" />
-  </svg>
-);
-
-const RegisterSection = () => {
+const RegisterForm = () => {
   const { register } = useAuth();
   const navigate = useNavigate();
   const captchaRef = useRef(null);
@@ -196,7 +170,7 @@ const RegisterSection = () => {
 
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-2">
-            Address
+            Address <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
@@ -209,16 +183,12 @@ const RegisterSection = () => {
           />
         </div>
 
-        <div className="w-full flex justify-center">
-          <div className="w-full max-w-md">
-            <ReCAPTCHA
-              ref={captchaRef}
-              sitekey="6LeiiQssAAAAAMLf7ME3LENBp5xc5WJmR9ZdsxdF"
-              onChange={(token) => setCaptchaToken(token)}
-              className="w-full"
-            />
-          </div>
-        </div>
+        <ReCAPTCHA
+          ref={captchaRef}
+          sitekey={process.env.REACT_APP_RECAPTCHA_KEY}
+          onChange={(token) => setCaptchaToken(token)}
+          className="w-full flex justify-center"
+        />
 
         {error && (
           <div className="p-3 text-sm text-red-700 bg-red-100 border border-red-200 rounded-lg">
@@ -249,4 +219,4 @@ const RegisterSection = () => {
   );
 };
 
-export default RegisterSection;
+export default RegisterForm;
