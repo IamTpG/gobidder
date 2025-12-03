@@ -10,12 +10,12 @@ import OtpVerificationPage from "../pages/OtpVerificationPage";
 import ProductDetailsPage from "../pages/ProductDetailsPage";
 import TransactionPage from "../pages/TransactionPage";
 import ProfilePage from "../pages/ProfilePage";
-import NotFound from "../pages/NotFound";
 import ProductsPage from "../pages/ProductsPage";
 import CreateProductPage from "../pages/CreateProductPage";
 import EditProductPage from "../pages/EditProductPage";
 import ProtectedRoute from "../components/routes/ProtectedRoute";
 import PublicRoute from "../components/routes/PublicRoute";
+import NotFoundPage from "../pages/NotFoundPage";
 
 const AppRouter = () => {
   return (
@@ -95,7 +95,7 @@ const AppRouter = () => {
         />
 
         {/* 404 - Page Not Found */}
-        <Route path="*" element={<NotFound />} />
+        <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>
   );
