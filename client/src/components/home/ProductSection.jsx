@@ -1,10 +1,10 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { AuctionCard } from "../common";
+import ProductCard from "../common/ProductCard";
 // import { CategoryFilter } from "../common";
 
-const AuctionSection = ({
+const ProductSection = ({
   title,
   subtitle,
   items = [],
@@ -220,18 +220,8 @@ const AuctionSection = ({
                     key={item.id}
                     className="flex-shrink-0 w-full sm:w-[calc(50%-0.5rem)] md:w-[calc(33.333%-1rem)] lg:w-[calc(25%-1.125rem)] xl:w-[calc(20%-1.2rem)] snap-start snap-always"
                   >
-                    <AuctionCard
-                      id={item.id}
-                      images={item.images}
-                      name={item.name}
-                      current_price={item.current_price}
-                      start_price={item.start_price}
-                      buy_now_price={item.buy_now_price}
-                      current_bidder={item.current_bidder}
-                      bid_count={item.bid_count}
-                      created_at={item.created_at}
-                      end_time={item.end_time}
-                      status={item.status}
+                    <ProductCard
+                      {...item}
                       onClick={() => navigate(`/products/${item.id}`)}
                       onBid={() =>
                         console.log("Bid on:", item.name || item.title)
@@ -302,4 +292,4 @@ const AuctionSection = ({
   );
 };
 
-export default AuctionSection;
+export default ProductSection;

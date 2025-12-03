@@ -1,6 +1,7 @@
 import React from "react";
-import { Button } from "../common";
 import { useNavigate } from "react-router-dom";
+
+import Button from "../common/Button";
 
 const HeroSection = () => {
   const navigate = useNavigate();
@@ -106,7 +107,7 @@ const HeroSection = () => {
               </div>
 
               {/* Center - Car */}
-              <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-4 rounded-lg overflow-hidden shadow-xl w-3/4 z-20">
+              <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-4 rounded-lg overflow-hidden shadow-xl w-3/4 z-20 hover:scale-105 transition-transform duration-300">
                 <img
                   src="https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=400&h=250&fit=crop"
                   alt="Luxury Car"

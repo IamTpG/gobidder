@@ -1,5 +1,5 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import Button from "../common/Button";
 import Logo from "./Logo";
@@ -81,13 +81,28 @@ const MobileMenu = ({
 
         {/* Navigation Links */}
         <nav className="px-6 py-6 space-y-2">
-          <a
-            href="/"
-            className="block py-2 text-primary font-medium"
+          <Link
+            to="/"
+            className={
+              (!isProductsPage ? "text-primary" : "text -gray-900") +
+              " block py-2 font-medium"
+            }
             onClick={toggleMobileMenu}
           >
             Home
-          </a>
+          </Link>
+
+          <Link
+            to="/products"
+            className={
+              (isProductsPage ? "text-primary" : "text -gray-900") +
+              " block py-2 font-medium"
+            }
+            onClick={toggleMobileMenu}
+          >
+            Products
+          </Link>
+
           {/* Categories Submenu (Accordion) */}
           <div>
             {/* Nút chính để mở/đóng menu Categories cấp 1 */}

@@ -4,148 +4,7 @@ import { useState, useEffect } from "react";
 import api from "../../services/api";
 import Countdown from "./Countdown";
 
-const Card = ({
-  children,
-  title,
-  subtitle,
-  footer,
-  image,
-  badge,
-  className = "",
-  variant = "default",
-  hoverable = false,
-  bordered = true,
-  shadow = "sm",
-  padding = "default",
-  onClick,
-  ...props
-}) => {
-  // Base styles
-  const baseStyles = `
-    bg-white rounded-2xl overflow-hidden
-    transition-all duration-300
-    ${hoverable ? "cursor-pointer hover:shadow-xl hover:-translate-y-1" : ""}
-    ${onClick ? "cursor-pointer" : ""}
-  `;
-
-  // Variant styles - dựa trên theme primary #01AA85
-  const variants = {
-    // Default - Card trắng cơ bản
-    default: `
-      ${bordered ? "border border-slate-200" : ""}
-    `,
-
-    // Primary - Card với accent primary
-    primary: `
-      border-l-4 border-l-primary
-      ${bordered ? "border border-slate-200" : ""}
-    `,
-
-    // Gradient - Card với gradient background (như trong giao diện)
-    gradient: `
-      bg-gradient-to-br from-primary/5 to-primary/10
-      ${bordered ? "border-2 border-primary/20" : ""}
-    `,
-
-    // Success - Card màu xanh lá nhạt
-    success: `
-      border-l-4 border-l-green-500
-      ${bordered ? "border border-slate-200" : ""}
-    `,
-
-    // Warning
-    warning: `
-      border-l-4 border-l-yellow-500
-      ${bordered ? "border border-slate-200" : ""}
-    `,
-
-    // Danger
-    danger: `
-      border-l-4 border-l-red-500
-      ${bordered ? "border border-slate-200" : ""}
-    `,
-
-    // Outlined - Card chỉ có viền
-    outlined: `
-      border-2 border-slate-200
-      hover:border-primary
-    `,
-
-    // Elevated - Card nổi (dùng cho auction card)
-    elevated: `
-      shadow-lg
-      ${bordered ? "border border-slate-100" : ""}
-    `,
-  };
-
-  // Shadow styles
-  const shadows = {
-    none: "",
-    sm: "shadow-sm",
-    md: "shadow-md",
-    lg: "shadow-lg",
-    xl: "shadow-xl",
-  };
-
-  // Padding styles
-  const paddings = {
-    none: "",
-    sm: "p-4",
-    default: "p-6",
-    lg: "p-8",
-  };
-
-  return (
-    <div
-      className={`${baseStyles} ${variants[variant]} ${shadows[shadow]} ${className}`}
-      onClick={onClick}
-      {...props}
-    >
-      {/* Badge (Live, Upcoming, etc.) */}
-      {badge && <div className="absolute top-4 left-4 z-10">{badge}</div>}
-
-      {/* Image */}
-      {image && (
-        <div className="relative w-full h-48 overflow-hidden">
-          {typeof image === "string" ? (
-            <img
-              src={image}
-              alt={title || "Card image"}
-              className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-            />
-          ) : (
-            image
-          )}
-        </div>
-      )}
-
-      {/* Content */}
-      <div className={paddings[padding]}>
-        {/* Title & Subtitle */}
-        {(title || subtitle) && (
-          <div className="mb-4">
-            {title && (
-              <h3 className="text-xl font-bold text-slate-900 mb-1">{title}</h3>
-            )}
-            {subtitle && <p className="text-sm text-slate-600">{subtitle}</p>}
-          </div>
-        )}
-
-        {/* Body */}
-        <div className="text-slate-700">{children}</div>
-      </div>
-
-      {/* Footer */}
-      {footer && (
-        <div className="px-6 py-4 bg-slate-50 border-t border-slate-200">
-          {footer}
-        </div>
-      )}
-    </div>
-  );
-};
-
-export const AuctionCard = ({
+export const ProductCard = ({
   id,
   images,
   name,
@@ -272,11 +131,11 @@ export const AuctionCard = ({
     >
       {/* Image Container */}
       <div className="relative h-64 bg-slate-100">
-        {/* NEW BADGE: Display 'New' badge if posted recently */}
+        {/* New Badge */}
         {isNew && (
           <div className="absolute top-4 left-4 z-20">
             <span className="inline-flex items-center rounded-full bg-red-500 px-3 py-1 text-xs font-bold text-white shadow-md ">
-              ✨ NEW 1HR
+              New Product
             </span>
           </div>
         )}
@@ -410,4 +269,4 @@ export const AuctionCard = ({
   );
 };
 
-export default Card;
+export default ProductCard;

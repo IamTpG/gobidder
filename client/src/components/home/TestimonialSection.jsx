@@ -1,13 +1,27 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 
 const ChevronLeft = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+  <svg
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+  >
     <path d="M15 18l-6-6 6-6" />
   </svg>
 );
 
 const ChevronRight = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+  <svg
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+  >
     <path d="M9 18l6-6-6-6" />
   </svg>
 );
@@ -24,7 +38,9 @@ const TestimonialCard = ({ testimonial }) => {
             className="w-16 h-16 rounded-full object-cover ring-4 ring-primary/10 hover:ring-primary/30 transition-all duration-300"
           />
           <div>
-            <h4 className="text-lg font-bold text-slate-800 hover:text-primary transition-colors duration-300">{testimonial.name}</h4>
+            <h4 className="text-lg font-bold text-slate-800 hover:text-primary transition-colors duration-300">
+              {testimonial.name}
+            </h4>
             <p className="text-sm text-slate-500">{testimonial.position}</p>
           </div>
         </div>
@@ -49,35 +65,43 @@ const TestimonialSection = () => {
   const testimonials = [
     {
       id: 1,
-      name: 'Penelope Gianna',
-      position: 'CEO at Probid',
-      avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&h=200&fit=crop',
-      tag: 'Fantastic Bidding Item!',
-      content: 'Feel free to customize the key features based on the services and strategies you offer in each plan. This breakdown helps potential clients understand the specific value they\'ll receive at each pricing tier.',
+      name: "Penelope Gianna",
+      position: "CEO at Probid",
+      avatar:
+        "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&h=200&fit=crop",
+      tag: "Fantastic Bidding Item!",
+      content:
+        "Feel free to customize the key features based on the services and strategies you offer in each plan. This breakdown helps potential clients understand the specific value they'll receive at each pricing tier.",
     },
     {
       id: 2,
-      name: 'Mr. Daniel Scoot',
-      position: 'CEO at Probid',
-      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&h=200&fit=crop',
-      tag: 'Great Auction Product!',
-      content: 'Feel free to customize the key features based on the services and strategies you offer in each plan. This breakdown helps potential clients understand the specific value they\'ll receive at each pricing tier.',
+      name: "Mr. Daniel Scoot",
+      position: "CEO at Probid",
+      avatar:
+        "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&h=200&fit=crop",
+      tag: "Great Auction Product!",
+      content:
+        "Feel free to customize the key features based on the services and strategies you offer in each plan. This breakdown helps potential clients understand the specific value they'll receive at each pricing tier.",
     },
     {
       id: 3,
-      name: 'Sarah Johnson',
-      position: 'Art Collector',
-      avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&h=200&fit=crop',
-      tag: 'Amazing Experience!',
-      content: 'The auction platform is incredibly user-friendly and transparent. I\'ve successfully won several bids and the process was seamless from start to finish. Highly recommend to any serious collector!',
+      name: "Sarah Johnson",
+      position: "Art Collector",
+      avatar:
+        "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&h=200&fit=crop",
+      tag: "Amazing Experience!",
+      content:
+        "The auction platform is incredibly user-friendly and transparent. I've successfully won several bids and the process was seamless from start to finish. Highly recommend to any serious collector!",
     },
     {
       id: 4,
-      name: 'Michael Chen',
-      position: 'Vintage Car Dealer',
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop',
-      tag: 'Professional Service!',
-      content: 'As a seller, I appreciate the comprehensive tools and analytics provided. The platform has helped me reach a wider audience and achieve better prices for my vintage automobiles.',
+      name: "Michael Chen",
+      position: "Vintage Car Dealer",
+      avatar:
+        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop",
+      tag: "Professional Service!",
+      content:
+        "As a seller, I appreciate the comprehensive tools and analytics provided. The platform has helped me reach a wider audience and achieve better prices for my vintage automobiles.",
     },
   ];
 
@@ -93,7 +117,10 @@ const TestimonialSection = () => {
     setCurrentIndex((prev) => Math.min(maxIndex, prev + 1));
   };
 
-  const visibleTestimonials = testimonials.slice(currentIndex, currentIndex + itemsPerPage);
+  const visibleTestimonials = testimonials.slice(
+    currentIndex,
+    currentIndex + itemsPerPage,
+  );
 
   return (
     <section className="py-20 bg-gradient-to-br from-slate-50 to-primary/5">
@@ -116,8 +143,8 @@ const TestimonialSection = () => {
               disabled={currentIndex === 0}
               className={`w-12 h-12 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
                 currentIndex === 0
-                  ? 'border-slate-200 text-slate-300 cursor-not-allowed'
-                  : 'border-primary text-primary hover:bg-primary hover:text-white hover:shadow-lg hover:scale-105'
+                  ? "border-slate-200 text-slate-300 cursor-not-allowed"
+                  : "border-primary text-primary hover:bg-primary hover:text-white hover:shadow-lg hover:scale-105"
               }`}
               aria-label="Previous testimonials"
             >
@@ -128,8 +155,8 @@ const TestimonialSection = () => {
               disabled={currentIndex >= maxIndex}
               className={`w-12 h-12 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
                 currentIndex >= maxIndex
-                  ? 'border-slate-200 text-slate-300 cursor-not-allowed'
-                  : 'border-primary text-primary hover:bg-primary hover:text-white hover:shadow-lg hover:scale-105'
+                  ? "border-slate-200 text-slate-300 cursor-not-allowed"
+                  : "border-primary text-primary hover:bg-primary hover:text-white hover:shadow-lg hover:scale-105"
               }`}
               aria-label="Next testimonials"
             >
@@ -140,39 +167,76 @@ const TestimonialSection = () => {
 
         {/* Brands Section - "We Worked With Global Largest Trusted Brand" */}
         <div className="mb-16 text-center">
-          <p className="text-slate-700 text-sm mb-8 font-medium">We Worked With Global Largest Trusted Brand</p>
+          <p className="text-slate-700 text-sm mb-8 font-medium">
+            We Worked With Global Largest Trusted Brand
+          </p>
           <div className="flex flex-wrap items-center justify-center gap-16 transition-all duration-500">
             <div className="opacity-50 hover:opacity-100 transition-all duration-300 hover:scale-110">
               <svg className="h-10 w-auto" viewBox="0 0 120 40" fill="none">
-                <text x="10" y="25" fontFamily="Arial, sans-serif" fontSize="20" fontWeight="bold" fill="#64748b">
+                <text
+                  x="10"
+                  y="25"
+                  fontFamily="Arial, sans-serif"
+                  fontSize="20"
+                  fontWeight="bold"
+                  fill="#64748b"
+                >
                   ❤️ Scooby
                 </text>
               </svg>
             </div>
             <div className="opacity-50 hover:opacity-100 transition-all duration-300 hover:scale-110">
               <svg className="h-10 w-auto" viewBox="0 0 120 40" fill="none">
-                <text x="10" y="25" fontFamily="Arial, sans-serif" fontSize="20" fontWeight="bold" fill="#64748b">
+                <text
+                  x="10"
+                  y="25"
+                  fontFamily="Arial, sans-serif"
+                  fontSize="20"
+                  fontWeight="bold"
+                  fill="#64748b"
+                >
                   📷 PicsZen
                 </text>
               </svg>
             </div>
             <div className="opacity-50 hover:opacity-100 transition-all duration-300 hover:scale-110">
               <svg className="h-10 w-auto" viewBox="0 0 140 40" fill="none">
-                <text x="10" y="25" fontFamily="Arial, sans-serif" fontSize="20" fontWeight="bold" fill="#64748b">
+                <text
+                  x="10"
+                  y="25"
+                  fontFamily="Arial, sans-serif"
+                  fontSize="20"
+                  fontWeight="bold"
+                  fill="#64748b"
+                >
                   🅿️ ParkPlace
                 </text>
               </svg>
             </div>
             <div className="opacity-50 hover:opacity-100 transition-all duration-300 hover:scale-110">
               <svg className="h-10 w-auto" viewBox="0 0 120 40" fill="none">
-                <text x="10" y="25" fontFamily="Arial, sans-serif" fontSize="20" fontWeight="bold" fill="#64748b">
+                <text
+                  x="10"
+                  y="25"
+                  fontFamily="Arial, sans-serif"
+                  fontSize="20"
+                  fontWeight="bold"
+                  fill="#64748b"
+                >
                   💄 Beautico
                 </text>
               </svg>
             </div>
             <div className="opacity-50 hover:opacity-100 transition-all duration-300 hover:scale-110">
               <svg className="h-10 w-auto" viewBox="0 0 120 40" fill="none">
-                <text x="10" y="25" fontFamily="Arial, sans-serif" fontSize="20" fontWeight="bold" fill="#64748b">
+                <text
+                  x="10"
+                  y="25"
+                  fontFamily="Arial, sans-serif"
+                  fontSize="20"
+                  fontWeight="bold"
+                  fill="#64748b"
+                >
                   ▲ Aploxn
                 </text>
               </svg>

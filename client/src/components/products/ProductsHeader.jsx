@@ -1,6 +1,6 @@
 import React from "react";
 
-const ProductsHeader = ({ title = "All Auctions", subtitle }) => {
+const ProductsHeader = ({ title = "All Products", subtitle }) => {
   return (
     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
       <div>

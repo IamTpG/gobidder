@@ -1,6 +1,7 @@
 import React from "react";
-import Button from "./Button"; // Sử dụng Button chung của bạn (đã có Spinner)
-import Spinner from "./Spinner";
+
+import Button from "../common/Button";
+import Spinner from "../common/Spinner";
 
 const BidControls = ({
   currentBid,

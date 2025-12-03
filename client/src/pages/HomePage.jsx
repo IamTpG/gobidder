@@ -1,13 +1,13 @@
 import React from "react";
 
-import HeroSection from "../components/sections/HeroSection";
-import AuctionSection from "../components/sections/AuctionSection";
-// import TestimonialSection from "../components/sections/TestimonialSection";
 import {
   useTopEndingSoon,
   useTopMostBids,
   useTopHighestPrice,
 } from "../hooks/useTopProducts";
+import HeroSection from "../components/home/HeroSection";
+import ProductSection from "../components/home/ProductSection";
+// import TestimonialSection from "../components/sections/TestimonialSection";
 import Spinner from "../components/common/Spinner";
 
 const HomePage = () => {
@@ -45,7 +45,7 @@ const HomePage = () => {
           </p>
         </div>
       ) : (
-        <AuctionSection
+        <ProductSection
           subtitle="ENDING SOON"
           title="Last Chance to Bid"
           items={endingSoonItems}
@@ -66,7 +66,7 @@ const HomePage = () => {
           </p>
         </div>
       ) : (
-        <AuctionSection
+        <ProductSection
           subtitle="🔥 TRENDING NOW"
           title="Most Popular Auctions"
           items={mostBidsItems}
@@ -87,7 +87,7 @@ const HomePage = () => {
           </p>
         </div>
       ) : (
-        <AuctionSection
+        <ProductSection
           subtitle="💎 PREMIUM COLLECTION"
           title="Highest Value Items"
           items={highestPriceItems}

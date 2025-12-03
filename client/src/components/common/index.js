@@ -1,7 +1,7 @@
 // Export tất cả common components
 export { default as Button } from "./Button";
 export { default as Input, SearchInput } from "./Input";
-export { default as Card, AuctionCard } from "./Card";
+export { default as Card, ProductCard } from "./ProductCard";
 export {
   default as Badge,
   StatusBadge,

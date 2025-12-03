@@ -172,6 +172,7 @@ const getProductById = async (productId) => {
     createdAt: product.created_at,
     timezone: "UTC 0", // Mặc định
     category: product.category?.name || "Uncategorized",
+    categoryId: product.category?.id || null,
     bidCount: product.bid_count,
     status: product.status,
 

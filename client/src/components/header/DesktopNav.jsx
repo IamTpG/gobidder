@@ -1,5 +1,5 @@
-import React, { useState, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
 
 import CategoryDropdown from "./CategoryDropdown";
 import Button from "../common/Button";
@@ -30,17 +30,33 @@ const DesktopNav = ({
    * Categories dropdown có logic phức tạp hơn và được quản lý trong CategoryDropdown.
    * @param {string | null} menuKey
    */
-  const handleDropdownToggle = (menuKey) => {
-    setHoveredDropdown(menuKey);
-  };
+  // const handleDropdownToggle = (menuKey) => {
+  //   setHoveredDropdown(menuKey);
+  // };
 
   return (
     <div className="hidden lg:flex flex-grow justify-between items-center">
       {/* Desktop Navigation Menu Links */}
       <nav className="flex items-center space-x-6 ml-8">
-        <a href="/" className="text-primary font-medium hover:text-primary/70">
+        <Link
+          to="/"
+          className={
+            (!isProductsPage ? "text-primary" : "text-gray-900") +
+            " font-medium hover:text-primary/70"
+          }
+        >
           Home
-        </a>
+        </Link>
+
+        <Link
+          to="/products"
+          className={
+            (isProductsPage ? "text-primary" : "text-gray-900") +
+            " font-medium hover:text-primary/70"
+          }
+        >
+          Products
+        </Link>
 
         {/* Category Dropdown (Component con) */}
         <CategoryDropdown
