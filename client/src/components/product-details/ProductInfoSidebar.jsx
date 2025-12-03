@@ -132,7 +132,7 @@ const ProductInfoSidebar = ({
         <>
           <div className="py-2">
             <p className="text-xs font-medium text-gray-500 mb-1">Time Left:</p>
-            {getDaysUntilEnd < 3 ? (
+            {getDaysUntilEnd(product.auctionEndDate) < 3 ? (
               <CountdownTimer
                 endDate={product.auctionEndDate}
                 timezone={product.timezone}
@@ -162,6 +162,7 @@ const ProductInfoSidebar = ({
 
               <BidControls
                 currentBid={Number(product.currentBid)}
+                startPrice={Number(product.startPrice)}
                 bidAmount={bidAmount}
                 onBidChange={onBidChange}
                 onBid={onPlaceBid}
@@ -188,7 +189,7 @@ const ProductInfoSidebar = ({
       ) : (
         <div className="bg-gray-100 p-4 rounded-lg text-center">
           <h3 className="font-bold text-gray-600 py-3">Auction Ended</h3>
-          {(isWinner || isSeller) && (
+          {(isWinner || (isSeller && product.currentBidder)) && (
             <Button onClick={onFinishPayment}>Proceed to Payment</Button>
           )}
         </div>
