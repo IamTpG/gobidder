@@ -1,10 +1,11 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
+
 import { useMyBids } from "../../hooks/useMyBids";
 import Spinner from "../common/Spinner";
 import Badge from "../common/Badge";
 
-const MyBidsSection = () => {
+const MyBidsTab = () => {
   const { activeTab, setActiveTab, bids, isLoading, error } = useMyBids();
   const navigate = useNavigate();
 
@@ -173,4 +174,4 @@ const MyBidsSection = () => {
   );
 };
 
-export default MyBidsSection;
+export default MyBidsTab;

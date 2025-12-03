@@ -1,6 +1,7 @@
 import React, { useState } from "react";
-import { useAuth } from "../contexts/AuthContext";
 import { useLocation, useNavigate } from "react-router-dom";
+
+import { useAuth } from "../contexts/AuthContext";
 import OtpVerificationForm from "../components/auth/OtpVerificationForm";
 
 const OtpVerificationPage = () => {

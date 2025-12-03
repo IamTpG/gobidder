@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { getProductById } from "../services/api";
 
-// Import Components
+import { getProductById } from "../services/api";
 import ProductDetails from "../components/product-details/ProductDetails";
 import ProductHeader from "../components/product-details/ProductHeader";
 import Spinner from "../components/common/Spinner";
