@@ -1,0 +1,257 @@
+import React, { useState, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+
+import useRelatedProducts from "../../hooks/useRelatedProducts";
+import {
+  formatDateTime,
+  formatPrice,
+  maskUserName,
+} from "../../utils/formatters";
+import {
+  createProductQuestion,
+  answerProductQuestion,
+  placeBid,
+  getMyAutoBid,
+  createTransactionForProduct,
+} from "../../services/api";
+import { useAuth } from "../../contexts/AuthContext";
+import ImageGallery from "../common/ImageGallery";
+import TabNavigation from "../common/TabNavigation";
+import AuctionSection from "../home/ProductSection";
+import ProductInfoSidebar from "./ProductInfoSidebar";
+import ProductQnA from "./ProductQnA";
+
+const ProductDetails = ({ product, onRefresh }) => {
+  const { user } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // State
+  const [activeTab, setActiveTab] = useState("description");
+  const [bidAmount, setBidAmount] = useState(0);
+  const [myAutoBidPrice, setMyAutoBidPrice] = useState(0);
+
+  // Loading & Error States
+  const [isBidding, setIsBidding] = useState(false);
+  const [bidError, setBidError] = useState(null);
+  const [bidSuccessMsg, setBidSuccessMsg] = useState(null);
+  const [isSubmittingAnswer, setIsSubmittingAnswer] = useState({});
+
+  // Hooks
+  const { products: relatedProducts } = useRelatedProducts(product?.id, 5);
+
+  // Initial Logic
+  useEffect(() => {
+    if (product) {
+      const minBid =
+        Number(product.currentBid) === 0
+          ? Number(product.startPrice)
+          : Number(product.currentBid) + Number(product.stepPrice);
+      setBidAmount(minBid);
+
+      // Get Auto Bid Info
+      getMyAutoBid(product.id)
+        .then((res) => setMyAutoBidPrice(res.myAutoBidPrice))
+        .catch((err) => console.error(err));
+    }
+  }, [product]);
+
+  // Handle Query Params (Scroll to QnA)
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const openQ = params.get("openQ");
+    if (openQ) {
+      setActiveTab("qna");
+      setTimeout(() => {
+        const el = document.getElementById(`q-${openQ}`);
+        if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 500);
+    }
+  }, [location.search]);
+
+  if (!product) return null;
+
+  const handlePlaceBid = async () => {
+    if (!user) return navigate("/auth", { state: { from: location } });
+
+    try {
+      setIsBidding(true);
+      setBidError(null);
+      setBidSuccessMsg(null);
+
+      const result = await placeBid(product.id, bidAmount);
+
+      setBidSuccessMsg("Bid placed successfully!");
+      if (Number(result.currentPrice) <= Number(product.currentBid)) {
+        setBidSuccessMsg("Bid placed! Your auto-bid keeps you winning.");
+      }
+      if (onRefresh) onRefresh();
+    } catch (err) {
+      setBidError(err.response?.data?.message || "Bid failed.");
+    } finally {
+      setIsBidding(false);
+    }
+  };
+
+  const handleFinishPayment = async () => {
+    try {
+      if (product.transaction?.id) {
+        navigate(`/transactions/${product.transaction.id}`);
+      } else {
+        const res = await createTransactionForProduct(product.id);
+        const txId = res.data?.id || res.id;
+        if (txId) navigate(`/transactions/${txId}`);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleSubmitQuestion = async (text) => {
+    try {
+      await createProductQuestion(product.id, { question_text: text });
+      if (onRefresh) onRefresh();
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleSubmitAnswer = async (qId, text) => {
+    try {
+      setIsSubmittingAnswer((prev) => ({ ...prev, [qId]: true }));
+      await answerProductQuestion(product.id, qId, { answer_text: text });
+      if (onRefresh) onRefresh();
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsSubmittingAnswer((prev) => ({ ...prev, [qId]: false }));
+    }
+  };
+
+  return (
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Left: Images */}
+        <ImageGallery images={product.images || []} alt={product.name} />
+
+        {/* Right: Info Sidebar */}
+        <ProductInfoSidebar
+          product={product}
+          user={user}
+          bidAmount={bidAmount}
+          isBidding={isBidding}
+          bidError={bidError}
+          bidSuccessMsg={bidSuccessMsg}
+          myAutoBidPrice={myAutoBidPrice}
+          onBidChange={setBidAmount}
+          onPlaceBid={handlePlaceBid}
+          onNavigateToAuth={() =>
+            navigate("/auth", { state: { from: location } })
+          }
+          onFinishPayment={handleFinishPayment}
+        />
+      </div>
+
+      {/* Tabs Section */}
+      <div className="mt-12">
+        <TabNavigation
+          tabs={[
+            { key: "description", label: "Description" },
+            { key: "history", label: "Auction History" },
+            { key: "qna", label: `Q&A (${product.qnaItems?.length || 0})` },
+          ]}
+          activeTab={activeTab}
+          onChange={setActiveTab}
+          variant="underline"
+          className="mb-6 border-b border-gray-200"
+        />
+
+        <div className="min-h-[200px]">
+          {activeTab === "description" && (
+            <div
+              className="prose max-w-none text-gray-600"
+              dangerouslySetInnerHTML={{ __html: product.fullDescription }}
+            />
+          )}
+
+          {activeTab === "history" && (
+            <div className="overflow-x-auto border rounded-lg">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                      Date
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                      Bid
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                      User
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {product.bidHistory?.map((bid) => (
+                    <tr key={bid.id}>
+                      <td className="px-6 py-4 text-sm text-gray-900">
+                        {formatDateTime(bid.date)}
+                      </td>
+                      <td className="px-6 py-4 text-sm font-medium text-primary">
+                        {formatPrice(bid.amount)}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-500">
+                        {maskUserName(bid.user)}
+                      </td>
+                    </tr>
+                  ))}
+                  {!product.bidHistory?.length && (
+                    <tr>
+                      <td
+                        colSpan="3"
+                        className="text-center py-4 text-gray-500"
+                      >
+                        No history available.
+                      </td>
+                    </tr>
+                  )}
+                  <tr>
+                    <td className="px-6 py-4 text-sm text-gray-900">
+                      {formatDateTime(product.createdAt)}
+                    </td>
+                    <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                      Auction started
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-500"></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {activeTab === "qna" && (
+            <ProductQnA
+              product={product}
+              user={user}
+              onSubmitQuestion={handleSubmitQuestion}
+              onSubmitAnswer={handleSubmitAnswer}
+              isSubmittingMap={isSubmittingAnswer}
+            />
+          )}
+        </div>
+      </div>
+
+      {/* Related Products */}
+      {relatedProducts?.length > 0 && (
+        <div className="mt-12 border-t pt-12">
+          <AuctionSection
+            title="Related Products"
+            items={relatedProducts}
+            itemsPerView={5}
+          />
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default ProductDetails;

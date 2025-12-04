@@ -1,9 +1,11 @@
 import React from "react";
-import Button from "./Button"; // Sử dụng Button chung của bạn (đã có Spinner)
-import Spinner from "./Spinner";
+
+import Button from "../common/Button";
+import Spinner from "../common/Spinner";
 
 const BidControls = ({
   currentBid,
+  startPrice,
   bidAmount,
   onBidChange,
   onBid,
@@ -12,7 +14,7 @@ const BidControls = ({
   isBidding = false,
   label = "Place Bid",
 }) => {
-  const minBid = currentBid + minBidIncrement;
+  const minBid = currentBid > 0 ? currentBid + minBidIncrement : startPrice;
 
   return (
     <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">

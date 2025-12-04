@@ -4,10 +4,10 @@ const prisma = require("../config/prisma");
  * Đặt giá tự động (Auto Bidding)
  * @param {Int} userId - ID người đặt giá
  * @param {Int} productId - ID sản phẩm
- * @param {BigInt} inputMaxPrice - Giá trần người dùng chấp nhận trả
+ * @param {Number} inputMaxPrice - Giá trần người dùng chấp nhận trả
  */
 const placeAutoBid = async (userId, productId, inputMaxPrice) => {
-  const maxPrice = BigInt(inputMaxPrice);
+  const maxPrice = Number(inputMaxPrice);
 
   // Sử dụng transaction để đảm bảo tính toàn vẹn dữ liệu (Race condition)
   return await prisma.$transaction(async (tx) => {
@@ -109,8 +109,14 @@ const placeAutoBid = async (userId, productId, inputMaxPrice) => {
     // Read system config so admins can control trigger and extension values.
     const cfg = (await tx.systemConfig.findFirst({ where: { id: 1 } })) || {};
     // fallback defaults keep previous behavior: trigger 5 (minutes), extension 10 (minutes)
-    const triggerMinutes = typeof cfg.anti_sniping_trigger === 'number' ? cfg.anti_sniping_trigger : 5;
-    const extensionMinutes = typeof cfg.anti_sniping_extension === 'number' ? cfg.anti_sniping_extension : 10;
+    const triggerMinutes =
+      typeof cfg.anti_sniping_trigger === "number"
+        ? cfg.anti_sniping_trigger
+        : 5;
+    const extensionMinutes =
+      typeof cfg.anti_sniping_extension === "number"
+        ? cfg.anti_sniping_extension
+        : 10;
 
     const now = new Date();
     const timeRemaining = product.end_time.getTime() - now.getTime();

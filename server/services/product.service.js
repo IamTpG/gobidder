@@ -172,6 +172,7 @@ const getProductById = async (productId) => {
     createdAt: product.created_at,
     timezone: "UTC 0", // Mặc định
     category: product.category?.name || "Uncategorized",
+    categoryId: product.category?.id || null,
     bidCount: product.bid_count,
     status: product.status,
 
@@ -356,13 +357,13 @@ const createProduct = async (sellerId, data) => {
     autoRenew,
   } = data;
 
-  // Chuyển đổi dữ liệu tiền tệ sang BigInt
-  const startPriceBigInt = BigInt(startPrice);
-  const stepPriceBigInt = BigInt(stepPrice);
-  const buyNowPriceBigInt = buyNowPrice ? BigInt(buyNowPrice) : null;
+  // Chuyển đổi dữ liệu tiền tệ sang Number
+  const startPriceNumber = Number(startPrice);
+  const stepPriceNumber = Number(stepPrice);
+  const buyNowPriceNumber = buyNowPrice ? Number(buyNowPrice) : null;
 
   // Kiểm tra logic giá
-  if (buyNowPriceBigInt && buyNowPriceBigInt <= startPriceBigInt) {
+  if (buyNowPriceNumber && buyNowPriceNumber <= startPriceNumber) {
     throw new Error("Buy-now price must be greater than start price");
   }
 
@@ -373,10 +374,10 @@ const createProduct = async (sellerId, data) => {
       description,
       images: images, // Prisma hỗ trợ lưu mảng JSON trực tiếp nếu DB là Postgres
 
-      start_price: startPriceBigInt,
-      step_price: stepPriceBigInt,
-      buy_now_price: buyNowPriceBigInt,
-      current_price: 0n,
+      start_price: startPriceNumber,
+      step_price: stepPriceNumber,
+      buy_now_price: buyNowPriceNumber,
+      current_price: 0,
 
       auto_renew: autoRenew || false,
       status: "Active",
@@ -430,16 +431,16 @@ const updateProduct = async (productId, sellerId, data) => {
     autoRenew,
   } = data;
 
-  // Chuyển đổi giá sang BigInt
-  const startPriceBigInt = startPrice ? BigInt(startPrice) : undefined;
-  const stepPriceBigInt = stepPrice ? BigInt(stepPrice) : undefined;
-  const buyNowPriceBigInt = buyNowPrice ? BigInt(buyNowPrice) : null;
+  // Chuyển đổi giá sang Number
+  const startPriceNumber = Number(startPrice);
+  const stepPriceNumber = Number(stepPrice);
+  const buyNowPriceNumber = Number(buyNowPrice);
 
   // Validate logic giá
   if (
-    buyNowPriceBigInt &&
-    startPriceBigInt &&
-    buyNowPriceBigInt <= startPriceBigInt
+    buyNowPriceNumber &&
+    startPriceNumber &&
+    buyNowPriceNumber <= startPriceNumber
   ) {
     throw new Error("Buy-now price must be greater than start price");
   }
@@ -456,10 +457,10 @@ const updateProduct = async (productId, sellerId, data) => {
       ...(name && { name }),
       ...(description && { description }),
       ...(images && { images }),
-      ...(startPriceBigInt && { start_price: startPriceBigInt }),
-      ...(stepPriceBigInt && { step_price: stepPriceBigInt }),
-      ...(buyNowPriceBigInt !== undefined && {
-        buy_now_price: buyNowPriceBigInt,
+      ...(startPriceNumber && { start_price: startPriceNumber }),
+      ...(stepPriceNumber && { step_price: stepPriceNumber }),
+      ...(buyNowPriceNumber !== undefined && {
+        buy_now_price: buyNowPriceNumber,
       }),
       ...(categoryId && { category_id: parseInt(categoryId) }),
       ...(endTime && { end_time: new Date(endTime) }),
@@ -618,7 +619,7 @@ const getUserWonProducts = async (userId) => {
     sellerName: product.seller.full_name,
     endTime: product.end_time,
     finalPrice: product.current_price,
-    myMaxBid: product.auto_bids[0]?.max_price || 0n,
+    myMaxBid: product.auto_bids[0]?.max_price || 0,
     status: "Won",
   }));
 };

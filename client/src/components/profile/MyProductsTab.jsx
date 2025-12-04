@@ -1,4 +1,6 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
+
 import { useMyProducts } from "../../hooks/useMyProducts";
 import {
   ProductGrid,
@@ -8,9 +10,8 @@ import {
   ProductsToolbar,
 } from "../products";
 import Pagination from "../../shared/Pagination";
-import { useNavigate } from "react-router-dom";
 
-const MyProductsSection = () => {
+const MyProductsTab = () => {
   const navigate = useNavigate();
   const {
     products,
@@ -146,4 +147,4 @@ const MyProductsSection = () => {
   );
 };
 
-export default MyProductsSection;
+export default MyProductsTab;

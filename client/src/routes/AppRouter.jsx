@@ -1,37 +1,37 @@
 import React from "react";
 import { Routes, Route } from "react-router-dom";
+
 import Layout from "../layouts/Layout";
-import Home from "../pages/Home";
-import Auth from "../pages/Auth";
+import HomePage from "../pages/HomePage";
+import AuthPage from "../pages/AuthPage";
+import ForgotPasswordPage from "../pages/ForgotPasswordPage";
+import OtpVerificationPage from "../pages/OtpVerificationPage";
+
 import ProductDetailsPage from "../pages/ProductDetailsPage";
 import TransactionPage from "../pages/TransactionPage";
-import OtpVerification from "../pages/OtpVerification";
 import ProfilePage from "../pages/ProfilePage";
-import ForgotPassword from "../pages/ForgotPassword";
-import NotFound from "../pages/NotFound";
 import ProductsPage from "../pages/ProductsPage";
 import CreateProductPage from "../pages/CreateProductPage";
 import EditProductPage from "../pages/EditProductPage";
 import ProtectedRoute from "../components/routes/ProtectedRoute";
 import PublicRoute from "../components/routes/PublicRoute";
+import NotFoundPage from "../pages/NotFoundPage";
 
 const AppRouter = () => {
   return (
     <Routes>
       <Route path="/" element={<Layout />}>
-        {/* Home Page */}
-        <Route index element={<Home />} />
-        {/* Products Page */}
+        <Route index element={<HomePage />} />
         <Route path="products" element={<ProductsPage />} />
-        <Route path="products/create" element={<CreateProductPage />} />
-        <Route path="products/:id/edit" element={<EditProductPage />} />
+        <Route path="products/:id" element={<ProductDetailsPage />} />
+        <Route path="transactions/:id" element={<TransactionPage />} />
 
         {/* Authentication Pages - Only accessible when not logged in */}
         <Route
           path="auth"
           element={
             <PublicRoute>
-              <Auth />
+              <AuthPage />
             </PublicRoute>
           }
         />
@@ -39,7 +39,7 @@ const AppRouter = () => {
           path="login"
           element={
             <PublicRoute>
-              <Auth />
+              <AuthPage />
             </PublicRoute>
           }
         />
@@ -47,7 +47,7 @@ const AppRouter = () => {
           path="register"
           element={
             <PublicRoute>
-              <Auth />
+              <AuthPage />
             </PublicRoute>
           }
         />
@@ -55,7 +55,7 @@ const AppRouter = () => {
           path="verify-otp"
           element={
             <PublicRoute>
-              <OtpVerification />
+              <OtpVerificationPage />
             </PublicRoute>
           }
         />
@@ -63,20 +63,10 @@ const AppRouter = () => {
           path="forgot-password"
           element={
             <PublicRoute>
-              <ForgotPassword />
+              <ForgotPasswordPage />
             </PublicRoute>
           }
         />
-
-        {/* Product Details - unified route */}
-        <Route path="products/:id" element={<ProductDetailsPage />} />
-        <Route path="transactions/:id" element={<TransactionPage />} />
-
-        {/* TODO: Add more routes as needed */}
-        {/* <Route path="auctions" element={<Auctions />} /> */}
-        {/* <Route path="auctions/:id" element={<AuctionDetails />} /> */}
-        {/* <Route path="profile" element={<Profile />} /> */}
-        {/* <Route path="dashboard" element={<Dashboard />} /> */}
 
         {/* Protected Routes - Only accessible when logged in */}
         <Route
@@ -87,9 +77,25 @@ const AppRouter = () => {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="products/create"
+          element={
+            <ProtectedRoute>
+              <CreateProductPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="products/:id/edit"
+          element={
+            <ProtectedRoute>
+              <EditProductPage />
+            </ProtectedRoute>
+          }
+        />
 
         {/* 404 - Page Not Found */}
-        <Route path="*" element={<NotFound />} />
+        <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>
   );

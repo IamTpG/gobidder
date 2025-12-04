@@ -55,11 +55,11 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const login = async ({ username, password }) => {
-    if (!username || !password)
+  const login = async ({ email, password }) => {
+    if (!email || !password)
       throw new Error("Please enter your email and password");
     try {
-      await api.post("/auth/login", { email: username, password });
+      await api.post("/auth/login", { email, password });
       const { data } = await api.get("/users/me");
       setUser(data);
       return data;

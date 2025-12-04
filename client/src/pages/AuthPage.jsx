@@ -1,8 +1,9 @@
 import React from "react";
-import LoginSection from "../components/sections/LoginSection";
-import RegisterSection from "../components/sections/RegisterSection";
 
-const Auth = () => {
+import LoginForm from "../components/auth/LoginForm";
+import RegisterForm from "../components/auth/RegisterForm";
+
+const AuthPage = () => {
   return (
     <div className="min-h-screen bg-white">
       <div className="bg-gradient-to-br from-slate-50 via-primary/5 to-slate-50 py-20">
@@ -25,12 +26,12 @@ const Auth = () => {
 
       <div className="container mx-auto px-4 max-w-7xl py-20 -mt-16">
         <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-          <LoginSection />
-          <RegisterSection />
+          <LoginForm />
+          <RegisterForm />
         </div>
       </div>
     </div>
   );
 };
 
-export default Auth;
+export default AuthPage;
