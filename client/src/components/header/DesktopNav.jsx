@@ -19,7 +19,6 @@ const DesktopNav = ({
   setSearchValue,
   handleAccountNavigate,
   handleHeaderSearchSubmit,
-  setShowBidSettingModal,
 }) => {
   const navigate = useNavigate();
   // Quản lý trạng thái dropdown (categories, blog, pages)
@@ -167,12 +166,12 @@ const DesktopNav = ({
         </a> */}
 
         {isAdmin && (
-          <button
-            onClick={() => setShowBidSettingModal(true)}
+          <Link
+            to="/admin/bid-settings"
             className="text-red-600 font-bold hover:text-primary ml-4"
           >
             Bid Setting
-          </button>
+          </Link>
         )}
       </nav>
 

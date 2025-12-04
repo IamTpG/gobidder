@@ -14,8 +14,10 @@ import ProductsPage from "../pages/ProductsPage";
 import CreateProductPage from "../pages/CreateProductPage";
 import EditProductPage from "../pages/EditProductPage";
 import ProtectedRoute from "../components/routes/ProtectedRoute";
+import AdminRoute from "../components/routes/AdminRoute";
 import PublicRoute from "../components/routes/PublicRoute";
 import NotFoundPage from "../pages/NotFoundPage";
+import BidSettingPage from "../pages/admin/BidSettingPage";
 
 const AppRouter = () => {
   return (
@@ -91,6 +93,14 @@ const AppRouter = () => {
             <ProtectedRoute>
               <EditProductPage />
             </ProtectedRoute>
+          }
+        />
+        <Route
+          path="admin/bid-settings"
+          element={
+            <AdminRoute>
+              <BidSettingPage />
+            </AdminRoute>
           }
         />
 
