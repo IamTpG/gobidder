@@ -96,7 +96,7 @@ const changeUserPassword = async (userId, { currentPassword, newPassword }) => {
 
   if (!user || !user.password_hash) {
     throw new Error(
-      "Password change is only available for email/password accounts",
+      "Password change is only available for email/password accounts"
     );
   }
 
@@ -133,7 +133,7 @@ const requestEmailChangeService = async (userId, { newEmail, password }) => {
 
   if (!user || !user.password_hash) {
     throw new Error(
-      "Email change is only available for email/password accounts",
+      "Email change is only available for email/password accounts"
     );
   }
 
@@ -188,7 +188,7 @@ const requestEmailChangeService = async (userId, { newEmail, password }) => {
 const confirmEmailChangeService = async (
   userId,
   currentEmail,
-  { newEmail, otp },
+  { newEmail, otp }
 ) => {
   const normalizedEmail = normalizeEmail(newEmail);
 
@@ -278,6 +278,182 @@ const getUserByIdService = async (id) => {
   return user;
 };
 
+// Cập nhật role người dùng (Admin only)
+const updateUserRole = async (userId, role) => {
+  const validRoles = ["Bidder", "Seller", "Admin"];
+  if (!validRoles.includes(role)) {
+    throw new Error("Invalid role");
+  }
+
+  const updatedUser = await prisma.user.update({
+    where: { id: parseInt(userId) },
+    data: { role },
+    select: {
+      id: true,
+      full_name: true,
+      email: true,
+      role: true,
+    },
+  });
+
+  return updatedUser;
+};
+
+// --- Seller Upgrade Request Services ---
+
+// Tạo yêu cầu nâng cấp lên Seller
+const requestSellerUpgrade = async (userId) => {
+  // Check if user already has a pending request
+  const existingRequest = await prisma.sellerUpgradeRequest.findUnique({
+    where: { user_id: userId },
+  });
+
+  if (existingRequest) {
+    if (existingRequest.status === "Pending") {
+      throw new Error("You already have a pending request");
+    }
+    // If rejected or expired, allow re-request (update existing or delete and create new? Update is better)
+    if (
+      existingRequest.status === "Rejected" ||
+      existingRequest.status === "Expired"
+    ) {
+      return await prisma.sellerUpgradeRequest.update({
+        where: { user_id: userId },
+        data: { status: "Pending", requested_at: new Date(), admin_id: null },
+      });
+    }
+    // If Approved, user is already seller (should be checked by role, but safe to check here)
+    if (existingRequest.status === "Approved") {
+      throw new Error("You are already a seller");
+    }
+  }
+
+  return await prisma.sellerUpgradeRequest.create({
+    data: { user_id: userId },
+  });
+};
+
+// Lấy danh sách yêu cầu đang chờ (Admin)
+const getPendingSellerRequests = async () => {
+  return await prisma.sellerUpgradeRequest.findMany({
+    where: { status: "Pending" },
+    include: {
+      user: {
+        select: {
+          id: true,
+          full_name: true,
+          email: true,
+          role: true,
+          created_at: true,
+        },
+      },
+    },
+    orderBy: { requested_at: "asc" },
+  });
+};
+
+// Duyệt yêu cầu (Admin)
+const approveSellerRequest = async (requestId, adminId) => {
+  const request = await prisma.sellerUpgradeRequest.findUnique({
+    where: { id: parseInt(requestId) },
+  });
+
+  if (!request) throw new Error("Request not found");
+  if (request.status !== "Pending") throw new Error("Request is not pending");
+
+  // Transaction: Update request status AND Update user role with approval timestamp
+  const [updatedRequest, updatedUser] = await prisma.$transaction([
+    prisma.sellerUpgradeRequest.update({
+      where: { id: parseInt(requestId) },
+      data: { status: "Approved", admin_id: adminId },
+    }),
+    prisma.user.update({
+      where: { id: request.user_id },
+      data: { role: "Seller", seller_approved_at: new Date() },
+    }),
+  ]);
+
+  return { request: updatedRequest, user: updatedUser };
+};
+
+// Từ chối yêu cầu (Admin)
+const rejectSellerRequest = async (requestId, adminId) => {
+  const request = await prisma.sellerUpgradeRequest.findUnique({
+    where: { id: parseInt(requestId) },
+  });
+
+  if (!request) throw new Error("Request not found");
+  if (request.status !== "Pending") throw new Error("Request is not pending");
+
+  return await prisma.sellerUpgradeRequest.update({
+    where: { id: parseInt(requestId) },
+    data: { status: "Rejected", admin_id: adminId },
+  });
+};
+
+// Lấy trạng thái yêu cầu của user hiện tại
+const getMySellerRequest = async (userId) => {
+  return await prisma.sellerUpgradeRequest.findUnique({
+    where: { user_id: userId },
+  });
+};
+
+// Revert expired sellers (those whose trial period of 2 minutes has passed) - FOR TESTING
+const revertExpiredSellers = async () => {
+  const twoMinutesAgo = new Date();
+  twoMinutesAgo.setMinutes(twoMinutesAgo.getMinutes() - 2);
+
+  // Find all sellers whose approval was more than 2 minutes ago
+  const expiredSellers = await prisma.user.findMany({
+    where: {
+      role: "Seller",
+      seller_approved_at: {
+        not: null,
+        lte: twoMinutesAgo,
+      },
+    },
+  });
+
+  if (expiredSellers.length === 0) {
+    return { message: "No expired sellers found", count: 0 };
+  }
+
+  // Revert each seller to bidder
+  const results = await Promise.all(
+    expiredSellers.map(async (seller) => {
+      try {
+        await prisma.$transaction([
+          // Update user role back to Bidder and clear approval timestamp
+          prisma.user.update({
+            where: { id: seller.id },
+            data: {
+              role: "Bidder",
+              seller_approved_at: null,
+            },
+          }),
+          // Update their request status to Expired
+          prisma.sellerUpgradeRequest.updateMany({
+            where: { user_id: seller.id, status: "Approved" },
+            data: { status: "Expired" },
+          }),
+        ]);
+        return { id: seller.id, success: true };
+      } catch (error) {
+        console.error(`Failed to revert seller ${seller.id}:`, error);
+        return { id: seller.id, success: false, error: error.message };
+      }
+    })
+  );
+
+  const successCount = results.filter((r) => r.success).length;
+  return {
+    message: `Reverted ${successCount} out of ${expiredSellers.length} expired sellers`,
+    count: successCount,
+    total: expiredSellers.length,
+    results,
+  };
+};
+
 module.exports = {
   getMyProfile,
   getAllUsers,
@@ -286,4 +462,11 @@ module.exports = {
   changeUserPassword,
   requestEmailChangeService,
   confirmEmailChangeService,
+  updateUserRole,
+  requestSellerUpgrade,
+  getPendingSellerRequests,
+  approveSellerRequest,
+  rejectSellerRequest,
+  getMySellerRequest,
+  revertExpiredSellers,
 };

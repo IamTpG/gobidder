@@ -7,6 +7,9 @@ const cookieParser = require("cookie-parser");
 require("dotenv").config();
 require("./config/passport");
 
+// Cron jobs
+const { scheduleSellerReversion } = require("./jobs/revert-sellers.job");
+
 // Routes
 const authRoutes = require("./routes/auth.route");
 const productsRoutes = require("./routes/product.route");
@@ -24,7 +27,7 @@ app.use(
   cors({
     origin: process.env.FE_URL || "http://localhost:3000",
     credentials: true,
-  }),
+  })
 );
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -50,6 +53,8 @@ const startServer = async () => {
   try {
     const server = app.listen(PORT, "0.0.0.0", () => {
       console.log(`Server running on port ${PORT}`);
+      // Start cron jobs
+      scheduleSellerReversion();
     });
 
     process.on("SIGINT", async () => {

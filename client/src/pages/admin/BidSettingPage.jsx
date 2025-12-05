@@ -60,10 +60,8 @@ const BidSettingPage = () => {
       const result = await response.json();
 
       console.log("Cập nhật cấu hình thành công!", result);
-      alert("Cập nhật cấu hình thành công!");
     } catch (error) {
       console.error("Save error:", error);
-      alert("Có lỗi xảy ra khi lưu cấu hình.");
     } finally {
       setIsLoading(false);
     }

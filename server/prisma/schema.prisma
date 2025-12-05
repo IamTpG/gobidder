@@ -20,6 +20,7 @@ model User {
   rating_plus          Int                    @default(0)
   rating_minus         Int                    @default(0)
   created_at           DateTime               @default(now())
+  seller_approved_at   DateTime?
   auto_bids            AutoBid[]
   banned_from_products BannedBidder[]
   bid_histories        BidHistory[]
@@ -244,6 +245,7 @@ enum RequestStatus {
   Pending
   Approved
   Rejected
+  Expired
 }
 
 enum RatingScore {

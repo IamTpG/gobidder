@@ -18,6 +18,8 @@ import AdminRoute from "../components/routes/AdminRoute";
 import PublicRoute from "../components/routes/PublicRoute";
 import NotFoundPage from "../pages/NotFoundPage";
 import BidSettingPage from "../pages/admin/BidSettingPage";
+import SellerApprovalPage from "../pages/admin/SellerApprovalPage";
+import AdminLayout from "../layouts/AdminLayout";
 
 const AppRouter = () => {
   return (
@@ -96,13 +98,16 @@ const AppRouter = () => {
           }
         />
         <Route
-          path="admin/bid-settings"
+          path="admin"
           element={
             <AdminRoute>
-              <BidSettingPage />
+              <AdminLayout />
             </AdminRoute>
           }
-        />
+        >
+          <Route path="bid-settings" element={<BidSettingPage />} />
+          <Route path="seller-approval" element={<SellerApprovalPage />} />
+        </Route>
 
         {/* 404 - Page Not Found */}
         <Route path="*" element={<NotFoundPage />} />
