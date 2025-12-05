@@ -88,7 +88,7 @@ router.get(
 router.get(
   "/me/products",
   passport.authenticate("jwt", { session: false }),
-  authorizeRoles("Seller"),
+  authorizeRoles("Seller", "ExpiredSeller"),
   userController.getMyProducts
 );
 

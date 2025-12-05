@@ -5,6 +5,7 @@ import {
   useSellerProducts,
   appendDescription,
 } from "../../hooks/useEditProduct";
+import { useAuth } from "../../contexts/AuthContext";
 import Button from "../common/Button";
 import Spinner from "../common/Spinner";
 import Badge from "../common/Badge";
@@ -12,11 +13,15 @@ import Modal from "../common/Modal";
 
 export default function MyProductsList() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { products, loading, error, refetch } = useSellerProducts();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedProductId, setSelectedProductId] = useState(null);
   const [descriptionText, setDescriptionText] = useState("");
   const [isAppending, setIsAppending] = useState(false);
+
+  // Check if user is active Seller (not ExpiredSeller)
+  const canCreateProducts = user?.role === "Seller";
 
   const handleOpenAppendModal = (productId) => {
     setSelectedProductId(productId);
@@ -148,13 +153,15 @@ export default function MyProductsList() {
           You haven't created any products yet. Start by creating your first
           product!
         </p>
-        <Button
-          variant="primary"
-          size="md"
-          onClick={() => navigate("/products/create")}
-        >
-          Create Product
-        </Button>
+        {canCreateProducts && (
+          <Button
+            variant="primary"
+            size="md"
+            onClick={() => navigate("/products/create")}
+          >
+            Create Product
+          </Button>
+        )}
       </div>
     );
   }
@@ -163,13 +170,15 @@ export default function MyProductsList() {
     <div className="space-y-4">
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-lg font-bold text-gray-900">My Products</h3>
-        <Button
-          variant="primary"
-          size="sm"
-          onClick={() => navigate("/products/create")}
-        >
-          + Create New
-        </Button>
+        {canCreateProducts && (
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => navigate("/products/create")}
+          >
+            + Create New
+          </Button>
+        )}
       </div>
 
       <div className="space-y-4">

@@ -1,9 +1,9 @@
 const cron = require("node-cron");
 const userService = require("../services/user.service");
 
-// Run every minute (for testing 2-minute trial period)
+// Run every hour
 const scheduleSellerReversion = () => {
-  cron.schedule("* * * * *", async () => {
+  cron.schedule("0 * * * *", async () => {
     console.log("[CRON] Running seller reversion job...");
     try {
       const result = await userService.revertExpiredSellers();
@@ -17,9 +17,7 @@ const scheduleSellerReversion = () => {
       console.error("[CRON] Error running seller reversion:", error);
     }
   });
-  console.log(
-    "[CRON] Seller reversion job scheduled (runs every minute for testing)"
-  );
+  console.log("[CRON] Seller reversion job scheduled (runs every hour)");
 };
 
 module.exports = { scheduleSellerReversion };

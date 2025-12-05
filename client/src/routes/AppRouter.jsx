@@ -15,6 +15,7 @@ import CreateProductPage from "../pages/CreateProductPage";
 import EditProductPage from "../pages/EditProductPage";
 import ProtectedRoute from "../components/routes/ProtectedRoute";
 import AdminRoute from "../components/routes/AdminRoute";
+import SellerRoute from "../components/routes/SellerRoute";
 import PublicRoute from "../components/routes/PublicRoute";
 import NotFoundPage from "../pages/NotFoundPage";
 import BidSettingPage from "../pages/admin/BidSettingPage";
@@ -84,9 +85,9 @@ const AppRouter = () => {
         <Route
           path="products/create"
           element={
-            <ProtectedRoute>
+            <SellerRoute>
               <CreateProductPage />
-            </ProtectedRoute>
+            </SellerRoute>
           }
         />
         <Route

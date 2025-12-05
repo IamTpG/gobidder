@@ -230,6 +230,7 @@ model RegistrationToken {
 enum UserRole {
   Bidder
   Seller
+  ExpiredSeller
   Admin
 }
 

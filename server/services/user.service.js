@@ -280,7 +280,7 @@ const getUserByIdService = async (id) => {
 
 // Cập nhật role người dùng (Admin only)
 const updateUserRole = async (userId, role) => {
-  const validRoles = ["Bidder", "Seller", "Admin"];
+  const validRoles = ["Bidder", "Seller", "ExpiredSeller", "Admin"];
   if (!validRoles.includes(role)) {
     throw new Error("Invalid role");
   }
@@ -326,6 +326,22 @@ const requestSellerUpgrade = async (userId) => {
     if (existingRequest.status === "Approved") {
       throw new Error("You are already a seller");
     }
+  }
+
+  // Check user role - only Bidder can request seller upgrade
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { role: true },
+  });
+
+  if (user.role === "ExpiredSeller") {
+    throw new Error(
+      "Please wait until all your products are sold/expired before requesting seller upgrade again"
+    );
+  }
+
+  if (user.role === "Seller") {
+    throw new Error("You are already a seller");
   }
 
   return await prisma.sellerUpgradeRequest.create({
@@ -398,10 +414,10 @@ const getMySellerRequest = async (userId) => {
   });
 };
 
-// Revert expired sellers (those whose trial period of 2 minutes has passed) - FOR TESTING
+// Revert expired sellers (those whose trial period of 7 days has passed)
 const revertExpiredSellers = async () => {
-  const twoMinutesAgo = new Date();
-  twoMinutesAgo.setMinutes(twoMinutesAgo.getMinutes() - 2);
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
   // Find all sellers whose approval was more than 2 minutes ago
   const expiredSellers = await prisma.user.findMany({
@@ -409,21 +425,46 @@ const revertExpiredSellers = async () => {
       role: "Seller",
       seller_approved_at: {
         not: null,
-        lte: twoMinutesAgo,
+        lte: sevenDaysAgo,
       },
     },
   });
 
-  if (expiredSellers.length === 0) {
-    return { message: "No expired sellers found", count: 0 };
-  }
-
-  // Revert each seller to bidder
+  // Revert each seller based on whether they have active products
   const results = await Promise.all(
     expiredSellers.map(async (seller) => {
       try {
+        // Check if seller has any active products (Pending or Active status AND not expired yet)
+        const activeProductsCount = await prisma.product.count({
+          where: {
+            seller_id: seller.id,
+            status: { in: ["Pending", "Active"] },
+            end_time: { gt: new Date() }, // Only count products that haven't reached end_time
+          },
+        });
+
+        // If they have active products, change to ExpiredSeller
+        if (activeProductsCount > 0) {
+          await prisma.$transaction([
+            prisma.user.update({
+              where: { id: seller.id },
+              data: { role: "ExpiredSeller" },
+            }),
+            prisma.sellerUpgradeRequest.updateMany({
+              where: { user_id: seller.id, status: "Approved" },
+              data: { status: "Expired" },
+            }),
+          ]);
+          return {
+            id: seller.id,
+            success: true,
+            changedToExpired: true,
+            activeProducts: activeProductsCount,
+          };
+        }
+
+        // No active products, downgrade to Bidder
         await prisma.$transaction([
-          // Update user role back to Bidder and clear approval timestamp
           prisma.user.update({
             where: { id: seller.id },
             data: {
@@ -431,26 +472,65 @@ const revertExpiredSellers = async () => {
               seller_approved_at: null,
             },
           }),
-          // Update their request status to Expired
           prisma.sellerUpgradeRequest.updateMany({
             where: { user_id: seller.id, status: "Approved" },
             data: { status: "Expired" },
           }),
         ]);
-        return { id: seller.id, success: true };
+        return { id: seller.id, success: true, downgraded: true };
       } catch (error) {
-        console.error(`Failed to revert seller ${seller.id}:`, error);
+        console.error(`Failed to process seller ${seller.id}:`, error);
         return { id: seller.id, success: false, error: error.message };
       }
     })
   );
 
+  // Also check ExpiredSellers without products and downgrade them
+  const expiredSellersWithoutProducts = await prisma.user.findMany({
+    where: { role: "ExpiredSeller" },
+  });
+
+  const cleanupResults = await Promise.all(
+    expiredSellersWithoutProducts.map(async (user) => {
+      try {
+        // Count active products: Pending/Active status AND not yet expired (end_time > now)
+        const activeProductsCount = await prisma.product.count({
+          where: {
+            seller_id: user.id,
+            status: { in: ["Pending", "Active"] },
+            end_time: { gt: new Date() }, // Only count products that haven't reached end_time
+          },
+        });
+
+        if (activeProductsCount === 0) {
+          await prisma.user.update({
+            where: { id: user.id },
+            data: { role: "Bidder", seller_approved_at: null },
+          });
+          return { id: user.id, success: true, cleanedUp: true };
+        }
+        return { id: user.id, success: true, stillHasProducts: true };
+      } catch (error) {
+        console.error(`Failed to cleanup ExpiredSeller ${user.id}:`, error);
+        return { id: user.id, success: false, error: error.message };
+      }
+    })
+  );
+
   const successCount = results.filter((r) => r.success).length;
+  const downgradedCount = results.filter((r) => r.downgraded).length;
+  const expiredSellerCount = results.filter((r) => r.changedToExpired).length;
+  const cleanedUpCount = cleanupResults.filter((r) => r.cleanedUp).length;
+
   return {
-    message: `Reverted ${successCount} out of ${expiredSellers.length} expired sellers`,
+    message: `Processed ${expiredSellers.length} expired seller(s): ${downgradedCount} → Bidder, ${expiredSellerCount} → ExpiredSeller | Cleaned up ${cleanedUpCount} ExpiredSeller(s) → Bidder`,
     count: successCount,
+    downgraded: downgradedCount,
+    changedToExpired: expiredSellerCount,
+    cleanedUp: cleanedUpCount,
     total: expiredSellers.length,
     results,
+    cleanupResults,
   };
 };
 
