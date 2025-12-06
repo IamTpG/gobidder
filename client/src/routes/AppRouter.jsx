@@ -14,8 +14,13 @@ import ProductsPage from "../pages/ProductsPage";
 import CreateProductPage from "../pages/CreateProductPage";
 import EditProductPage from "../pages/EditProductPage";
 import ProtectedRoute from "../components/routes/ProtectedRoute";
+import AdminRoute from "../components/routes/AdminRoute";
+import SellerRoute from "../components/routes/SellerRoute";
 import PublicRoute from "../components/routes/PublicRoute";
 import NotFoundPage from "../pages/NotFoundPage";
+import BidSettingPage from "../pages/admin/BidSettingPage";
+import SellerApprovalPage from "../pages/admin/SellerApprovalPage";
+import AdminLayout from "../layouts/AdminLayout";
 
 const AppRouter = () => {
   return (
@@ -80,9 +85,9 @@ const AppRouter = () => {
         <Route
           path="products/create"
           element={
-            <ProtectedRoute>
+            <SellerRoute>
               <CreateProductPage />
-            </ProtectedRoute>
+            </SellerRoute>
           }
         />
         <Route
@@ -93,6 +98,17 @@ const AppRouter = () => {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="admin"
+          element={
+            <AdminRoute>
+              <AdminLayout />
+            </AdminRoute>
+          }
+        >
+          <Route path="bid-settings" element={<BidSettingPage />} />
+          <Route path="seller-approval" element={<SellerApprovalPage />} />
+        </Route>
 
         {/* 404 - Page Not Found */}
         <Route path="*" element={<NotFoundPage />} />

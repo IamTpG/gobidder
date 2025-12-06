@@ -1,7 +1,7 @@
 const productService = require("../services/product.service");
 const { sendMail } = require("../utils/utils");
 const prisma = require("../config/prisma");
-const path = require('path');
+const path = require("path");
 // Lấy tất cả sản phẩm
 const getProducts = async (req, res) => {
   try {
@@ -57,35 +57,35 @@ const getProductById = async (req, res) => {
       return res.status(404).json({ message: "Product not found" });
     }
 
-      // Attach transaction info if exists. Only show full transaction details to seller or winner.
-      let transaction = null;
-      try {
-        const tx = await prisma.transaction.findUnique({
-          where: { product_id: productId },
-          include: {
-            seller: { select: { id: true, full_name: true } },
-            winner: { select: { id: true, full_name: true } },
-            messages: true,
-            ratings: true,
-          },
-        });
+    // Attach transaction info if exists. Only show full transaction details to seller or winner.
+    let transaction = null;
+    try {
+      const tx = await prisma.transaction.findUnique({
+        where: { product_id: productId },
+        include: {
+          seller: { select: { id: true, full_name: true } },
+          winner: { select: { id: true, full_name: true } },
+          messages: true,
+          ratings: true,
+        },
+      });
 
-        if (tx) {
-          // If request is authenticated and user is seller or winner -> include full tx
-          const userId = req.user?.id;
-          if (userId && (userId === tx.seller_id || userId === tx.winner_id)) {
-            transaction = tx;
-          } else {
-            // For other users, expose only status and a generic note
-            transaction = { status: tx.status, message: "Sản phẩm đã kết thúc" };
-          }
+      if (tx) {
+        // If request is authenticated and user is seller or winner -> include full tx
+        const userId = req.user?.id;
+        if (userId && (userId === tx.seller_id || userId === tx.winner_id)) {
+          transaction = tx;
+        } else {
+          // For other users, expose only status and a generic note
+          transaction = { status: tx.status, message: "Sản phẩm đã kết thúc" };
         }
-      } catch (e) {
-        // ignore transaction lookup errors
-        console.error('Transaction lookup error', e);
       }
+    } catch (e) {
+      // ignore transaction lookup errors
+      console.error("Transaction lookup error", e);
+    }
 
-      if (transaction) product.transaction = transaction;
+    if (transaction) product.transaction = transaction;
 
     return res.status(200).json({
       data: product,
@@ -392,9 +392,9 @@ const multer = require("multer");
 const fs = require("fs");
 const cloudinary = require("../config/cloudinary");
 
-const uploadDir = path.join(__dirname, '../uploads'); 
+const uploadDir = path.join(__dirname, "../uploads");
 if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
+  fs.mkdirSync(uploadDir, { recursive: true });
 }
 
 const storage = multer.diskStorage({
@@ -441,12 +441,16 @@ const create = async (req, res) => {
 
   if (!files || !Array.isArray(files) || files.length < 3) {
     if (files) deleteLocalFiles(files);
-    return res.status(400).json({ message: "At least 3 images are required for the product." });
+    return res
+      .status(400)
+      .json({ message: "At least 3 images are required for the product." });
   }
 
   if (!startPrice || !stepPrice) {
     if (files) deleteLocalFiles(files);
-    return res.status(400).json({ message: "Start price and step price are required" });
+    return res
+      .status(400)
+      .json({ message: "Start price and step price are required" });
   }
 
   if (Number(startPrice) <= 0 || Number(stepPrice) <= 0) {
@@ -462,6 +466,15 @@ const create = async (req, res) => {
   try {
     const sellerId = req.user.id;
 
+    // ExpiredSeller cannot create new products
+    if (req.user.role === "ExpiredSeller") {
+      if (files) deleteLocalFiles(files);
+      return res.status(403).json({
+        message:
+          "Your 7 days being a seller has expired. Please wait until all your products are completed before requesting seller status again.",
+      });
+    }
+
     // 1. Tải Từng Tệp Lên Cloudinary
     for (const file of files) {
       const uploadResult = await cloudinary.uploader.upload(file.path, {
@@ -472,11 +485,11 @@ const create = async (req, res) => {
 
     // 2. Dọn dẹp File Tạm thời
     deleteLocalFiles(files);
-    
+
     // Xử lý buyNowPrice để tránh lỗi BigInt với chuỗi rỗng hoặc "null"
     let safeBuyNowPrice = null;
-    if (buyNowPrice && buyNowPrice !== 'null' && buyNowPrice.trim() !== '') {
-        safeBuyNowPrice = buyNowPrice;
+    if (buyNowPrice && buyNowPrice !== "null" && buyNowPrice.trim() !== "") {
+      safeBuyNowPrice = buyNowPrice;
     }
 
     const productData = {
@@ -569,7 +582,7 @@ const update = async (req, res) => {
         categoryId,
         endTime,
         autoRenew,
-      },
+      }
     );
 
     return res.status(200).json({ success: true, product: updatedProduct });
@@ -607,7 +620,7 @@ const appendDescription = async (req, res) => {
     const updated = await productService.appendDescription(
       productId,
       sellerId,
-      text.trim(),
+      text.trim()
     );
     return res.status(200).json({ success: true, product: updated });
   } catch (error) {

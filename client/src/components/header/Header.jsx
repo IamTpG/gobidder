@@ -3,7 +3,6 @@ import { useNavigate, useLocation } from "react-router-dom";
 
 import { useCategories } from "../../hooks/useCategories";
 import { useAuth } from "../../contexts/AuthContext";
-import BidSettingModal from "../admin/BidSettingModal";
 import DesktopNav from "./DesktopNav";
 import MobileMenu from "./MobileMenu";
 import Logo from "./Logo";
@@ -27,9 +26,6 @@ const Header = () => {
   // Trạng thái cho Search
   const [searchValue, setSearchValue] = useState("");
   const isProductsPage = useLocation().pathname.startsWith("/products");
-
-  // Trạng thái cho Modal (Chỉ Admin)
-  const [showBidSettingModal, setShowBidSettingModal] = useState(false);
 
   // Hooks
   const navigate = useNavigate();
@@ -154,7 +150,6 @@ const Header = () => {
               setSearchValue={setSearchValue}
               handleAccountNavigate={handleAccountNavigate}
               handleHeaderSearchSubmit={handleHeaderSearchSubmit}
-              setShowBidSettingModal={setShowBidSettingModal}
             />
           </div>
         </div>
@@ -175,15 +170,8 @@ const Header = () => {
           setSearchValue={setSearchValue}
           handleAccountNavigate={handleAccountNavigate}
           handleHeaderSearchSubmit={handleHeaderSearchSubmit}
-          setShowBidSettingModal={setShowBidSettingModal}
         />
       </header>
-
-      {/* Bid Setting Modal*/}
-      <BidSettingModal
-        isOpen={showBidSettingModal}
-        onClose={() => setShowBidSettingModal(false)}
-      />
     </>
   );
 };

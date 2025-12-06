@@ -2,6 +2,7 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 
 import { useMyProducts } from "../../hooks/useMyProducts";
+import { useAuth } from "../../contexts/AuthContext";
 import {
   ProductGrid,
   ProductCardSkeleton,
@@ -13,6 +14,7 @@ import Pagination from "../../shared/Pagination";
 
 const MyProductsTab = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const {
     products,
     isLoading,
@@ -28,6 +30,9 @@ const MyProductsTab = () => {
     handleSortChange,
     handleStatusChange,
   } = useMyProducts();
+
+  // Check if user is active Seller (not ExpiredSeller)
+  const canCreateProducts = user?.role === "Seller";
 
   return (
     <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 md:p-10 min-h-[500px]">
@@ -120,12 +125,14 @@ const MyProductsTab = () => {
                 : "You haven't listed any products yet."
             }
           />
-          <button
-            onClick={() => navigate("/products/create")}
-            className="bg-[#00B289] hover:bg-[#009974] text-white px-6 py-2.5 rounded-xl font-semibold text-sm transition-colors mt-6"
-          >
-            Create New Auction
-          </button>
+          {canCreateProducts && (
+            <button
+              onClick={() => navigate("/products/create")}
+              className="bg-[#00B289] hover:bg-[#009974] text-white px-6 py-2.5 rounded-xl font-semibold text-sm transition-colors mt-6"
+            >
+              Create New Auction
+            </button>
+          )}
         </div>
       )}
 

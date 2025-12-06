@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 import api from "../../services/api";
 import { useProfilePassword } from "../../hooks/useProfilePassword";
@@ -11,6 +11,43 @@ import PasswordChangeSection from "./PasswordChangeSection";
 import EmailChangeSection from "./EmailChangeSection";
 
 const MyInfoTab = ({ profile, setProfile, onLogout, isLoggingOut }) => {
+  // Seller request state
+  const [sellerRequest, setSellerRequest] = useState(null);
+  const [requestingSellerStatus, setRequestingSellerStatus] = useState(false);
+
+  // Fetch seller request status
+  useEffect(() => {
+    const fetchRequestStatus = async () => {
+      if (profile?.role !== "Bidder") return;
+      try {
+        const { data } = await api.get("/users/me/request-seller");
+        setSellerRequest(data);
+      } catch (err) {
+        console.error("Failed to fetch seller request status:", err);
+      }
+    };
+    fetchRequestStatus();
+  }, [profile]);
+
+  const handleRequestSeller = async () => {
+    setRequestingSellerStatus(true);
+    try {
+      const { data } = await api.post("/users/me/request-seller");
+      setSellerRequest(data);
+      setNotification({
+        type: "success",
+        message: "Seller request submitted successfully.",
+      });
+    } catch (err) {
+      setNotification({
+        type: "error",
+        message: err.response?.data?.message || "Failed to submit request.",
+      });
+    } finally {
+      setRequestingSellerStatus(false);
+    }
+  };
+
   // Logic Sửa thông tin cá nhân (Name, Address, Birthdate)
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -108,6 +145,55 @@ const MyInfoTab = ({ profile, setProfile, onLogout, isLoggingOut }) => {
         />
       ) : (
         <ProfileViewMode profile={profile} onEdit={() => setIsEditing(true)} />
+      )}
+
+      {/* Seller Request Section */}
+      {profile?.role === "Bidder" && (
+        <div className="mt-8 p-4 bg-gray-50 rounded-lg border border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            Become a Seller
+          </h3>
+          {sellerRequest?.status === "Pending" ? (
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">
+                Request Pending
+              </span>
+              <span className="text-gray-600 text-sm">
+                Your request is being reviewed by an admin.
+              </span>
+            </div>
+          ) : sellerRequest?.status === "Rejected" ? (
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
+                  Request Rejected
+                </span>
+              </div>
+              <button
+                onClick={handleRequestSeller}
+                disabled={requestingSellerStatus}
+                className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 disabled:opacity-50"
+              >
+                {requestingSellerStatus ? "Submitting..." : "Request Again"}
+              </button>
+            </div>
+          ) : (
+            <div>
+              <p className="text-gray-600 text-sm mb-3">
+                Request to upgrade your account to Seller.
+              </p>
+              <button
+                onClick={handleRequestSeller}
+                disabled={requestingSellerStatus}
+                className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 disabled:opacity-50"
+              >
+                {requestingSellerStatus
+                  ? "Submitting..."
+                  : "Request to become Seller"}
+              </button>
+            </div>
+          )}
+        </div>
       )}
 
       {isLocalAccount && (

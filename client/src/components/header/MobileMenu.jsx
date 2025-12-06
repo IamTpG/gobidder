@@ -23,7 +23,6 @@ const MobileMenu = ({
   setSearchValue,
   handleAccountNavigate,
   handleHeaderSearchSubmit,
-  setShowBidSettingModal,
 }) => {
   const navigate = useNavigate();
 
@@ -165,7 +164,7 @@ const MobileMenu = ({
                                 toggleSubMenu(
                                   isParentExpanded
                                     ? null
-                                    : `category-${parent.id}`,
+                                    : `category-${parent.id}`
                                 );
                               }}
                               className="text-gray-400 px-2"
@@ -283,15 +282,13 @@ const MobileMenu = ({
           </a> */}
 
           {isAdmin && (
-            <button
-              onClick={() => {
-                setShowBidSettingModal(true);
-                toggleMobileMenu();
-              }}
+            <Link
+              to="/admin/bid-settings"
+              onClick={toggleMobileMenu}
               className="block py-2 text-red-600 font-bold w-full text-left"
             >
               Bid Setting
-            </button>
+            </Link>
           )}
         </nav>
 

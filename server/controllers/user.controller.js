@@ -107,7 +107,7 @@ const confirmEmailChange = async (req, res) => {
       {
         newEmail,
         otp,
-      },
+      }
     );
 
     res.clearCookie("reset_token", {
@@ -125,7 +125,7 @@ const confirmEmailChange = async (req, res) => {
         role: result.user.role,
       },
       "access_token",
-      "1d",
+      "1d"
     );
 
     return res.json(result);
@@ -247,6 +247,95 @@ const getMyProducts = async (req, res) => {
   }
 };
 
+// Cập nhật role người dùng
+const updateUserRole = async (req, res) => {
+  const { id } = req.params;
+  const { role } = req.body;
+
+  try {
+    const updatedUser = await userService.updateUserRole(id, role);
+    return res.json(updatedUser);
+  } catch (err) {
+    if (err.message === "Invalid role") {
+      return res.status(400).json({ message: err.message });
+    }
+    // Prisma error for record not found
+    if (err.code === "P2025") {
+      return res.status(404).json({ message: "User not found" });
+    }
+    console.error(err);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+// --- Seller Request Controllers ---
+
+const requestSeller = async (req, res) => {
+  try {
+    const result = await userService.requestSellerUpgrade(req.user.id);
+    return res.json(result);
+  } catch (err) {
+    if (
+      err.message === "You already have a pending request" ||
+      err.message === "You are already a seller"
+    ) {
+      return res.status(400).json({ message: err.message });
+    }
+    console.error(err);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+const getSellerRequests = async (req, res) => {
+  try {
+    const requests = await userService.getPendingSellerRequests();
+    return res.json(requests);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+const approveSeller = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const result = await userService.approveSellerRequest(id, req.user.id);
+    return res.json(result);
+  } catch (err) {
+    if (err.message === "Request not found")
+      return res.status(404).json({ message: err.message });
+    if (err.message === "Request is not pending")
+      return res.status(400).json({ message: err.message });
+    console.error(err);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+const rejectSeller = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const result = await userService.rejectSellerRequest(id, req.user.id);
+    return res.json(result);
+  } catch (err) {
+    if (err.message === "Request not found")
+      return res.status(404).json({ message: err.message });
+    if (err.message === "Request is not pending")
+      return res.status(400).json({ message: err.message });
+    console.error(err);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+const getMyRequestStatus = async (req, res) => {
+  try {
+    const result = await userService.getMySellerRequest(req.user.id);
+    return res.json(result);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
 module.exports = {
   getMe,
   getUsers,
@@ -259,4 +348,10 @@ module.exports = {
   getMyActiveBids,
   getMyWonProducts,
   getMyProducts,
+  updateUserRole,
+  requestSeller,
+  getSellerRequests,
+  approveSeller,
+  rejectSeller,
+  getMyRequestStatus,
 };

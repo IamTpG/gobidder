@@ -4,7 +4,11 @@ import { Link } from "react-router-dom";
 const SIDEBAR_ITEMS = [
   { key: "information", label: "Personal Information" },
   { key: "bids", label: "My Bids" },
-  { key: "products", label: "My Products", requireRole: "Seller" },
+  {
+    key: "products",
+    label: "My Products",
+    requireRole: ["Seller", "ExpiredSeller"],
+  },
   { key: "security", label: "Security" },
   { key: "notifications", label: "Notifications" },
   { key: "billing", label: "Billing" },
@@ -14,7 +18,11 @@ const ProfileSidebar = ({ activeKey, userRole }) => {
   // Filter items dựa trên role
   const visibleItems = SIDEBAR_ITEMS.filter((item) => {
     if (item.requireRole) {
-      return userRole === item.requireRole;
+      // Support both string and array for requireRole
+      const allowedRoles = Array.isArray(item.requireRole)
+        ? item.requireRole
+        : [item.requireRole];
+      return allowedRoles.includes(userRole);
     }
     return true;
   });

@@ -90,29 +90,31 @@ export const ProductCard = ({
     }
   };
 
-  const [highlightDuration, setHighlightDuration] = useState(60);
+  const [highlightDuration, setHighlightDuration] = useState(null);
 
   useEffect(() => {
     const fetchSystemConfig = async () => {
       try {
         const response = await api.get("/admin/system-config");
 
-        if (response.ok) {
-          const data = await response.json();
+        // Axios trả về data trực tiếp trong response.data
+        const data = response.data;
 
-          if (data && data.new_product_duration) {
-            setHighlightDuration(data.new_product_duration);
-          }
+        if (data && data.new_product_duration) {
+          setHighlightDuration(data.new_product_duration);
         }
       } catch (error) {
-        console.error("Lỗi không lấy được config, dùng mặc định 60p:", error);
+        console.error(
+          "Error fetching configuration",
+          error
+        );
       }
     };
     fetchSystemConfig();
   }, []);
 
   const isNewProduct = () => {
-    if (!created_at) return false;
+    if (!created_at || highlightDuration === null) return false;
     const postedTime = new Date(created_at).getTime();
     const hightLightTime = highlightDuration * 60 * 1000;
     return Date.now() - postedTime < hightLightTime;
