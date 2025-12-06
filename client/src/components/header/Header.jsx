@@ -38,7 +38,7 @@ const Header = () => {
   const accountLabel = authLoading
     ? "..."
     : isLoggedIn
-      ? "My Account"
+      ? "My Account"  
       : "Login";
 
   /**

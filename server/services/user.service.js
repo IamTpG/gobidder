@@ -414,10 +414,9 @@ const getMySellerRequest = async (userId) => {
   });
 };
 
-// Revert expired sellers (those whose trial period of 7 days has passed)
 const revertExpiredSellers = async () => {
-  const sevenDaysAgo = new Date();
-  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  const expireDays = new Date();
+  expireDays.setDate(expireDays.getDate() - 7);
 
   // Find all sellers whose approval was more than 2 minutes ago
   const expiredSellers = await prisma.user.findMany({
@@ -425,7 +424,7 @@ const revertExpiredSellers = async () => {
       role: "Seller",
       seller_approved_at: {
         not: null,
-        lte: sevenDaysAgo,
+        lte: expireDays,
       },
     },
   });

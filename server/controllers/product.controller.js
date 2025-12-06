@@ -471,7 +471,7 @@ const create = async (req, res) => {
       if (files) deleteLocalFiles(files);
       return res.status(403).json({
         message:
-          "Your seller trial has expired. Please wait until all your products are completed before requesting seller status again.",
+          "Your 7 days of being a seller has expired. Please wait until all your products are completed before requesting seller status again.",
       });
     }
 
