@@ -105,7 +105,7 @@ export const ProductCard = ({
         }
       } catch (error) {
         console.error(
-          "Error fetching config, using default 60 minutes:",
+          "Error fetching configuration",
           error
         );
       }

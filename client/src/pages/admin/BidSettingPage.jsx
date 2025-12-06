@@ -35,18 +35,35 @@ const BidSettingPage = () => {
     setIsLoading(true);
     setSaveMessage("");
     setErrorMessage("");
-    
+
+    // Validation
+    const highlightValue = parseInt(highlightDuration);
+    const snipingValue = parseInt(snipingTime);
+    const extendValue = parseInt(extendTime);
+
+    if (highlightValue < 1 || snipingValue < 1 || extendValue < 1) {
+      setErrorMessage("All values must be at least 1 minute.");
+      setIsLoading(false);
+      return;
+    }
+
+    if (isNaN(highlightValue) || isNaN(snipingValue) || isNaN(extendValue)) {
+      setErrorMessage("Please enter valid numbers.");
+      setIsLoading(false);
+      return;
+    }
+
     try {
       const payload = {
-        highlight_duration: parseInt(highlightDuration),
-        anti_sniping_trigger: parseInt(snipingTime),
-        anti_sniping_extension: parseInt(extendTime),
+        highlight_duration: highlightValue,
+        anti_sniping_trigger: snipingValue,
+        anti_sniping_extension: extendValue,
       };
 
       const response = await api.put("/admin/system-config", payload);
       console.log("Configuration updated successfully!", response.data);
       setSaveMessage("Configuration updated successfully!");
-      
+
       // Clear success message after 3 seconds
       setTimeout(() => setSaveMessage(""), 3000);
     } catch (error) {
@@ -71,8 +88,12 @@ const BidSettingPage = () => {
       <div className="max-w-4xl mx-auto">
         <div className="bg-white rounded-xl shadow-sm p-8">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">System Settings</h1>
-            <p className="text-gray-600 mt-2">Configure global auction parameters</p>
+            <h1 className="text-3xl font-bold text-gray-900">
+              System Settings
+            </h1>
+            <p className="text-gray-600 mt-2">
+              Configure global auction parameters
+            </p>
           </div>
 
           {/* Success Message */}
@@ -92,7 +113,6 @@ const BidSettingPage = () => {
           {/* New Product Highlight Section */}
           <div className="mb-8 p-6 bg-blue-50 rounded-lg border border-blue-200">
             <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
-              <span className="text-2xl mr-2">✨</span>
               New Product Highlight
             </h2>
 
@@ -115,7 +135,8 @@ const BidSettingPage = () => {
                   </span>
                 </div>
                 <p className="text-sm text-gray-600 mt-2">
-                  Newly created products will be highlighted as "New Arrival" for this duration.
+                  Newly created products will be highlighted as "New Arrival"
+                  for this duration.
                 </p>
               </div>
             </div>
@@ -124,7 +145,6 @@ const BidSettingPage = () => {
           {/* Bid Extension Section */}
           <div className="mb-8 p-6 bg-orange-50 rounded-lg border border-orange-200">
             <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
-              <span className="text-2xl mr-2">⏱️</span>
               Bid Extension (Anti-Sniping)
             </h2>
 
@@ -147,7 +167,10 @@ const BidSettingPage = () => {
                 </div>
                 <p className="text-sm text-gray-600 mt-2">
                   If a bid is placed within the last{" "}
-                  <span className="font-semibold text-orange-600">{snipingTime}</span> minutes...
+                  <span className="font-semibold text-orange-600">
+                    {snipingTime}
+                  </span>{" "}
+                  minutes...
                 </p>
               </div>
 
@@ -169,7 +192,10 @@ const BidSettingPage = () => {
                 </div>
                 <p className="text-sm text-gray-600 mt-2">
                   ...the auction end time will be extended by{" "}
-                  <span className="font-semibold text-orange-600">{extendTime}</span> minutes.
+                  <span className="font-semibold text-orange-600">
+                    {extendTime}
+                  </span>{" "}
+                  minutes.
                 </p>
               </div>
             </div>
