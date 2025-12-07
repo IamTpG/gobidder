@@ -26,7 +26,7 @@ const ProductsSidebar = ({
 
   return (
     <aside
-      className={`w-full lg:w-72 xl:w-80 border max-h-[500px] overflow-y-hidden border-slate-200 rounded-3xl p-6 bg-white shadow-sm ${className}`}
+      className={`w-full lg:w-72 border max-h-[500px] overflow-y-hidden border-slate-200 rounded-3xl p-6 bg-white shadow-sm ${className}`}
     >
       <Input
         placeholder="Search"

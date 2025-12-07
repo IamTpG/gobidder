@@ -155,12 +155,12 @@ const ProductManagementPage = () => {
         isLoading={deletingId === confirmDialog.productId}
       />
 
-      <div className="max-w-[1400px] mx-auto  py-12">
-        <div className="flex flex-col gap-6 sm:gap-2">
-          <div className="flex items-center justify-between">
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-12">
+        <div className="flex flex-col gap-6 sm:gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             {activeSection === "categories" ? (
               <div>
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
                   Category Management
                 </h1>
                 <p className="text-sm text-gray-600">
@@ -169,7 +169,7 @@ const ProductManagementPage = () => {
               </div>
             ) : (
               <div>
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
                   Product Management
                 </h1>
                 <p className="text-sm text-gray-600">
@@ -178,10 +178,10 @@ const ProductManagementPage = () => {
               </div>
             )}
             {/* Section Toggle */}
-            <div className="flex p-1 bg-gray-100 rounded-xl">
+            <div className="flex p-1 bg-gray-100 rounded-xl self-start sm:self-auto">
               <button
                 onClick={() => setActiveSection("products")}
-                className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all ${
+                className={`px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold rounded-lg transition-all whitespace-nowrap ${
                   activeSection === "products"
                     ? "bg-white text-[#00B289] shadow-sm"
                     : "text-gray-500 hover:text-gray-700"
@@ -191,7 +191,7 @@ const ProductManagementPage = () => {
               </button>
               <button
                 onClick={() => setActiveSection("categories")}
-                className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all ${
+                className={`px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold rounded-lg transition-all whitespace-nowrap ${
                   activeSection === "categories"
                     ? "bg-white text-[#00B289] shadow-sm"
                     : "text-gray-500 hover:text-gray-700"
@@ -232,16 +232,18 @@ const ProductManagementPage = () => {
           ) : (
             <>
               {/* Status Filter Tabs */}
-              <div className="mb-4 ml-auto">
-                <TabNavigation
-                  tabs={tabs}
-                  activeTab={status}
-                  onChange={handleStatusChange}
-                  variant="pills"
-                />
+              <div className="mb-4">
+                <div className="flex justify-end">
+                  <TabNavigation
+                    tabs={tabs}
+                    activeTab={status}
+                    onChange={handleStatusChange}
+                    variant="pills"
+                  />
+                </div>
               </div>
 
-              <div className="flex flex-col lg:flex-row gap-10">
+              <div className="flex flex-col lg:flex-row gap-6 lg:gap-10">
                 <ProductsSidebar
                   searchValue={q}
                   onSearchChange={handleSearchChange}
@@ -249,10 +251,10 @@ const ProductManagementPage = () => {
                   isLoadingCategories={categoriesLoading}
                   selectedCategoryId={categoryId}
                   onCategoryChange={handleCategoryChange}
-                  className="xl:w-64"
+                  className="lg:w-56 w-full"
                 />
 
-                <section className="flex-1">
+                <section className="flex-1 min-w-0">
                   <ProductsToolbar
                     startResult={startResult}
                     endResult={endResult}
@@ -278,21 +280,27 @@ const ProductManagementPage = () => {
 
                   {!isLoading && !error && products.length > 0 && (
                     <>
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
+                      {/* Desktop Table View */}
+                      <div className="hidden md:block">
+                        <table className="w-full text-left border-collapse table-auto">
                           <thead>
                             <tr className="border-b border-gray-200 text-gray-600 text-sm">
-                              <th className="py-3 px-4 font-medium">Product</th>
-                              {/* <th className="py-3 px-4 font-medium">Seller</th>  */}
-                              <th className="py-3 px-4 font-medium">
+                              <th className="py-3 px-2 sm:px-4 font-medium">
+                                Product
+                              </th>
+                              <th className="py-3 px-2 sm:px-4 font-medium whitespace-nowrap">
                                 Current Price
                               </th>
-                              <th className="py-3 px-4 font-medium">Bids</th>
-                              <th className="py-3 px-4 font-medium">
+                              <th className="py-3 px-2 sm:px-4 font-medium whitespace-nowrap">
+                                Bids
+                              </th>
+                              <th className="py-3 px-2 sm:px-4 font-medium whitespace-nowrap">
                                 End Time
                               </th>
-                              <th className="py-3 px-4 font-medium">Status</th>
-                              <th className="py-3 px-4 font-medium text-right">
+                              <th className="py-3 px-2 sm:px-4 font-medium whitespace-nowrap">
+                                Status
+                              </th>
+                              <th className="py-3 px-2 sm:px-4 font-medium text-right whitespace-nowrap">
                                 Actions
                               </th>
                             </tr>
@@ -314,34 +322,26 @@ const ProductManagementPage = () => {
                                   }
                                   className="hover:bg-blue-50/50 cursor-pointer transition-all duration-200 group"
                                 >
-                                  <td className="py-4 px-4">
-                                    <div className="flex items-center gap-3">
+                                  <td className="py-4 px-2 sm:px-4">
+                                    <div className="flex items-center gap-2 sm:gap-3">
                                       <img
                                         src={imageUrl}
                                         alt={product.name}
-                                        className="w-16 h-16 object-cover rounded-lg"
+                                        className="w-12 h-12 sm:w-16 sm:h-16 object-cover rounded-lg flex-shrink-0"
                                       />
-                                      <div>
-                                        <div className="font-medium text-gray-900 line-clamp-2">
+                                      <div className="min-w-0 flex-1">
+                                        <div className="font-medium text-gray-900 line-clamp-2 break-words text-sm sm:text-base">
                                           {product.name}
                                         </div>
-                                        <div className="text-sm text-gray-500">
+                                        <div className="text-xs sm:text-sm text-gray-500 line-clamp-1 break-words">
                                           {product.category?.name ||
                                             "Uncategorized"}
                                         </div>
                                       </div>
                                     </div>
                                   </td>
-                                  {/* <td className="py-4 px-4">
-                                <div className="text-sm text-gray-900">
-                                  {product.seller?.full_name || 'N/A'}
-                                </div>
-                                <div className="text-xs text-gray-500">
-                                  {product.seller?.email || ''}
-                                </div>
-                              </td> */}
-                                  <td className="py-4 px-4">
-                                    <div className="font-medium text-gray-900">
+                                  <td className="py-4 px-2 sm:px-4 whitespace-nowrap">
+                                    <div className="font-medium text-gray-900 text-sm sm:text-base">
                                       $
                                       {formatPrice(
                                         product.current_price ||
@@ -349,20 +349,20 @@ const ProductManagementPage = () => {
                                       )}
                                     </div>
                                   </td>
-                                  <td className="py-4 px-4">
+                                  <td className="py-4 px-2 sm:px-4 whitespace-nowrap">
                                     <span className="text-sm text-gray-900">
                                       {product.bid_count || 0}
                                     </span>
                                   </td>
-                                  <td className="py-4 px-4">
-                                    <div className="text-sm text-gray-900">
+                                  <td className="py-4 px-2 sm:px-4 whitespace-nowrap">
+                                    <div className="text-xs sm:text-sm text-gray-900">
                                       {formatDate(product.end_time)}
                                     </div>
                                   </td>
-                                  <td className="py-4 px-4">
+                                  <td className="py-4 px-2 sm:px-4 whitespace-nowrap">
                                     {getStatusBadge(product.status)}
                                   </td>
-                                  <td className="py-4 px-4 text-right">
+                                  <td className="py-4 px-2 sm:px-4 text-right whitespace-nowrap">
                                     <div
                                       className="flex items-center gap-2 justify-end"
                                       onClick={(e) => e.stopPropagation()}
@@ -482,6 +482,111 @@ const ProductManagementPage = () => {
                             })}
                           </tbody>
                         </table>
+                      </div>
+
+                      {/* Mobile Card View */}
+                      <div className="md:hidden space-y-4">
+                        {products.map((product) => {
+                          const images = Array.isArray(product.images)
+                            ? product.images
+                            : typeof product.images === "string"
+                              ? JSON.parse(product.images)
+                              : [];
+                          const imageUrl = images[0] || "";
+
+                          return (
+                            <div
+                              key={product.id}
+                              onClick={() =>
+                                navigate(`/products/${product.id}`)
+                              }
+                              className="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition-shadow cursor-pointer"
+                            >
+                              <div className="flex gap-3 mb-3">
+                                <img
+                                  src={imageUrl}
+                                  alt={product.name}
+                                  className="w-20 h-20 object-cover rounded-lg flex-shrink-0"
+                                />
+                                <div className="flex-1 min-w-0">
+                                  <h3 className="font-medium text-gray-900 line-clamp-2 mb-1">
+                                    {product.name}
+                                  </h3>
+                                  <p className="text-sm text-gray-500 mb-2">
+                                    {product.category?.name || "Uncategorized"}
+                                  </p>
+                                  <div className="flex items-center gap-2 mb-2">
+                                    {getStatusBadge(product.status)}
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="grid grid-cols-2 gap-3 mb-3 text-sm">
+                                <div>
+                                  <span className="text-gray-500">Price:</span>
+                                  <span className="font-medium text-gray-900 ml-1">
+                                    $
+                                    {formatPrice(
+                                      product.current_price ||
+                                        product.start_price,
+                                    )}
+                                  </span>
+                                </div>
+                                <div>
+                                  <span className="text-gray-500">Bids:</span>
+                                  <span className="font-medium text-gray-900 ml-1">
+                                    {product.bid_count || 0}
+                                  </span>
+                                </div>
+                                <div className="col-span-2">
+                                  <span className="text-gray-500">
+                                    End Time:
+                                  </span>
+                                  <span className="font-medium text-gray-900 ml-1">
+                                    {formatDate(product.end_time)}
+                                  </span>
+                                </div>
+                              </div>
+                              <div
+                                className="flex items-center gap-2 pt-3 border-t border-gray-100"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <button
+                                  onClick={() =>
+                                    navigate(`/products/${product.id}`)
+                                  }
+                                  className="flex-1 px-3 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                >
+                                  View
+                                </button>
+                                <button
+                                  onClick={() =>
+                                    navigate(`/products/${product.id}/edit`)
+                                  }
+                                  className="flex-1 px-3 py-2 text-sm font-medium text-yellow-600 hover:bg-yellow-50 rounded-lg transition-colors"
+                                >
+                                  Edit
+                                </button>
+                                {product.status !== "Removed" && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleDeleteClick(
+                                        product.id,
+                                        product.name,
+                                      );
+                                    }}
+                                    disabled={deletingId === product.id}
+                                    className="flex-1 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                  >
+                                    {deletingId === product.id
+                                      ? "Deleting..."
+                                      : "Delete"}
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
 
                       {/* Pagination */}
