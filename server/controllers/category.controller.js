@@ -82,7 +82,13 @@ const deleteCategory = async (req, res) => {
     res.json(result);
   } catch (err) {
     console.error(err);
-    if (err.message === "Cannot delete category with products or children") {
+    if (err.message === "Category not found") {
+      return res.status(404).json({ message: err.message });
+    }
+    if (
+      err.message === "Cannot delete category with children categories" ||
+      err.message === "Cannot delete category that has products"
+    ) {
       return res.status(400).json({ message: err.message });
     }
     res.status(500).json({ message: "Server error" });
