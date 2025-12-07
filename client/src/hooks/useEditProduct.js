@@ -64,7 +64,7 @@ export const useEditProduct = (productId) => {
         });
       }
 
-      const res = await api.put(`/products/${productId}`, data, {
+      await api.put(`/products/${productId}`, data, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
