@@ -66,6 +66,18 @@ export const ProductCard = ({
 
   // Button styles based on status from DB
   const getButtonStyles = () => {
+    if (props.isOwner) {
+      if (status === "Sold" || status === "Expired" || status === "Removed") {
+        return "hidden";
+      }
+      return "bg-[#01AA85] text-white hover:bg-[#018f70] hover:shadow-lg transition-all duration-300";
+    }
+    if (props.isOwner) {
+      if (status === "Sold" || status === "Expired" || status === "Removed") {
+        return "hidden";
+      }
+      return "bg-[#01AA85] text-white hover:bg-[#018f70] hover:shadow-lg transition-all duration-300";
+    }
     if (status === "Sold" || status === "Expired" || status === "Removed") {
       return "bg-slate-300 text-slate-500 cursor-not-allowed";
     }
@@ -76,6 +88,12 @@ export const ProductCard = ({
   };
 
   const getButtonText = () => {
+    if (props.isOwner) {
+      return "Edit";
+    }
+    if (props.isOwner) {
+      return "Edit";
+    }
     switch (status) {
       case "Sold":
         return "Sold";
@@ -104,10 +122,7 @@ export const ProductCard = ({
           setHighlightDuration(data.new_product_duration);
         }
       } catch (error) {
-        console.error(
-          "Error fetching configuration",
-          error
-        );
+        console.error("Error fetching configuration", error);
       }
     };
     fetchSystemConfig();
@@ -258,10 +273,21 @@ export const ProductCard = ({
         {/* Bid Button */}
         <button
           onClick={(e) => {
-            e.stopPropagation();
-            onBid && onBid();
+            if (props.isOwner && props.onEdit) {
+              e.stopPropagation();
+              props.onEdit();
+            } else if (onBid) {
+              e.stopPropagation();
+              onBid();
+            }
           }}
-          disabled={status !== "Active"}
+          disabled={
+            !props.isOwner &&
+            (status === "Sold" ||
+              status === "Expired" ||
+              status === "Removed" ||
+              status === "Pending")
+          }
           className={`w-full py-3 rounded-xl font-semibold text-sm transition-all duration-300 active:scale-[0.98] ${getButtonStyles()}`}
         >
           {getButtonText()}

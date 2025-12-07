@@ -20,6 +20,7 @@ import TabNavigation from "../common/TabNavigation";
 import AuctionSection from "../home/ProductSection";
 import ProductInfoSidebar from "./ProductInfoSidebar";
 import ProductQnA from "./ProductQnA";
+import "../../styles/ProductDetails.css";
 
 const ProductDetails = ({ product, onRefresh }) => {
   const { user } = useAuth();
@@ -169,7 +170,10 @@ const ProductDetails = ({ product, onRefresh }) => {
         <div className="min-h-[200px]">
           {activeTab === "description" && (
             <div
-              className="prose max-w-none text-gray-600"
+              className="description-content prose prose-sm sm:prose lg:prose-lg max-w-none text-gray-600
+                prose-ul:list-disc prose-ul:pl-5 prose-ul:my-2
+                prose-ol:list-decimal prose-ol:pl-5 prose-ol:my-2
+                prose-li:my-1"
               dangerouslySetInnerHTML={{ __html: product.fullDescription }}
             />
           )}

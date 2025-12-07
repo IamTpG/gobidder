@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 
 import ProductCard from "../common/ProductCard";
 
-const ProductGrid = ({ products }) => {
+const ProductGrid = ({ products, isOwner, onEdit }) => {
   const navigate = useNavigate();
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 mt-8">
@@ -12,6 +12,8 @@ const ProductGrid = ({ products }) => {
           <ProductCard
             key={p.id}
             {...p}
+            isOwner={isOwner}
+            onEdit={() => onEdit && onEdit(p)}
             onClick={() => navigate(`/products/${p.id}`)}
             onBid={() => console.log("Bid on:", p.name || p.title)}
           />

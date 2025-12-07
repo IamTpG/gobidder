@@ -12,6 +12,7 @@ export default function ProductForm({
   loading = false,
   showDescription = false,
   submitLabel = "Submit",
+  isEditMode = false,
 }) {
   // Khởi tạo state dựa trên initialValues (cho Edit) hoặc mặc định (cho Create)
   const [name, setName] = useState(initialValues.name || "");
@@ -31,6 +32,7 @@ export default function ProductForm({
   const [images, setImages] = useState(initialValues.images || []);
   const [filesToUpload, setFilesToUpload] = useState([]); // Dùng riêng cho Create (FormData)
   const [imageUrlInput, setImageUrlInput] = useState("");
+  const [fileLabel, setFileLabel] = useState("No files selected");
 
   const [errors, setErrors] = useState({});
 
@@ -53,7 +55,7 @@ export default function ProductForm({
     const newErrors = {};
 
     if (!name.trim()) newErrors.name = "Product name is required";
-    if (showDescription && !description.trim())
+    if (showDescription && !isEditMode && !description.trim())
       newErrors.description = "Description is required";
     if (!categoryId) newErrors.categoryId = "Please select a category";
 
@@ -85,7 +87,15 @@ export default function ProductForm({
   const handleImages = (e) => {
     const selectedFiles = [...e.target.files];
     // Lưu file gốc để CreatePage dùng
-    setFilesToUpload((prev) => [...prev, ...selectedFiles]);
+    setFilesToUpload((prev) => {
+      const next = [...prev, ...selectedFiles];
+      setFileLabel(
+        next.length > 0
+          ? `${next.length} file${next.length > 1 ? "s" : ""} selected`
+          : "No files selected",
+      );
+      return next;
+    });
 
     // Tạo preview base64/blob
     selectedFiles.forEach((file) => {
@@ -99,7 +109,15 @@ export default function ProductForm({
 
   const removeImage = (index) => {
     setImages((prev) => prev.filter((_, i) => i !== index));
-    setFilesToUpload((prev) => prev.filter((_, i) => i !== index));
+    setFilesToUpload((prev) => {
+      const next = prev.filter((_, i) => i !== index);
+      setFileLabel(
+        next.length > 0
+          ? `${next.length} file${next.length > 1 ? "s" : ""} selected`
+          : "No files selected",
+      );
+      return next;
+    });
   };
 
   const handleSubmit = () => {
@@ -143,8 +161,13 @@ export default function ProductForm({
       {showDescription && (
         <div>
           <label className="block font-medium text-gray-700 mb-2">
-            Description
+            {isEditMode ? "Description (Optional)" : "Description"}
           </label>
+          {isEditMode && (
+            <p className="text-sm text-gray-500 mb-2">
+              New information will be appended to the existing description.
+            </p>
+          )}
           <Editor
             apiKey={process.env.REACT_APP_TINYMCE_API_KEY}
             init={{
@@ -246,13 +269,23 @@ export default function ProductForm({
             Add
           </Button>
         </div>
-        <input
-          type="file"
-          multiple
-          accept="image/*"
-          onChange={handleImages}
-          className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-white hover:file:bg-primary/90"
-        />
+        <div className="flex items-center gap-3">
+          <input
+            id="product-file-input"
+            type="file"
+            multiple
+            accept="image/*"
+            onChange={handleImages}
+            className="hidden"
+          />
+          <label
+            htmlFor="product-file-input"
+            className="cursor-pointer inline-flex items-center px-4 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition"
+          >
+            Choose files
+          </label>
+          <span className="text-sm text-gray-600">{fileLabel}</span>
+        </div>
         {errors.images && (
           <p className="text-red-500 text-sm">{errors.images}</p>
         )}

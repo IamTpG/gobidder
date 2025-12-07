@@ -175,6 +175,7 @@ const getProductById = async (productId) => {
     categoryId: product.category?.id || null,
     bidCount: product.bid_count,
     status: product.status,
+    autoRenew: product.auto_renew,
 
     // Thông tin người bán
     seller: {
@@ -400,71 +401,46 @@ const createProduct = async (sellerId, data) => {
  * @param {Object} data - Dữ liệu cập nhật
  */
 const updateProduct = async (productId, sellerId, data) => {
-  // Kiểm tra product có tồn tại và thuộc về seller không
-  const existingProduct = await prisma.product.findUnique({
+  // 1. Check if product exists and belongs to seller
+  const product = await prisma.product.findUnique({
     where: { id: productId },
-    select: { seller_id: true, bid_count: true, status: true },
   });
 
-  if (!existingProduct) {
+  if (!product) {
     throw new Error("Product not found");
   }
 
-  if (existingProduct.seller_id !== sellerId) {
-    throw new Error("You are not authorized to edit this product");
+  if (product.seller_id !== sellerId) {
+    throw new Error("Unauthorized: You are not the seller of this product");
   }
 
-  // Không cho phép chỉnh sửa nếu đã có người đấu giá
-  if (existingProduct.bid_count > 0) {
-    throw new Error("Cannot edit product that already has bids");
+  // 2. Handle Description Append
+  let finalDescription = product.description;
+  if (data.description && data.description.trim() !== "") {
+    const date = new Date();
+    const formattedDate = `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`;
+
+    // Format:
+    // [Old Description]
+    // <br/>
+    // <p>✏️ <strong>[Date]</strong></p>
+    // [New Description]
+    finalDescription = `${product.description}<br/><br/><p>✏️ <strong>${formattedDate}</strong></p><br/>${data.description}`;
   }
 
-  const {
-    name,
-    description,
-    images,
-    startPrice,
-    stepPrice,
-    buyNowPrice,
-    categoryId,
-    endTime,
-    autoRenew,
-  } = data;
-
-  // Chuyển đổi giá sang Number
-  const startPriceNumber = Number(startPrice);
-  const stepPriceNumber = Number(stepPrice);
-  const buyNowPriceNumber = Number(buyNowPrice);
-
-  // Validate logic giá
-  if (
-    buyNowPriceNumber &&
-    startPriceNumber &&
-    buyNowPriceNumber <= startPriceNumber
-  ) {
-    throw new Error("Buy-now price must be greater than start price");
-  }
-
-  // Validate end_time
-  if (endTime && new Date(endTime) <= new Date()) {
-    throw new Error("End time must be in the future");
-  }
-
-  // Cập nhật product
+  // 3. Update
   const updatedProduct = await prisma.product.update({
     where: { id: productId },
     data: {
-      ...(name && { name }),
-      ...(description && { description }),
-      ...(images && { images }),
-      ...(startPriceNumber && { start_price: startPriceNumber }),
-      ...(stepPriceNumber && { step_price: stepPriceNumber }),
-      ...(buyNowPriceNumber !== undefined && {
-        buy_now_price: buyNowPriceNumber,
-      }),
-      ...(categoryId && { category_id: parseInt(categoryId) }),
-      ...(endTime && { end_time: new Date(endTime) }),
-      ...(autoRenew !== undefined && { auto_renew: autoRenew }),
+      name: data.name,
+      description: finalDescription,
+      images: data.images, // Array of URLs
+      start_price: data.startPrice,
+      step_price: data.stepPrice,
+      buy_now_price: data.buyNowPrice,
+      category_id: data.categoryId,
+      end_time: data.endTime,
+      auto_renew: data.autoRenew,
     },
   });
 

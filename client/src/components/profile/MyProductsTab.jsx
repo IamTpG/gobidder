@@ -138,7 +138,11 @@ const MyProductsTab = () => {
 
       {!isLoading && !error && products.length > 0 && (
         <>
-          <ProductGrid products={products} />
+          <ProductGrid
+            products={products}
+            isOwner={true}
+            onEdit={(product) => navigate(`/products/${product.id}/edit`)}
+          />
           {totalPages > 1 && (
             <div className="mt-8">
               <Pagination

@@ -23,7 +23,7 @@ router.get(
   "/seller/my-products",
   passport.authenticate("jwt", { session: false }),
   authorizeRoles("Seller", "ExpiredSeller"),
-  productController.getSellerProducts
+  productController.getSellerProducts,
 );
 
 // Lấy sản phẩm liên quan
@@ -36,7 +36,7 @@ router.get("/:id", productController.getProductById);
 router.post(
   "/:id/questions",
   passport.authenticate("jwt", { session: false }),
-  productController.createQuestion
+  productController.createQuestion,
 );
 
 // Append description (Seller only)
@@ -44,7 +44,7 @@ router.post(
   "/:id/append-description",
   passport.authenticate("jwt", { session: false }),
   authorizeRoles("Seller", "ExpiredSeller"),
-  productController.appendDescription
+  productController.appendDescription,
 );
 
 // Trả lời câu hỏi (yêu cầu login và là seller)
@@ -52,7 +52,7 @@ router.post(
   "/:id/questions/:questionId/answer",
   passport.authenticate("jwt", { session: false }),
   authorizeRoles("Seller", "ExpiredSeller"),
-  productController.answerQuestion
+  productController.answerQuestion,
 );
 
 router.post(
@@ -60,7 +60,7 @@ router.post(
   passport.authenticate("jwt", { session: false }),
   authorizeRoles("Seller"),
   upload.array("images", 10),
-  create
+  create,
 );
 
 // Cập nhật sản phẩm (Seller only)
@@ -68,7 +68,8 @@ router.put(
   "/:id",
   passport.authenticate("jwt", { session: false }),
   authorizeRoles("Seller", "ExpiredSeller"),
-  productController.update
+  upload.array("images", 10),
+  productController.update,
 );
 
 module.exports = router;
