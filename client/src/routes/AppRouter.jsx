@@ -13,6 +13,7 @@ import ProfilePage from "../pages/ProfilePage";
 import ProductsPage from "../pages/ProductsPage";
 import CreateProductPage from "../pages/CreateProductPage";
 import EditProductPage from "../pages/EditProductPage";
+import WatchlistPage from "../pages/WatchlistPage";
 import ProtectedRoute from "../components/routes/ProtectedRoute";
 import AdminRoute from "../components/routes/AdminRoute";
 import SellerRoute from "../components/routes/SellerRoute";
@@ -79,6 +80,14 @@ const AppRouter = () => {
           element={
             <ProtectedRoute>
               <ProfilePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="watchlist"
+          element={
+            <ProtectedRoute>
+              <WatchlistPage />
             </ProtectedRoute>
           }
         />
