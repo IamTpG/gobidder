@@ -133,6 +133,12 @@ const getProductById = async (productId) => {
           },
         },
       },
+      // Danh sách bidder bị ban
+      banned_bidders: {
+        select: {
+          bidder_id: true,
+        },
+      },
       // Q&A (Câu hỏi và trả lời)
       qna_items: {
         orderBy: {
@@ -155,6 +161,11 @@ const getProductById = async (productId) => {
   if (!product) {
     return null;
   }
+
+  // Tạo Set các bidder_id bị ban để filter nhanh
+  const bannedBidderIds = new Set(
+    product.banned_bidders.map((banned) => banned.bidder_id),
+  );
 
   // Transform data để khớp với Frontend format
   return {
@@ -203,14 +214,16 @@ const getProductById = async (productId) => {
         ? JSON.parse(product.images)
         : [],
 
-    // Lịch sử đấu giá
-    bidHistory: product.bid_histories.map((bid) => ({
-      id: bid.id,
-      date: bid.created_at,
-      amount: parseFloat(bid.bid_price),
-      user: bid.user.full_name,
-      userId: bid.user.id,
-    })),
+    // Lịch sử đấu giá - Lọc bỏ các bidder bị ban
+    bidHistory: product.bid_histories
+      .filter((bid) => !bannedBidderIds.has(bid.user_id))
+      .map((bid) => ({
+        id: bid.id,
+        date: bid.created_at,
+        amount: parseFloat(bid.bid_price),
+        user: bid.user.full_name,
+        userId: bid.user.id,
+      })),
 
     // Q&A
     qnaItems: product.qna_items.map((qna) => ({

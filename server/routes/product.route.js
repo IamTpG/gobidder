@@ -80,6 +80,29 @@ router.post(
   productController.appendDescription,
 );
 
+// Ban a bidder from product (Seller only)
+router.post(
+  "/:id/ban-bidder",
+  passport.authenticate("jwt", { session: false }),
+  authorizeRoles("Seller", "ExpiredSeller"),
+  require("../controllers/bannedBidder.controller").banBidder,
+);
+
+// Check if current user is banned from product
+router.get(
+  "/:id/banned-status",
+  passport.authenticate("jwt", { session: false }),
+  require("../controllers/bannedBidder.controller").checkBannedStatus,
+);
+
+// Get all banned bidders for a product (Seller only)
+router.get(
+  "/:id/banned-bidders",
+  passport.authenticate("jwt", { session: false }),
+  authorizeRoles("Seller", "ExpiredSeller"),
+  require("../controllers/bannedBidder.controller").getBannedBidders,
+);
+
 // Trả lời câu hỏi (yêu cầu login và là seller)
 router.post(
   "/:id/questions/:questionId/answer",

@@ -1,4 +1,5 @@
 const prisma = require("../config/prisma");
+const bannedBidderService = require("./bannedBidder.service");
 
 /**
  * Đặt giá tự động (Auto Bidding)
@@ -8,6 +9,18 @@ const prisma = require("../config/prisma");
  */
 const placeAutoBid = async (userId, productId, inputMaxPrice) => {
   const maxPrice = Number(inputMaxPrice);
+
+  // Check if user is banned from this product first
+  const isBanned = await bannedBidderService.isBidderBanned(
+    parseInt(productId),
+    userId,
+  );
+
+  if (isBanned) {
+    throw new Error(
+      "You are banned from bidding on this product by the seller",
+    );
+  }
 
   // Sử dụng transaction để đảm bảo tính toàn vẹn dữ liệu (Race condition)
   return await prisma.$transaction(async (tx) => {
