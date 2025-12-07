@@ -2,6 +2,7 @@ import React from "react";
 
 import ProfileAvatar from "./ProfileAvatar";
 import ProfileInfoCard from "./ProfileInfoCard";
+import RatingDisplay from "./RatingDisplay";
 
 const formatDisplayDate = (value) => {
   if (!value) return "Update your information";
@@ -46,6 +47,7 @@ const ProfileViewMode = ({ profile, onEdit }) => {
         <ProfileInfoCard label="Email" value={profile.email} />
         <ProfileInfoCard label="Address" value={profile.address} />
         <ProfileInfoCard label="Birthdate" value={birthdateDisplay} />
+        {profile.rating && <RatingDisplay rating={profile.rating} />}
       </div>
     </div>
   );
