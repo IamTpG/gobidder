@@ -18,12 +18,45 @@ router.get("/top/most-bids", productController.getTopMostBids);
 // Top 5 sản phẩm có giá cao nhất
 router.get("/top/highest-price", productController.getTopHighestPrice);
 
-// Lấy danh sách sản phẩm của seller đang login (MUST be before /:id route)
+// Lấy danh sách sản phẩm của seller đang login
 router.get(
   "/seller/my-products",
   passport.authenticate("jwt", { session: false }),
   authorizeRoles("Seller", "ExpiredSeller"),
   productController.getSellerProducts,
+);
+
+// Admin routes
+// Lấy tất cả sản phẩm (Admin only - bao gồm tất cả status)
+router.get(
+  "/admin/all",
+  passport.authenticate("jwt", { session: false }),
+  authorizeRoles("Admin"),
+  productController.getAllProductsAdmin,
+);
+
+// Lấy một sản phẩm chi tiết (Admin only)
+router.get(
+  "/admin/:id",
+  passport.authenticate("jwt", { session: false }),
+  authorizeRoles("Admin"),
+  productController.getProductByIdAdmin,
+);
+
+// Cập nhật sản phẩm (Admin only - có thể sửa bất kỳ sản phẩm nào)
+router.put(
+  "/admin/:id",
+  passport.authenticate("jwt", { session: false }),
+  authorizeRoles("Admin"),
+  productController.updateProductAdmin,
+);
+
+// Xóa sản phẩm (Admin only - set status = Removed)
+router.delete(
+  "/admin/:id",
+  passport.authenticate("jwt", { session: false }),
+  authorizeRoles("Admin"),
+  productController.deleteProductAdmin,
 );
 
 // Lấy sản phẩm liên quan

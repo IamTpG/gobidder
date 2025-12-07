@@ -20,6 +20,7 @@ import PublicRoute from "../components/routes/PublicRoute";
 import NotFoundPage from "../pages/NotFoundPage";
 import BidSettingPage from "../pages/admin/BidSettingPage";
 import SellerApprovalPage from "../pages/admin/SellerApprovalPage";
+import ProductManagementPage from "../pages/admin/ProductManagementPage";
 import AdminLayout from "../layouts/AdminLayout";
 
 const AppRouter = () => {
@@ -107,6 +108,7 @@ const AppRouter = () => {
           }
         >
           <Route path="bid-settings" element={<BidSettingPage />} />
+          <Route path="products" element={<ProductManagementPage />} />
           <Route path="seller-approval" element={<SellerApprovalPage />} />
         </Route>
 

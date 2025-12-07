@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 
 import api from "../../services/api";
 import Countdown from "./Countdown";
+import { HeartIcon } from "./Icons";
 
 export const ProductCard = ({
   id,
@@ -19,7 +20,17 @@ export const ProductCard = ({
   onBid,
   onClick,
   className = "",
-  ...props
+  isInWatchlist = false,
+  onWatchlistToggle,
+  // Destructure other props to prevent passing non-DOM attributes
+  seller,
+  category,
+  seller_id,
+  category_id,
+  current_bidder_id,
+  auto_renew,
+  step_price,
+  ...props // Only pass valid DOM attributes
 }) => {
   // Get first image from array or use placeholder
   const getImageUrl = () => {
@@ -129,7 +140,6 @@ export const ProductCard = ({
       ${className}
       ${isNew ? "border-2 border-amber-500 ring-4 ring-amber-300/50 shadow-lg" : ""}`}
       onClick={onClick}
-      {...props}
     >
       {/* Image Container */}
       <div className="relative h-64 bg-slate-100">
@@ -237,21 +247,41 @@ export const ProductCard = ({
 
         {/* Posted Date */}
         {created_at && (
-          <div className="mb-4 text-xs text-slate-500 flex items-center gap-1">
-            <svg
-              className="w-3.5 h-3.5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-              />
-            </svg>
-            <span>Posted: {formatDate(created_at)}</span>
+          <div className="mb-4 flex items-center justify-between">
+            <div className="text-xs text-slate-500 flex items-center gap-1">
+              <svg
+                className="w-3.5 h-3.5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                />
+              </svg>
+              <span>Posted: {formatDate(created_at)}</span>
+            </div>
+
+            {/* Watchlist Heart Icon */}
+            {onWatchlistToggle && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onWatchlistToggle(id);
+                }}
+                className={`p-1.5 rounded-full transition-all duration-200 hover:scale-110 ${
+                  isInWatchlist
+                    ? "text-red-500 hover:bg-red-50"
+                    : "text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+                }`}
+                title={isInWatchlist ? "Remove from watchlist" : "Add to watchlist"}
+              >
+                <HeartIcon filled={isInWatchlist} className="w-5 h-5" />
+              </button>
+            )}
           </div>
         )}
 

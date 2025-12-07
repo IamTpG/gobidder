@@ -10,6 +10,7 @@ import {
 import Badge from "../common/Badge";
 import CountdownTimer from "../common/CountdownTimer";
 import Button from "../common/Button";
+import { HeartIcon } from "../common/Icons";
 
 const ProductInfoSidebar = ({
   product,
@@ -25,6 +26,8 @@ const ProductInfoSidebar = ({
   onFinishPayment,
   isBanned,
   isCheckingBan,
+  isInWatchlist = false,
+  onWatchlistToggle,
 }) => {
   // Tính số ngày còn lại đến khi kết thúc đấu giá
   const getDaysUntilEnd = (endDate) => {
@@ -148,6 +151,23 @@ const ProductInfoSidebar = ({
               </div>
             )}
           </div>
+
+          {/* Watchlist Button */}
+          {user && onWatchlistToggle && (
+            <button
+              onClick={() => onWatchlistToggle(product.id)}
+              className={`w-full flex items-center justify-center gap-2 py-3 rounded-lg border-2 font-semibold text-sm transition-all duration-200 ${
+                isInWatchlist
+                  ? "bg-red-50 border-red-500 text-red-600 hover:bg-red-100"
+                  : "bg-white border-gray-300 text-gray-700 hover:border-primary hover:text-primary hover:bg-primary/5"
+              }`}
+            >
+              <HeartIcon filled={isInWatchlist} className="w-5 h-5" />
+              <span>
+                {isInWatchlist ? "Remove from Favorites" : "Add to Favorites"}
+              </span>
+            </button>
+          )}
 
           {!isSeller ? (
             <div className="space-y-3">

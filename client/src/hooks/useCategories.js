@@ -6,22 +6,22 @@ export const useCategories = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const fetchCategories = async () => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await api.get("/categories");
+      setCategories(response.data || []);
+    } catch (err) {
+      setError(err.message || "Error fetching categories");
+      console.error("Error fetching categories:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchCategories = async () => {
-      setIsLoading(true);
-      setError(null);
-
-      try {
-        const response = await api.get("/categories");
-        setCategories(response.data || []);
-      } catch (err) {
-        setError(err.message || "Error fetching categories");
-        console.error("Error fetching categories:", err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchCategories();
   }, []);
 
@@ -43,5 +43,6 @@ export const useCategories = () => {
     allCategories: categories, // Tất cả categories (bao gồm cả children)
     isLoading,
     error,
+    refetch: fetchCategories,
   };
 };

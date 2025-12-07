@@ -654,7 +654,14 @@ const getProductsBySellerId = async ({
 
   // Filter theo status nếu có (mặc định lấy tất cả)
   if (status) {
-    where.status = status;
+    // Nếu status là "Won", filter các sản phẩm có người thắng đấu giá
+    if (status === "Won") {
+      where.current_bidder_id = { not: null }; // Có người thắng
+      where.end_time = { lte: new Date() }; // Đã hết hạn
+      where.status = { not: "Removed" }; // Loại trừ sản phẩm đã bị gỡ
+    } else {
+      where.status = status;
+    }
   }
 
   if (categoryId) {
@@ -734,6 +741,209 @@ const getProductsBySellerId = async ({
   return response;
 };
 
+// ========== ADMIN SERVICES ==========
+
+// Lấy tất cả sản phẩm (Admin only - bao gồm tất cả status)
+const getAllProductsAdmin = async ({
+  page,
+  limit,
+  categoryId,
+  sort,
+  q,
+  skip,
+  status,
+}) => {
+  const where = {}; // Không filter status mặc định, lấy tất cả
+
+  // Filter theo status nếu có
+  if (status) {
+    where.status = status;
+  }
+
+  if (categoryId) {
+    // Lấy tất cả category IDs (parent + children)
+    const categoryIds = await categoryService.getAllCategoryIds(categoryId);
+    where.category_id = { in: categoryIds };
+  }
+
+  const searchTerm = q?.trim();
+  if (searchTerm) {
+    where.OR = [
+      { name: { equals: searchTerm, mode: "insensitive" } },
+      { name: { startsWith: searchTerm + " ", mode: "insensitive" } },
+      { name: { endsWith: " " + searchTerm, mode: "insensitive" } },
+      { name: { contains: " " + searchTerm + " ", mode: "insensitive" } },
+      { description: { equals: searchTerm, mode: "insensitive" } },
+      { description: { startsWith: searchTerm + " ", mode: "insensitive" } },
+      { description: { endsWith: " " + searchTerm, mode: "insensitive" } },
+      {
+        description: { contains: " " + searchTerm + " ", mode: "insensitive" },
+      },
+    ];
+  }
+
+  let orderBy;
+  switch (sort) {
+    case "price_asc":
+      orderBy = { current_price: "asc" };
+      break;
+    case "price_desc":
+      orderBy = { current_price: "desc" };
+      break;
+    case "end_time_asc":
+      orderBy = { end_time: "asc" };
+      break;
+    case "end_time_desc":
+      orderBy = { end_time: "desc" };
+      break;
+    case "bid_count":
+      orderBy = { bid_count: "desc" };
+      break;
+    case "created_at":
+    default:
+      orderBy = { created_at: "desc" };
+  }
+
+  const products = await prisma.product.findMany({
+    where,
+    skip,
+    orderBy,
+    take: limit,
+    include: {
+      seller: {
+        select: { id: true, full_name: true, email: true },
+      },
+      category: {
+        select: { id: true, name: true },
+      },
+      current_bidder: {
+        select: { id: true, full_name: true },
+      },
+    },
+  });
+
+  const totalItems = await prisma.product.count({ where });
+  const totalPages = Math.ceil(totalItems / limit);
+
+  const response = {
+    data: products,
+    totalItems,
+    totalPages,
+    hasNextPage: page < totalPages,
+    hasPreviousPage: page > 1,
+  };
+
+  return response;
+};
+
+// Cập nhật sản phẩm (Admin only - có thể sửa bất kỳ sản phẩm nào)
+const updateProductAdmin = async (productId, data) => {
+  // Kiểm tra product có tồn tại không
+  const existingProduct = await prisma.product.findUnique({
+    where: { id: productId },
+    select: { id: true, bid_count: true },
+  });
+
+  if (!existingProduct) {
+    throw new Error("Product not found");
+  }
+
+  const {
+    name,
+    description,
+    images,
+    startPrice,
+    stepPrice,
+    buyNowPrice,
+    categoryId,
+    endTime,
+    autoRenew,
+    status,
+  } = data;
+
+  // Chuyển đổi giá sang Number
+  const startPriceNumber = Number(startPrice);
+  const stepPriceNumber = Number(stepPrice);
+  const buyNowPriceNumber = buyNowPrice ? Number(buyNowPrice) : null;
+
+  // Validate logic giá
+  if (
+    buyNowPriceNumber &&
+    startPriceNumber &&
+    buyNowPriceNumber <= startPriceNumber
+  ) {
+    throw new Error("Buy-now price must be greater than start price");
+  }
+
+  // Validate end_time (nếu có)
+  if (endTime && new Date(endTime) <= new Date()) {
+    throw new Error("End time must be in the future");
+  }
+
+  // Build update data
+  const updateData = {};
+  if (name) updateData.name = name;
+  if (description) updateData.description = description;
+  if (images) updateData.images = images;
+  if (startPriceNumber) updateData.start_price = startPriceNumber;
+  if (stepPriceNumber) updateData.step_price = stepPriceNumber;
+  if (buyNowPriceNumber !== undefined)
+    updateData.buy_now_price = buyNowPriceNumber;
+  if (categoryId) updateData.category_id = parseInt(categoryId);
+  if (endTime) updateData.end_time = new Date(endTime);
+  if (autoRenew !== undefined) updateData.auto_renew = autoRenew;
+  if (status) updateData.status = status; // Admin có thể thay đổi status
+
+  // Cập nhật product
+  const updatedProduct = await prisma.product.update({
+    where: { id: productId },
+    data: updateData,
+    include: {
+      seller: {
+        select: { id: true, full_name: true, email: true },
+      },
+      category: {
+        select: { id: true, name: true },
+      },
+      current_bidder: {
+        select: { id: true, full_name: true },
+      },
+    },
+  });
+
+  return updatedProduct;
+};
+
+// Xóa sản phẩm (Admin only - set status = Removed)
+const deleteProductAdmin = async (productId) => {
+  // Kiểm tra product có tồn tại không
+  const existingProduct = await prisma.product.findUnique({
+    where: { id: productId },
+  });
+
+  if (!existingProduct) {
+    throw new Error("Product not found");
+  }
+
+  // Set status = Removed thay vì xóa thực sự
+  const deletedProduct = await prisma.product.update({
+    where: { id: productId },
+    data: {
+      status: "Removed",
+    },
+    include: {
+      seller: {
+        select: { id: true, full_name: true, email: true },
+      },
+      category: {
+        select: { id: true, name: true },
+      },
+    },
+  });
+
+  return deletedProduct;
+};
+
 module.exports = {
   getProducts,
   getProductById,
@@ -749,4 +959,7 @@ module.exports = {
   getUserWonProducts,
   getProductsBySellerId,
   appendDescription,
+  getAllProductsAdmin,
+  updateProductAdmin,
+  deleteProductAdmin,
 };

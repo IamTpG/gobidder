@@ -122,14 +122,46 @@ const updateCategory = async (id, data) => {
 // Xóa category
 const deleteCategory = async (id) => {
   try {
-    await prisma.category.delete({ where: { id: parseInt(id) } });
-    return { message: "Category deleted" };
+    const categoryId = parseInt(id);
+
+    // Kiểm tra category có tồn tại không
+    const category = await prisma.category.findUnique({
+      where: { id: categoryId },
+      include: {
+        children: true,
+        products: {
+          select: { id: true },
+        },
+      },
+    });
+
+    if (!category) {
+      throw new Error("Category not found");
+    }
+
+    // Kiểm tra category có children không
+    if (category.children && category.children.length > 0) {
+      throw new Error("Cannot delete category with children categories");
+    }
+
+    // Kiểm tra category có sản phẩm không
+    if (category.products && category.products.length > 0) {
+      throw new Error("Cannot delete category that has products");
+    }
+
+    // Xóa category
+    await prisma.category.delete({ where: { id: categoryId } });
+    return { message: "Category deleted successfully" };
   } catch (error) {
     console.error("Error in deleteCategory:", error);
-    if (error.code === "P2003") {
-      throw new Error("Cannot delete category with products or children");
+    if (
+      error.message === "Category not found" ||
+      error.message === "Cannot delete category with children categories" ||
+      error.message === "Cannot delete category that has products"
+    ) {
+      throw error;
     }
-    throw error;
+    throw new Error("Failed to delete category");
   }
 };
 
