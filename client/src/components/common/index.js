@@ -12,7 +12,6 @@ export {
 export { default as Countdown } from "./Countdown";
 export { default as CountdownTimer } from "./CountdownTimer";
 export { default as ImageGallery } from "./ImageGallery";
-export { default as BidControls } from "./BidControls";
 export { default as TabNavigation } from "./TabNavigation";
 export {
   default as CategoryFilter,
@@ -20,3 +19,5 @@ export {
   TabCategoryFilter,
   DropdownCategoryFilter,
 } from "./CategoryFilter";
+export { default as Modal } from "./Modal";
+export { default as ConfirmDialog } from "./ConfirmDialog";
