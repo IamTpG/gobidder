@@ -23,6 +23,8 @@ const ProductInfoSidebar = ({
   onPlaceBid,
   onNavigateToAuth,
   onFinishPayment,
+  isBanned,
+  isCheckingBan,
 }) => {
   // Tính số ngày còn lại đến khi kết thúc đấu giá
   const getDaysUntilEnd = (endDate) => {
@@ -149,6 +151,12 @@ const ProductInfoSidebar = ({
 
           {!isSeller ? (
             <div className="space-y-3">
+              {isBanned && (
+                <div className="p-4 text-sm text-red-800 bg-red-50 border border-red-300 rounded-lg font-medium">
+                  ⚠️ You have been banned from bidding on this product by the
+                  seller.
+                </div>
+              )}
               {bidError && (
                 <div className="p-3 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg">
                   {bidError}
@@ -160,24 +168,28 @@ const ProductInfoSidebar = ({
                 </div>
               )}
 
-              <BidControls
-                currentBid={Number(product.currentBid)}
-                startPrice={Number(product.startPrice)}
-                bidAmount={bidAmount}
-                onBidChange={onBidChange}
-                onBid={onPlaceBid}
-                minBidIncrement={Number(product.stepPrice)}
-                disabled={isBidding}
-                isBidding={isBidding}
-                label="Place Bid"
-              />
-              {!user && (
-                <button
-                  onClick={onNavigateToAuth}
-                  className="w-full text-xs text-primary underline"
-                >
-                  Login to bid
-                </button>
+              {!isBanned && (
+                <>
+                  <BidControls
+                    currentBid={Number(product.currentBid)}
+                    startPrice={Number(product.startPrice)}
+                    bidAmount={bidAmount}
+                    onBidChange={onBidChange}
+                    onBid={onPlaceBid}
+                    minBidIncrement={Number(product.stepPrice)}
+                    disabled={isBidding || isBanned || isCheckingBan}
+                    isBidding={isBidding}
+                    label="Place Bid"
+                  />
+                  {!user && (
+                    <button
+                      onClick={onNavigateToAuth}
+                      className="w-full text-xs text-primary underline"
+                    >
+                      Login to bid
+                    </button>
+                  )}
+                </>
               )}
             </div>
           ) : (

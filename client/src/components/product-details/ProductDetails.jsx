@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import useRelatedProducts from "../../hooks/useRelatedProducts";
+import useBanBidder from "../../hooks/useBanBidder";
+import useBannedStatus from "../../hooks/useBannedStatus";
 import {
   formatDateTime,
   formatPrice,
@@ -25,17 +27,25 @@ const ProductDetails = ({ product, onRefresh }) => {
   const { user } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const isSeller = user && product?.seller && user.id === product.seller.id;
 
   // State
   const [activeTab, setActiveTab] = useState("description");
   const [bidAmount, setBidAmount] = useState(0);
   const [myAutoBidPrice, setMyAutoBidPrice] = useState(0);
+  const [banTarget, setBanTarget] = useState(null);
+  const [banFeedback, setBanFeedback] = useState(null);
 
   // Loading & Error States
   const [isBidding, setIsBidding] = useState(false);
   const [bidError, setBidError] = useState(null);
   const [bidSuccessMsg, setBidSuccessMsg] = useState(null);
   const [isSubmittingAnswer, setIsSubmittingAnswer] = useState({});
+  const { banBidder, isLoading: isBanning, error: banError } = useBanBidder();
+  const { isBanned, isLoading: isCheckingBan } = useBannedStatus(
+    product?.id,
+    !!user && !isSeller,
+  );
 
   // Hooks
   const { products: relatedProducts } = useRelatedProducts(product?.id, 5);
@@ -56,6 +66,11 @@ const ProductDetails = ({ product, onRefresh }) => {
     }
   }, [product]);
 
+  useEffect(() => {
+    setBanFeedback(null);
+    setBanTarget(null);
+  }, [product?.id]);
+
   // Handle Query Params (Scroll to QnA)
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -72,6 +87,10 @@ const ProductDetails = ({ product, onRefresh }) => {
   if (!product) return null;
 
   const handlePlaceBid = async () => {
+    if (isBanned) {
+      setBidError("You are banned from bidding on this product.");
+      return;
+    }
     if (!user) return navigate("/auth", { state: { from: location } });
 
     try {
@@ -90,6 +109,26 @@ const ProductDetails = ({ product, onRefresh }) => {
       setBidError(err.response?.data?.message || "Bid failed.");
     } finally {
       setIsBidding(false);
+    }
+  };
+
+  const openBanModal = (bid) => {
+    setBanFeedback(null);
+    setBanTarget(bid);
+  };
+
+  const handleBanBidder = async () => {
+    if (!banTarget) return;
+    try {
+      await banBidder({
+        productId: product.id,
+        bidderId: banTarget.userId,
+      });
+      setBanFeedback("Bidder has been banned and the auction updated.");
+      setBanTarget(null);
+      if (onRefresh) onRefresh();
+    } catch (e) {
+      // Error handled by hook state
     }
   };
 
@@ -149,6 +188,8 @@ const ProductDetails = ({ product, onRefresh }) => {
             navigate("/auth", { state: { from: location } })
           }
           onFinishPayment={handleFinishPayment}
+          isBanned={isBanned}
+          isCheckingBan={isCheckingBan}
         />
       </div>
 
@@ -188,9 +229,34 @@ const ProductDetails = ({ product, onRefresh }) => {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                       User
                     </th>
+                    {isSeller && (
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                        Action
+                      </th>
+                    )}
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
+                  {banError && (
+                    <tr>
+                      <td
+                        colSpan={isSeller ? 4 : 3}
+                        className="px-6 py-3 text-sm text-red-700 bg-red-50"
+                      >
+                        {banError}
+                      </td>
+                    </tr>
+                  )}
+                  {banFeedback && (
+                    <tr>
+                      <td
+                        colSpan={isSeller ? 4 : 3}
+                        className="px-6 py-3 text-sm text-green-700 bg-green-50"
+                      >
+                        {banFeedback}
+                      </td>
+                    </tr>
+                  )}
                   {product.bidHistory?.map((bid) => (
                     <tr key={bid.id}>
                       <td className="px-6 py-4 text-sm text-gray-900">
@@ -200,14 +266,26 @@ const ProductDetails = ({ product, onRefresh }) => {
                         {formatPrice(bid.amount)}
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-500">
-                        {maskUserName(bid.user)}
+                        {isSeller ? bid.user : maskUserName(bid.user)}
                       </td>
+                      {isSeller && (
+                        <td className="px-6 py-4 text-sm text-right">
+                          <button
+                            onClick={() => openBanModal(bid)}
+                            className="text-red-600 hover:text-red-800 text-2xl font-bold leading-none transition-colors"
+                            aria-label="Ban bidder"
+                            title="Ban this bidder"
+                          >
+                            ×
+                          </button>
+                        </td>
+                      )}
                     </tr>
                   ))}
                   {!product.bidHistory?.length && (
                     <tr>
                       <td
-                        colSpan="3"
+                        colSpan={isSeller ? 4 : 3}
                         className="text-center py-4 text-gray-500"
                       >
                         No history available.
@@ -222,6 +300,7 @@ const ProductDetails = ({ product, onRefresh }) => {
                       Auction started
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-500"></td>
+                    {isSeller && <td className="px-6 py-4"></td>}
                   </tr>
                 </tbody>
               </table>
@@ -248,6 +327,37 @@ const ProductDetails = ({ product, onRefresh }) => {
             items={relatedProducts}
             itemsPerView={5}
           />
+        </div>
+      )}
+
+      {banTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md border-t-4 border-primary">
+            <div className="p-6 space-y-4">
+              <h3 className="text-lg font-semibold text-gray-900">
+                Ban bidder?
+              </h3>
+              <p className="text-sm text-gray-600">
+                Are you sure you want to ban {banTarget.user} from this auction?
+                They will no longer be able to place bids on this product.
+              </p>
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => setBanTarget(null)}
+                  className="px-4 py-2 text-sm font-semibold text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleBanBidder}
+                  disabled={isBanning}
+                  className="px-4 py-2 text-sm font-semibold text-white rounded-lg bg-primary hover:bg-primary/90 disabled:opacity-70"
+                >
+                  {isBanning ? "Banning..." : "Confirm Ban"}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>

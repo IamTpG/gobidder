@@ -23,7 +23,7 @@ router.get(
   "/seller/my-products",
   passport.authenticate("jwt", { session: false }),
   authorizeRoles("Seller", "ExpiredSeller"),
-  productController.getSellerProducts
+  productController.getSellerProducts,
 );
 
 // Lấy sản phẩm liên quan
@@ -36,7 +36,7 @@ router.get("/:id", productController.getProductById);
 router.post(
   "/:id/questions",
   passport.authenticate("jwt", { session: false }),
-  productController.createQuestion
+  productController.createQuestion,
 );
 
 // Append description (Seller only)
@@ -44,7 +44,30 @@ router.post(
   "/:id/append-description",
   passport.authenticate("jwt", { session: false }),
   authorizeRoles("Seller", "ExpiredSeller"),
-  productController.appendDescription
+  productController.appendDescription,
+);
+
+// Ban a bidder from product (Seller only)
+router.post(
+  "/:id/ban-bidder",
+  passport.authenticate("jwt", { session: false }),
+  authorizeRoles("Seller", "ExpiredSeller"),
+  require("../controllers/bannedBidder.controller").banBidder,
+);
+
+// Check if current user is banned from product
+router.get(
+  "/:id/banned-status",
+  passport.authenticate("jwt", { session: false }),
+  require("../controllers/bannedBidder.controller").checkBannedStatus,
+);
+
+// Get all banned bidders for a product (Seller only)
+router.get(
+  "/:id/banned-bidders",
+  passport.authenticate("jwt", { session: false }),
+  authorizeRoles("Seller", "ExpiredSeller"),
+  require("../controllers/bannedBidder.controller").getBannedBidders,
 );
 
 // Trả lời câu hỏi (yêu cầu login và là seller)
@@ -52,7 +75,7 @@ router.post(
   "/:id/questions/:questionId/answer",
   passport.authenticate("jwt", { session: false }),
   authorizeRoles("Seller", "ExpiredSeller"),
-  productController.answerQuestion
+  productController.answerQuestion,
 );
 
 router.post(
@@ -60,7 +83,7 @@ router.post(
   passport.authenticate("jwt", { session: false }),
   authorizeRoles("Seller"),
   upload.array("images", 10),
-  create
+  create,
 );
 
 // Cập nhật sản phẩm (Seller only)
@@ -68,7 +91,7 @@ router.put(
   "/:id",
   passport.authenticate("jwt", { session: false }),
   authorizeRoles("Seller", "ExpiredSeller"),
-  productController.update
+  productController.update,
 );
 
 module.exports = router;

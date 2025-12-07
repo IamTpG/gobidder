@@ -56,11 +56,31 @@ export const getMyWonProducts = async () => {
   return response.data;
 };
 
+// Ban bidder API functions
+export const banBidderFromProduct = async (productId, bidderId) => {
+  const response = await api.post(`/products/${productId}/ban-bidder`, {
+    bidderId,
+  });
+  return response.data;
+};
+
+export const checkBannedStatus = async (productId) => {
+  const response = await api.get(`/products/${productId}/banned-status`);
+  return response.data;
+};
+
+export const getBannedBidders = async (productId) => {
+  const response = await api.get(`/products/${productId}/banned-bidders`);
+  return response.data;
+};
+
 export default api;
 
 // Transaction endpoints (simulated payments)
 export const createTransactionForProduct = async (productId) => {
-  const response = await api.post(`/transactions/create-for-product/${productId}`);
+  const response = await api.post(
+    `/transactions/create-for-product/${productId}`,
+  );
   return response.data;
 };
 
@@ -75,26 +95,38 @@ export const getTransaction = async (transactionId) => {
 };
 
 export const uploadPayment = async (transactionId, formData) => {
-  const response = await api.post(`/transactions/${transactionId}/payment`, formData, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
+  const response = await api.post(
+    `/transactions/${transactionId}/payment`,
+    formData,
+    {
+      headers: { "Content-Type": "multipart/form-data" },
+    },
+  );
   return response.data;
 };
 
 export const uploadShipping = async (transactionId, formData) => {
-  const response = await api.post(`/transactions/${transactionId}/shipping`, formData, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
+  const response = await api.post(
+    `/transactions/${transactionId}/shipping`,
+    formData,
+    {
+      headers: { "Content-Type": "multipart/form-data" },
+    },
+  );
   return response.data;
 };
 
 export const confirmReceipt = async (transactionId) => {
-  const response = await api.post(`/transactions/${transactionId}/confirm-receipt`);
+  const response = await api.post(
+    `/transactions/${transactionId}/confirm-receipt`,
+  );
   return response.data;
 };
 
 export const cancelTransaction = async (transactionId, reason) => {
-  const response = await api.post(`/transactions/${transactionId}/cancel`, { reason });
+  const response = await api.post(`/transactions/${transactionId}/cancel`, {
+    reason,
+  });
   return response.data;
 };
 
@@ -104,11 +136,17 @@ export const fetchTransactionMessages = async (transactionId) => {
 };
 
 export const sendTransactionMessage = async (transactionId, payload) => {
-  const response = await api.post(`/transactions/${transactionId}/messages`, payload);
+  const response = await api.post(
+    `/transactions/${transactionId}/messages`,
+    payload,
+  );
   return response.data;
 };
 
 export const postTransactionRating = async (transactionId, payload) => {
-  const response = await api.post(`/transactions/${transactionId}/rating`, payload);
+  const response = await api.post(
+    `/transactions/${transactionId}/rating`,
+    payload,
+  );
   return response.data;
 };
