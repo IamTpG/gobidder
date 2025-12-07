@@ -67,14 +67,14 @@ const MyProductsTab = () => {
             Active
           </button>
           <button
-            onClick={() => handleStatusChange("Pending")}
+            onClick={() => handleStatusChange("Won")}
             className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all ${
-              status === "Pending"
+              status === "Won"
                 ? "bg-white text-[#00B289] shadow-sm"
                 : "text-gray-500 hover:text-gray-700"
             }`}
           >
-            Pending
+            Won
           </button>
           <button
             onClick={() => handleStatusChange("Sold")}

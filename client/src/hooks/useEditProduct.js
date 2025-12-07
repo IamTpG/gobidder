@@ -2,7 +2,14 @@ import { useState, useEffect, useCallback } from "react";
 import api from "../services/api";
 import { useNavigate } from "react-router-dom";
 
+import { useAuth } from "../contexts/AuthContext";
+
+/**
+ * Hook để lấy thông tin sản phẩm và cập nhật sản phẩm
+ * Hỗ trợ cả Admin và Seller
+ */
 export const useEditProduct = (productId) => {
+  const { user } = useAuth();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -20,6 +27,18 @@ export const useEditProduct = (productId) => {
       console.error("Error fetching product:", err);
       setError(err.response?.data?.message || "Failed to fetch product");
     } finally {
+  // Xác định role và endpoint tương ứng
+  const isAdmin = user?.role === "Admin";
+  const getEndpoint = isAdmin
+    ? `/products/admin/${productId}`
+    : `/products/${productId}`;
+  const updateEndpoint = isAdmin
+    ? `/products/admin/${productId}`
+    : `/products/${productId}`;
+
+  // Fetch product details
+  useEffect(() => {
+    if (!productId) {
       setLoading(false);
     }
   }, [productId]);
@@ -27,6 +46,22 @@ export const useEditProduct = (productId) => {
   useEffect(() => {
     fetchProduct();
   }, [fetchProduct]);
+    const fetchProduct = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await api.get(getEndpoint);
+        setProduct(response.data.data);
+      } catch (err) {
+        console.error("Error fetching product:", err);
+        setError(err.response?.data?.message || "Failed to load product");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProduct();
+  }, [productId, getEndpoint]);
 
   const updateProduct = async (formData) => {
     setUpdating(true);
@@ -127,7 +162,9 @@ export const appendDescription = async (productId, text) => {
   try {
     const response = await api.post(
       `/products/${productId}/append-description`,
-      { text: text.trim() },
+      {
+        text: text.trim(),
+      },
     );
     return response.data;
   } catch (err) {

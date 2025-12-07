@@ -661,6 +661,190 @@ const appendDescription = async (req, res) => {
   }
 };
 
+// Lấy tất cả sản phẩm (Admin only - bao gồm tất cả status)
+const getAllProductsAdmin = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const categoryIdParam = req.query.categoryId ?? req.query.category;
+    const categoryId = categoryIdParam ? Number(categoryIdParam) : undefined;
+    const sort = req.query.sort || "created_at";
+    const q = req.query.q || "";
+    const status = req.query.status;
+
+    const maxLimit = 50;
+    const validateLimit = Math.min(limit, maxLimit);
+    const validatePage = Math.max(page, 1);
+    const skip = (validatePage - 1) * validateLimit;
+
+    const result = await productService.getAllProductsAdmin({
+      page: validatePage,
+      limit: validateLimit,
+      categoryId,
+      sort,
+      q,
+      skip,
+      status,
+    });
+
+    return res.status(200).json({
+      data: result.data,
+      pagination: {
+        page: validatePage,
+        limit: validateLimit,
+        totalItems: result.totalItems,
+        totalPages: result.totalPages,
+        hasNextPage: result.hasNextPage,
+        hasPreviousPage: result.hasPreviousPage,
+      },
+    });
+  } catch (error) {
+    console.error("Error in getAllProductsAdmin:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// Lấy một sản phẩm chi tiết (Admin only)
+const getProductByIdAdmin = async (req, res) => {
+  try {
+    const productId = parseInt(req.params.id);
+
+    if (isNaN(productId) || productId <= 0) {
+      return res.status(400).json({ message: "Invalid product ID" });
+    }
+
+    const product = await productService.getProductById(productId);
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    // Admin có thể xem transaction details
+    let transaction = null;
+    try {
+      const tx = await prisma.transaction.findUnique({
+        where: { product_id: productId },
+        include: {
+          seller: { select: { id: true, full_name: true } },
+          winner: { select: { id: true, full_name: true } },
+          messages: true,
+          ratings: true,
+        },
+      });
+      if (tx) transaction = tx;
+    } catch (e) {
+      console.error("Transaction lookup error", e);
+    }
+
+    if (transaction) product.transaction = transaction;
+
+    return res.status(200).json({
+      data: product,
+    });
+  } catch (error) {
+    console.error("Error in getProductByIdAdmin:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// Cập nhật sản phẩm (Admin only - có thể sửa bất kỳ sản phẩm nào)
+const updateProductAdmin = async (req, res) => {
+  const productId = parseInt(req.params.id);
+
+  const {
+    name,
+    description,
+    images,
+    startPrice,
+    stepPrice,
+    buyNowPrice,
+    categoryId,
+    endTime,
+    autoRenew,
+    status, // Admin có thể thay đổi status
+  } = req.body;
+
+  // Validation cơ bản
+  if (!name || !description || !categoryId) {
+    return res.status(400).json({ message: "Missing required fields" });
+  }
+
+  // Validate Images (Bắt buộc >= 3 ảnh)
+  if (!images || !Array.isArray(images) || images.length < 3) {
+    return res
+      .status(400)
+      .json({ message: "At least 3 images are required for the product." });
+  }
+
+  // Validate Prices
+  if (!startPrice || !stepPrice) {
+    return res
+      .status(400)
+      .json({ message: "Start price and step price are required" });
+  }
+
+  if (Number(startPrice) <= 0 || Number(stepPrice) <= 0) {
+    return res.status(400).json({ message: "Prices must be positive numbers" });
+  }
+
+  // Validate EndTime (nếu có)
+  if (endTime && new Date(endTime) <= new Date()) {
+    return res.status(400).json({ message: "End time must be in the future" });
+  }
+
+  // Validate status nếu có
+  const validStatuses = ["Pending", "Active", "Sold", "Expired", "Removed"];
+  if (status && !validStatuses.includes(status)) {
+    return res.status(400).json({ message: "Invalid status" });
+  }
+
+  try {
+    const updatedProduct = await productService.updateProductAdmin(productId, {
+      name,
+      description,
+      images,
+      startPrice,
+      stepPrice,
+      buyNowPrice,
+      categoryId,
+      endTime,
+      autoRenew,
+      status,
+    });
+
+    return res.status(200).json({ success: true, product: updatedProduct });
+  } catch (error) {
+    console.error("Error in updateProductAdmin:", error);
+    return res
+      .status(400)
+      .json({ message: error.message || "Failed to update product" });
+  }
+};
+
+// Xóa sản phẩm (Admin only - set status = Removed)
+const deleteProductAdmin = async (req, res) => {
+  try {
+    const productId = parseInt(req.params.id);
+
+    if (isNaN(productId) || productId <= 0) {
+      return res.status(400).json({ message: "Invalid product ID" });
+    }
+
+    const deletedProduct = await productService.deleteProductAdmin(productId);
+
+    return res.status(200).json({
+      success: true,
+      message: "Product removed successfully",
+      product: deletedProduct,
+    });
+  } catch (error) {
+    console.error("Error in deleteProductAdmin:", error);
+    if (error.message === "Product not found") {
+      return res.status(404).json({ message: error.message });
+    }
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
 module.exports = {
   getProducts,
   getProductById,
@@ -675,4 +859,8 @@ module.exports = {
   update,
   getSellerProducts,
   appendDescription,
+  getAllProductsAdmin,
+  getProductByIdAdmin,
+  updateProductAdmin,
+  deleteProductAdmin,
 };
