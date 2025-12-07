@@ -641,7 +641,14 @@ const getProductsBySellerId = async ({
 
   // Filter theo status nếu có (mặc định lấy tất cả)
   if (status) {
-    where.status = status;
+    // Nếu status là "Won", filter các sản phẩm có người thắng đấu giá
+    if (status === "Won") {
+      where.current_bidder_id = { not: null }; // Có người thắng
+      where.end_time = { lte: new Date() }; // Đã hết hạn
+      where.status = { not: "Removed" }; // Loại trừ sản phẩm đã bị gỡ
+    } else {
+      where.status = status;
+    }
   }
 
   if (categoryId) {
