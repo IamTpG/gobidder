@@ -9,6 +9,7 @@ const SIDEBAR_ITEMS = [
     label: "My Products",
     requireRole: ["Seller", "ExpiredSeller"],
   },
+  { key: "watchlist", label: "Watchlist" },
   { key: "security", label: "Security" },
   { key: "notifications", label: "Notifications" },
   { key: "billing", label: "Billing" },

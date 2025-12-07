@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 import ProductCard from "../common/ProductCard";
+import { useWatchlist } from "../../hooks/useWatchlist";
+import { useAuth } from "../../contexts/AuthContext";
 // import { CategoryFilter } from "../common";
 
 const ProductSection = ({
@@ -12,6 +14,8 @@ const ProductSection = ({
   className = "",
 }) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { isInWatchlist, toggleWatchlist } = useWatchlist();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [responsiveItemsPerView, setResponsiveItemsPerView] =
     useState(itemsPerView);
@@ -130,6 +134,19 @@ const ProductSection = ({
     };
   }, [currentIndex]);
 
+  // Handle watchlist toggle
+  const handleWatchlistToggle = async (productId) => {
+    if (!user) {
+      navigate("/auth");
+      return;
+    }
+    try {
+      await toggleWatchlist(productId);
+    } catch (error) {
+      console.error("Error toggling watchlist:", error);
+    }
+  };
+
   return (
     <section className={`py-8 sm:py-12 md:py-16 ${className}`}>
       <div className="max-w-[1400px] mx-auto px-6 sm:px-8 lg:px-12">
@@ -226,6 +243,8 @@ const ProductSection = ({
                       onBid={() =>
                         console.log("Bid on:", item.name || item.title)
                       }
+                      isInWatchlist={user ? isInWatchlist(item.id) : false}
+                      onWatchlistToggle={handleWatchlistToggle}
                     />
                   </div>
                 ))}

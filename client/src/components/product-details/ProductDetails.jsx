@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import useRelatedProducts from "../../hooks/useRelatedProducts";
+import { useWatchlist } from "../../hooks/useWatchlist";
 import {
   formatDateTime,
   formatPrice,
@@ -39,6 +40,20 @@ const ProductDetails = ({ product, onRefresh }) => {
 
   // Hooks
   const { products: relatedProducts } = useRelatedProducts(product?.id, 5);
+  const { isInWatchlist, toggleWatchlist } = useWatchlist();
+
+  // Handle watchlist toggle
+  const handleWatchlistToggle = async (productId) => {
+    if (!user) {
+      navigate("/auth", { state: { from: location } });
+      return;
+    }
+    try {
+      await toggleWatchlist(productId);
+    } catch (error) {
+      console.error("Error toggling watchlist:", error);
+    }
+  };
 
   // Initial Logic
   useEffect(() => {
@@ -149,6 +164,8 @@ const ProductDetails = ({ product, onRefresh }) => {
             navigate("/auth", { state: { from: location } })
           }
           onFinishPayment={handleFinishPayment}
+          isInWatchlist={user ? isInWatchlist(product.id) : false}
+          onWatchlistToggle={handleWatchlistToggle}
         />
       </div>
 
