@@ -1,14 +1,26 @@
 import { useState, useEffect } from "react";
 import api from "../services/api";
+import { useAuth } from "../contexts/AuthContext";
 
 /**
  * Hook để lấy thông tin sản phẩm và cập nhật sản phẩm
+ * Hỗ trợ cả Admin và Seller
  */
 export const useEditProduct = (productId) => {
+  const { user } = useAuth();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [updating, setUpdating] = useState(false);
+
+  // Xác định role và endpoint tương ứng
+  const isAdmin = user?.role === "Admin";
+  const getEndpoint = isAdmin
+    ? `/products/admin/${productId}`
+    : `/products/${productId}`;
+  const updateEndpoint = isAdmin
+    ? `/products/admin/${productId}`
+    : `/products/${productId}`;
 
   // Fetch product details
   useEffect(() => {
@@ -21,7 +33,7 @@ export const useEditProduct = (productId) => {
       try {
         setLoading(true);
         setError(null);
-        const response = await api.get(`/products/${productId}`);
+        const response = await api.get(getEndpoint);
         setProduct(response.data.data);
       } catch (err) {
         console.error("Error fetching product:", err);
@@ -32,14 +44,14 @@ export const useEditProduct = (productId) => {
     };
 
     fetchProduct();
-  }, [productId]);
+  }, [productId, getEndpoint]);
 
   // Update product
   const updateProduct = async (productData) => {
     try {
       setUpdating(true);
       setError(null);
-      const response = await api.put(`/products/${productId}`, productData);
+      const response = await api.put(updateEndpoint, productData);
       return response.data;
     } catch (err) {
       console.error("Error updating product:", err);
@@ -105,7 +117,9 @@ export const appendDescription = async (productId, text) => {
   try {
     const response = await api.post(
       `/products/${productId}/append-description`,
-      { text: text.trim() },
+      {
+        text: text.trim(),
+      },
     );
     return response.data;
   } catch (err) {
