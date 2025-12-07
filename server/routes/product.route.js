@@ -101,6 +101,7 @@ router.put(
   "/:id",
   passport.authenticate("jwt", { session: false }),
   authorizeRoles("Seller", "ExpiredSeller"),
+  upload.array("images", 10),
   productController.update,
 );
 

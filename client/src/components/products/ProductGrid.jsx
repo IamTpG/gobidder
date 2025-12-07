@@ -5,7 +5,7 @@ import ProductCard from "../common/ProductCard";
 import { useWatchlist } from "../../hooks/useWatchlist";
 import { useAuth } from "../../contexts/AuthContext";
 
-const ProductGrid = ({ products }) => {
+const ProductGrid = ({ products, isOwner, onEdit }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { isInWatchlist, toggleWatchlist } = useWatchlist();
@@ -29,6 +29,8 @@ const ProductGrid = ({ products }) => {
           <ProductCard
             key={p.id}
             {...p}
+            isOwner={isOwner}
+            onEdit={() => onEdit && onEdit(p)}
             onClick={() => navigate(`/products/${p.id}`)}
             onBid={() => console.log("Bid on:", p.name || p.title)}
             isInWatchlist={user ? isInWatchlist(p.id) : false}

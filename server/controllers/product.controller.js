@@ -531,66 +531,96 @@ const update = async (req, res) => {
   const {
     name,
     description,
-    images,
     startPrice,
     stepPrice,
     buyNowPrice,
     categoryId,
     endTime,
     autoRenew,
+    oldImages, // Array of URLs to keep
   } = req.body;
 
-  // Validation cơ bản
-  if (!name || !description || !categoryId || !endTime) {
-    return res.status(400).json({ message: "Missing required fields" });
-  }
-
-  // Validate Images (Bắt buộc >= 3 ảnh)
-  if (!images || !Array.isArray(images) || images.length < 3) {
-    return res
-      .status(400)
-      .json({ message: "At least 3 images are required for the product." });
-  }
-
-  // Validate Prices
-  if (!startPrice || !stepPrice) {
-    return res
-      .status(400)
-      .json({ message: "Start price and step price are required" });
-  }
-
-  if (Number(startPrice) <= 0 || Number(stepPrice) <= 0) {
-    return res.status(400).json({ message: "Prices must be positive numbers" });
-  }
-
-  // Validate EndTime
-  if (new Date(endTime) <= new Date()) {
-    return res.status(400).json({ message: "End time must be in the future" });
-  }
+  // Handle new images from upload
+  const files = req.files;
+  let newImageUrls = [];
 
   try {
+    if (files && files.length > 0) {
+      const uploadPromises = files.map((file) => {
+        return new Promise((resolve, reject) => {
+          cloudinary.uploader.upload(file.path, (error, result) => {
+            if (error) reject(error);
+            else resolve(result.secure_url);
+          });
+        });
+      });
+
+      newImageUrls = await Promise.all(uploadPromises);
+      // Clean up local files
+      deleteLocalFiles(files);
+    }
+
+    // Combine old images (ensure it's an array) and new images
+    let finalImages = [];
+    if (oldImages) {
+      finalImages = Array.isArray(oldImages) ? oldImages : [oldImages];
+    }
+    finalImages = [...finalImages, ...newImageUrls];
+
+    // Validation cơ bản
+    if (!name || !categoryId || !endTime) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+
+    // Validate Images (Bắt buộc >= 3 ảnh)
+    if (finalImages.length < 3) {
+      return res
+        .status(400)
+        .json({ message: "At least 3 images are required" });
+    }
+
+    // Validate Prices
+    if (!startPrice || !stepPrice) {
+      return res
+        .status(400)
+        .json({ message: "Start price and step price are required" });
+    }
+
+    if (Number(startPrice) <= 0 || Number(stepPrice) <= 0) {
+      return res.status(400).json({ message: "Prices must be positive" });
+    }
+
+    // Validate EndTime
+    if (new Date(endTime) <= new Date()) {
+      return res
+        .status(400)
+        .json({ message: "End time must be in the future" });
+    }
+
     const updatedProduct = await productService.updateProduct(
       productId,
       sellerId,
       {
         name,
-        description,
-        images,
-        startPrice,
-        stepPrice,
-        buyNowPrice,
-        categoryId,
-        endTime,
-        autoRenew,
+        description, // This is the NEW description to append
+        images: finalImages,
+        startPrice: Number(startPrice),
+        stepPrice: Number(stepPrice),
+        buyNowPrice: buyNowPrice ? Number(buyNowPrice) : null,
+        categoryId: Number(categoryId),
+        endTime: new Date(endTime),
+        autoRenew: autoRenew === "true" || autoRenew === true,
       },
     );
 
-    return res.status(200).json({ success: true, product: updatedProduct });
+    return res.status(200).json({
+      message: "Product updated successfully",
+      product: updatedProduct,
+    });
   } catch (error) {
     console.error("Error in update product:", error);
-    return res
-      .status(400)
-      .json({ message: error.message || "Failed to update product" });
+    if (files) deleteLocalFiles(files);
+    return res.status(500).json({ message: error.message });
   }
 };
 
