@@ -23,7 +23,7 @@ router.get(
   "/seller/my-products",
   passport.authenticate("jwt", { session: false }),
   authorizeRoles("Seller", "ExpiredSeller"),
-  productController.getSellerProducts,
+  productController.getSellerProducts
 );
 
 // Admin routes
@@ -32,7 +32,7 @@ router.get(
   "/admin/all",
   passport.authenticate("jwt", { session: false }),
   authorizeRoles("Admin"),
-  productController.getAllProductsAdmin,
+  productController.getAllProductsAdmin
 );
 
 // Lấy một sản phẩm chi tiết (Admin only)
@@ -40,7 +40,7 @@ router.get(
   "/admin/:id",
   passport.authenticate("jwt", { session: false }),
   authorizeRoles("Admin"),
-  productController.getProductByIdAdmin,
+  productController.getProductByIdAdmin
 );
 
 // Cập nhật sản phẩm (Admin only - có thể sửa bất kỳ sản phẩm nào)
@@ -48,7 +48,7 @@ router.put(
   "/admin/:id",
   passport.authenticate("jwt", { session: false }),
   authorizeRoles("Admin"),
-  productController.updateProductAdmin,
+  productController.updateProductAdmin
 );
 
 // Xóa sản phẩm (Admin only - set status = Removed)
@@ -56,20 +56,21 @@ router.delete(
   "/admin/:id",
   passport.authenticate("jwt", { session: false }),
   authorizeRoles("Admin"),
-  productController.deleteProductAdmin,
+  productController.deleteProductAdmin
 );
 
 // Lấy sản phẩm liên quan
 router.get("/:id/related", productController.getRelatedProducts);
 
-// Lấy một sản phẩm
-router.get("/:id", productController.getProductById);
+// Lấy một sản phẩm (Sử dụng optionalAuth để xác định user nếu có login)
+const optionalAuth = require("../middlewares/optionalAuth.middleware");
+router.get("/:id", optionalAuth, productController.getProductById);
 
 // Tạo câu hỏi mới (yêu cầu login)
 router.post(
   "/:id/questions",
   passport.authenticate("jwt", { session: false }),
-  productController.createQuestion,
+  productController.createQuestion
 );
 
 // Append description (Seller only)
@@ -77,7 +78,7 @@ router.post(
   "/:id/append-description",
   passport.authenticate("jwt", { session: false }),
   authorizeRoles("Seller", "ExpiredSeller"),
-  productController.appendDescription,
+  productController.appendDescription
 );
 
 // Ban a bidder from product (Seller only)
@@ -85,14 +86,14 @@ router.post(
   "/:id/ban-bidder",
   passport.authenticate("jwt", { session: false }),
   authorizeRoles("Seller", "ExpiredSeller"),
-  require("../controllers/bannedBidder.controller").banBidder,
+  require("../controllers/bannedBidder.controller").banBidder
 );
 
 // Check if current user is banned from product
 router.get(
   "/:id/banned-status",
   passport.authenticate("jwt", { session: false }),
-  require("../controllers/bannedBidder.controller").checkBannedStatus,
+  require("../controllers/bannedBidder.controller").checkBannedStatus
 );
 
 // Get all banned bidders for a product (Seller only)
@@ -100,7 +101,7 @@ router.get(
   "/:id/banned-bidders",
   passport.authenticate("jwt", { session: false }),
   authorizeRoles("Seller", "ExpiredSeller"),
-  require("../controllers/bannedBidder.controller").getBannedBidders,
+  require("../controllers/bannedBidder.controller").getBannedBidders
 );
 
 // Trả lời câu hỏi (yêu cầu login và là seller)
@@ -108,7 +109,7 @@ router.post(
   "/:id/questions/:questionId/answer",
   passport.authenticate("jwt", { session: false }),
   authorizeRoles("Seller", "ExpiredSeller"),
-  productController.answerQuestion,
+  productController.answerQuestion
 );
 
 router.post(
@@ -116,7 +117,7 @@ router.post(
   passport.authenticate("jwt", { session: false }),
   authorizeRoles("Seller"),
   upload.array("images", 10),
-  create,
+  create
 );
 
 // Cập nhật sản phẩm (Seller only)
@@ -125,7 +126,7 @@ router.put(
   passport.authenticate("jwt", { session: false }),
   authorizeRoles("Seller", "ExpiredSeller"),
   upload.array("images", 10),
-  productController.update,
+  productController.update
 );
 
 module.exports = router;

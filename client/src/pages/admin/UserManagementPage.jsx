@@ -3,11 +3,8 @@ import { Helmet } from "react-helmet";
 import {
   Users,
   Search,
-  MoreVertical,
   Edit2,
-  Trash2,
   UserPlus,
-  Shield,
   Ban,
   Filter,
 } from "lucide-react";
@@ -156,7 +153,7 @@ const UserManagementPage = () => {
         </div>
         <button
           onClick={openCreateModal}
-          className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-medium text-white transition hover:bg-blue-700"
+          className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 font-medium text-white transition hover:bg-green-500"
         >
           <UserPlus size={20} />
           Add User
@@ -288,8 +285,8 @@ const UserManagementPage = () => {
           pageLinkClassName={
             "block px-3 py-1 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white"
           }
-          activeClassName={"bg-blue-600 border-blue-600 text-white"}
-          activeLinkClassName={"bg-blue-600 text-white hover:bg-blue-700"}
+          activeClassName={"bg-primary border-primary text-white"}
+          activeLinkClassName={"bg-primary text-white hover:bg-primary"}
           previousClassName={
             "rounded-md border border-gray-300 dark:border-gray-600 px-3 py-1 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white"
           }
