@@ -336,6 +336,62 @@ const getMyRequestStatus = async (req, res) => {
   }
 };
 
+const createUser = async (req, res) => {
+  try {
+    const { full_name, email, password, role } = req.body;
+    const newUser = await userService.createUser({
+      full_name,
+      email,
+      password,
+      role,
+    });
+    return res.status(201).json(newUser);
+  } catch (err) {
+    if (err.message === "Email is already in use") {
+      return res.status(409).json({ message: err.message });
+    }
+    console.error(err);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+const updateUser = async (req, res) => {
+  const { id } = req.params;
+  const { full_name, email, role, password } = req.body;
+  try {
+    const updatedUser = await userService.updateUser(id, {
+      full_name,
+      email,
+      role,
+      password,
+    });
+    return res.json(updatedUser);
+  } catch (err) {
+    if (err.message === "User not found") {
+      return res.status(404).json({ message: err.message });
+    }
+    if (err.message === "Email is already in use") {
+      return res.status(409).json({ message: err.message });
+    }
+    console.error(err);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+const deleteUser = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const result = await userService.deleteUser(id);
+    return res.json(result);
+  } catch (err) {
+    if (err.message === "User not found") {
+      return res.status(404).json({ message: err.message });
+    }
+    console.error(err);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
 module.exports = {
   getMe,
   getUsers,
@@ -354,4 +410,7 @@ module.exports = {
   approveSeller,
   rejectSeller,
   getMyRequestStatus,
+  createUser,
+  updateUser,
+  deleteUser,
 };
