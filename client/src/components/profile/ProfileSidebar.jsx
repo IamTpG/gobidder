@@ -29,7 +29,7 @@ const ProfileSidebar = ({ activeKey, userRole }) => {
   });
 
   return (
-    <aside className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 lg:w-64 h-fit sticky top-24">
+    <aside className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 lg:w-64 h-fit top-24">
       <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4 pl-4">
         Account Settings
       </h3>
