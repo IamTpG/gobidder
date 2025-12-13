@@ -23,6 +23,7 @@ import TabNavigation from "../common/TabNavigation";
 import AuctionSection from "../home/ProductSection";
 import ProductInfoSidebar from "./ProductInfoSidebar";
 import ProductQnA from "./ProductQnA";
+import TransactionRating from "./TransactionRating";
 import "../../styles/ProductDetails.css";
 
 const ProductDetails = ({ product, onRefresh }) => {
@@ -47,6 +48,7 @@ const ProductDetails = ({ product, onRefresh }) => {
   const { isBanned, isLoading: isCheckingBan } = useBannedStatus(
     product?.id,
     !!user && !isSeller,
+    !!user && !isSeller
   );
 
   // Hooks
@@ -210,6 +212,15 @@ const ProductDetails = ({ product, onRefresh }) => {
           onWatchlistToggle={handleWatchlistToggle}
         />
       </div>
+
+      {/* Transaction Rating Section */}
+      {product?.transaction && (
+        <TransactionRating
+          transaction={product.transaction}
+          user={user}
+          onRateSuccess={onRefresh}
+        />
+      )}
 
       {/* Tabs Section */}
       <div className="mt-12">

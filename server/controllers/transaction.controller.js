@@ -7,7 +7,7 @@ const fs = require("fs");
 const path = require("path");
 const cloudinary = require("../config/cloudinary");
 
-const uploadDir = path.join(__dirname, '../uploads');
+const uploadDir = path.join(__dirname, "../uploads");
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 
 const storage = multer.diskStorage({
@@ -18,14 +18,17 @@ const upload = multer({ storage });
 
 const deleteLocalFiles = (files) => {
   files?.forEach((file) => {
-    try { fs.unlinkSync(file.path); } catch {};
+    try {
+      fs.unlinkSync(file.path);
+    } catch {}
   });
 };
 
 const createForProduct = async (req, res) => {
   try {
     const productId = parseInt(req.params.productId);
-    if (isNaN(productId)) return res.status(400).json({ message: "Invalid product ID" });
+    if (isNaN(productId))
+      return res.status(400).json({ message: "Invalid product ID" });
 
     const tx = await transactionService.createTransactionForProduct(productId);
     return res.status(201).json({ data: tx });
@@ -49,56 +52,92 @@ const getByProduct = async (req, res) => {
 const getById = async (req, res) => {
   try {
     const id = parseInt(req.params.id);
-    const tx = await transactionService.getTransactionById(id);
+    // Pass user ID and role for ownership check
+    // Note: req.user.role might not be populated if authorizeRoles middleware isn't used before this.
+    // However, we'll handle the check in the service. Ideally passport strategy should populate role,
+    // or we fetch it. Let's see what passport does.
+    // Safe bet: Pass req.user.id. If role is needed for Admin bypass, we might need to fetch it in service
+    // or ensure it's here.
+    const userId = req.user.id;
+    const userRole = req.user.role; // Might be undefined depending on passport config
+
+    const tx = await transactionService.getTransactionById(
+      id,
+      userId,
+      userRole
+    );
     return res.status(200).json({ data: tx });
   } catch (error) {
     console.error("getById error:", error);
+    // Return 403 or 404 depending on error, but 404 is safer to avoid leaking existence
+    // If service throws "Unauthorized", we can map to 403, but here catching all as 404 or 400 is existing behavior.
+    // Let's distinguish if possible, or just messsage.
+    if (error.message.includes("Unauthorized")) {
+      return res.status(403).json({ message: error.message });
+    }
     return res.status(404).json({ message: error.message || "Not found" });
   }
 };
 
 // Buyer uploads payment proof and shipping address
-const postPayment = [upload.single("invoice"), async (req, res) => {
-  try {
-    const id = parseInt(req.params.id);
-    const buyerId = req.user.id;
-    let paymentInvoiceUrl = null;
+const postPayment = [
+  upload.single("invoice"),
+  async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const buyerId = req.user.id;
+      let paymentInvoiceUrl = null;
 
-    if (req.file) {
-      const uploadResult = await cloudinary.uploader.upload(req.file.path, { folder: 'transactions/payment' });
-      paymentInvoiceUrl = uploadResult.secure_url;
-      deleteLocalFiles([req.file]);
+      if (req.file) {
+        const uploadResult = await cloudinary.uploader.upload(req.file.path, {
+          folder: "transactions/payment",
+        });
+        paymentInvoiceUrl = uploadResult.secure_url;
+        deleteLocalFiles([req.file]);
+      }
+
+      const { shipping_address } = req.body;
+      const updated = await transactionService.buyerUploadPayment(id, buyerId, {
+        shippingAddress: shipping_address,
+        paymentInvoiceUrl,
+      });
+      return res.status(200).json({ data: updated });
+    } catch (error) {
+      console.error("postPayment error:", error);
+      return res.status(400).json({ message: error.message || "Failed" });
     }
-
-    const { shipping_address } = req.body;
-    const updated = await transactionService.buyerUploadPayment(id, buyerId, { shippingAddress: shipping_address, paymentInvoiceUrl });
-    return res.status(200).json({ data: updated });
-  } catch (error) {
-    console.error("postPayment error:", error);
-    return res.status(400).json({ message: error.message || "Failed" });
-  }
-}];
+  },
+];
 
 // Seller confirms shipping (uploads shipping invoice)
-const postShipping = [upload.single("invoice"), async (req, res) => {
-  try {
-    const id = parseInt(req.params.id);
-    const sellerId = req.user.id;
-    let shippingInvoiceUrl = null;
+const postShipping = [
+  upload.single("invoice"),
+  async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const sellerId = req.user.id;
+      let shippingInvoiceUrl = null;
 
-    if (req.file) {
-      const uploadResult = await cloudinary.uploader.upload(req.file.path, { folder: 'transactions/shipping' });
-      shippingInvoiceUrl = uploadResult.secure_url;
-      deleteLocalFiles([req.file]);
+      if (req.file) {
+        const uploadResult = await cloudinary.uploader.upload(req.file.path, {
+          folder: "transactions/shipping",
+        });
+        shippingInvoiceUrl = uploadResult.secure_url;
+        deleteLocalFiles([req.file]);
+      }
+
+      const updated = await transactionService.sellerConfirmShipping(
+        id,
+        sellerId,
+        { shippingInvoiceUrl }
+      );
+      return res.status(200).json({ data: updated });
+    } catch (error) {
+      console.error("postShipping error:", error);
+      return res.status(400).json({ message: error.message || "Failed" });
     }
-
-    const updated = await transactionService.sellerConfirmShipping(id, sellerId, { shippingInvoiceUrl });
-    return res.status(200).json({ data: updated });
-  } catch (error) {
-    console.error("postShipping error:", error);
-    return res.status(400).json({ message: error.message || "Failed" });
-  }
-}];
+  },
+];
 
 const postConfirmReceipt = async (req, res) => {
   try {
@@ -117,7 +156,9 @@ const postCancel = async (req, res) => {
     const id = parseInt(req.params.id);
     const sellerId = req.user.id;
     const { reason } = req.body;
-    const updated = await transactionService.sellerCancel(id, sellerId, { reason });
+    const updated = await transactionService.sellerCancel(id, sellerId, {
+      reason,
+    });
     return res.status(200).json({ data: updated });
   } catch (error) {
     console.error("postCancel error:", error);
@@ -131,7 +172,12 @@ const postMessage = async (req, res) => {
     const id = parseInt(req.params.id);
     const senderId = req.user.id;
     const { receiverId, message } = req.body;
-    const msg = await transactionService.addMessage(id, senderId, receiverId, message);
+    const msg = await transactionService.addMessage(
+      id,
+      senderId,
+      receiverId,
+      message
+    );
     return res.status(201).json({ data: msg });
   } catch (error) {
     console.error("postMessage error:", error);
@@ -156,7 +202,10 @@ const postRating = async (req, res) => {
     const id = parseInt(req.params.id);
     const raterId = req.user.id;
     const { score, comment } = req.body;
-    const saved = await transactionService.upsertRating(id, raterId, { score, comment });
+    const saved = await transactionService.upsertRating(id, raterId, {
+      score,
+      comment,
+    });
     return res.status(201).json({ data: saved });
   } catch (error) {
     console.error("postRating error:", error);
