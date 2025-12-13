@@ -92,7 +92,6 @@ router.get(
   userController.getMyProducts
 );
 
-// --- Admin Routes for Seller Requests ---
 
 // Lấy tất cả seller requests (Admin)
 router.get(
@@ -124,6 +123,30 @@ router.get(
   passport.authenticate("jwt", { session: false }),
   authorizeRoles("Admin"),
   userController.getUserById
+);
+
+// Xóa/Ban người dùng (Admin)
+router.delete(
+  "/:id",
+  passport.authenticate("jwt", { session: false }),
+  authorizeRoles("Admin"),
+  userController.deleteUser
+);
+
+// Tạo mới người dùng (Admin)
+router.post(
+  "/",
+  passport.authenticate("jwt", { session: false }),
+  authorizeRoles("Admin"),
+  userController.createUser
+);
+
+// Cập nhật người dùng (Admin)
+router.put(
+  "/:id",
+  passport.authenticate("jwt", { session: false }),
+  authorizeRoles("Admin"),
+  userController.updateUser
 );
 
 module.exports = router;

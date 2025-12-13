@@ -19,11 +19,26 @@ passport.use(
       secretOrKey: process.env.JWT_SECRET,
     },
     async (jwt_payload, done) => {
-      return done(null, jwt_payload);
-    },
-  ),
-);
+      try {
+        const user = await prisma.user.findUnique({
+          where: { id: jwt_payload.id },
+        });
 
+        if (!user) {
+          return done(null, false);
+        }
+
+        if (user.role === "Banned") {
+          return done(null, false, { message: "Account is banned" });
+        }
+
+        return done(null, user);
+      } catch (error) {
+        return done(error, false);
+      }
+    }
+  )
+)
 passport.use(
   new LocalStrategy(
     {
@@ -51,12 +66,18 @@ passport.use(
           });
         }
 
+        if (user.role === "Banned") {
+          return done(null, false, {
+            message: "Tài khoản của bạn đã bị khóa.",
+          });
+        }
+
         return done(null, user);
       } catch (error) {
         return done(error);
       }
-    },
-  ),
+    }
+  )
 );
 
 passport.use(
@@ -77,6 +98,11 @@ passport.use(
         });
 
         if (existingUser) {
+          if (existingUser.role === "Banned") {
+            return done(null, false, {
+              message: "Your account has been banned.",
+            });
+          }
           if (!existingUser.google_id) {
             const updatedUser = await prisma.user.update({
               where: { email },
@@ -101,6 +127,6 @@ passport.use(
       } catch (error) {
         return done(error);
       }
-    },
-  ),
+    }
+  )
 );

@@ -9,71 +9,71 @@ const router = express.Router();
 router.post(
   "/create-for-product/:productId",
   passport.authenticate("jwt", { session: false }),
-  transactionController.createForProduct,
+  transactionController.createForProduct
 );
 
 // Get transaction by product ID
 router.get(
   "/product/:productId",
   passport.authenticate("jwt", { session: false }),
-  transactionController.getByProduct,
+  transactionController.getByProduct
 );
 
 // Get transaction by id
 router.get(
   "/:id",
   passport.authenticate("jwt", { session: false }),
-  transactionController.getById,
+  transactionController.getById
 );
 
 // Buyer uploads payment proof
 router.post(
   "/:id/payment",
   passport.authenticate("jwt", { session: false }),
-  transactionController.postPayment,
+  transactionController.postPayment
 );
 
 // Seller confirms shipping
 router.post(
   "/:id/shipping",
   passport.authenticate("jwt", { session: false }),
-  authorizeRoles("Seller"),
-  transactionController.postShipping,
+  authorizeRoles("Seller", "ExpiredSeller"),
+  transactionController.postShipping
 );
 
 // Buyer confirms receipt
 router.post(
   "/:id/confirm-receipt",
   passport.authenticate("jwt", { session: false }),
-  transactionController.postConfirmReceipt,
+  transactionController.postConfirmReceipt
 );
 
 // Seller cancels transaction
 router.post(
   "/:id/cancel",
   passport.authenticate("jwt", { session: false }),
-  authorizeRoles("Seller"),
-  transactionController.postCancel,
+  authorizeRoles("Seller", "ExpiredSeller"),
+  transactionController.postCancel
 );
 
 // Chat messages
 router.get(
   "/:id/messages",
   passport.authenticate("jwt", { session: false }),
-  transactionController.getMessages,
+  transactionController.getMessages
 );
 
 router.post(
   "/:id/messages",
   passport.authenticate("jwt", { session: false }),
-  transactionController.postMessage,
+  transactionController.postMessage
 );
 
 // Ratings
 router.post(
   "/:id/rating",
   passport.authenticate("jwt", { session: false }),
-  transactionController.postRating,
+  transactionController.postRating
 );
 
 module.exports = router;

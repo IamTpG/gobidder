@@ -11,7 +11,6 @@ model User {
   id                   Int                    @id @default(autoincrement())
   full_name            String
   address              String?
-  birthdate            DateTime?
   email                String                 @unique
   password_hash        String?
   google_id            String?                @unique
@@ -20,6 +19,7 @@ model User {
   rating_plus          Int                    @default(0)
   rating_minus         Int                    @default(0)
   created_at           DateTime               @default(now())
+  birthdate            DateTime?
   seller_approved_at   DateTime?
   auto_bids            AutoBid[]
   banned_from_products BannedBidder[]
@@ -227,11 +227,20 @@ model RegistrationToken {
   updatedAt DateTime
 }
 
+model SystemConfig {
+  id                     Int      @id @default(autoincrement())
+  new_product_duration   Int      @default(60)
+  anti_sniping_trigger   Int      @default(5)
+  anti_sniping_extension Int      @default(3)
+  updated_at             DateTime @updatedAt
+}
+
 enum UserRole {
   Bidder
   Seller
-  ExpiredSeller
   Admin
+  ExpiredSeller
+  Banned
 }
 
 enum ProductStatus {
@@ -260,18 +269,4 @@ enum TransactionStatus {
   PendingReceipt
   Completed
   Cancelled
-}
-
-
-model SystemConfig {
-  id                     Int      @id @default(autoincrement())
-  
-  // 1. Cấu hình New Product sẽ highlight bao lâu
-  new_product_duration   Int      @default(60) // Đơn vị: Phút
-  
-  // 2. Cấu hình Anti-Sniping (Bù giờ)
-  anti_sniping_trigger   Int      @default(5)  // Kích hoạt khi còn X phút cuối
-  anti_sniping_extension Int      @default(3)  // Cộng thêm Y phút
-  
-  updated_at             DateTime @updatedAt
 }

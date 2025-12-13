@@ -1,5 +1,6 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
+import { Users } from "lucide-react";
 
 const AdminSidebar = () => {
   const location = useLocation();
@@ -30,6 +31,11 @@ const AdminSidebar = () => {
           />
         </svg>
       ),
+    },
+    {
+      path: "/admin/users",
+      label: "User Management",
+      icon: <Users className="w-5 h-5" />,
     },
     {
       path: "/admin/seller-approval",

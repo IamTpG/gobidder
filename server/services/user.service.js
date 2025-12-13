@@ -112,7 +112,7 @@ const changeUserPassword = async (userId, { currentPassword, newPassword }) => {
 
   if (!user || !user.password_hash) {
     throw new Error(
-      "Password change is only available for email/password accounts",
+      "Password change is only available for email/password accounts"
     );
   }
 
@@ -149,7 +149,7 @@ const requestEmailChangeService = async (userId, { newEmail, password }) => {
 
   if (!user || !user.password_hash) {
     throw new Error(
-      "Email change is only available for email/password accounts",
+      "Email change is only available for email/password accounts"
     );
   }
 
@@ -204,7 +204,7 @@ const requestEmailChangeService = async (userId, { newEmail, password }) => {
 const confirmEmailChangeService = async (
   userId,
   currentEmail,
-  { newEmail, otp },
+  { newEmail, otp }
 ) => {
   const normalizedEmail = normalizeEmail(newEmail);
 
@@ -352,7 +352,7 @@ const requestSellerUpgrade = async (userId) => {
 
   if (user.role === "ExpiredSeller") {
     throw new Error(
-      "Please wait until all your products are sold/expired before requesting seller upgrade again",
+      "Please wait until all your products are sold/expired before requesting seller upgrade again"
     );
   }
 
@@ -498,7 +498,7 @@ const revertExpiredSellers = async () => {
         console.error(`Failed to process seller ${seller.id}:`, error);
         return { id: seller.id, success: false, error: error.message };
       }
-    }),
+    })
   );
 
   // Also check ExpiredSellers without products and downgrade them
@@ -530,7 +530,7 @@ const revertExpiredSellers = async () => {
         console.error(`Failed to cleanup ExpiredSeller ${user.id}:`, error);
         return { id: user.id, success: false, error: error.message };
       }
-    }),
+    })
   );
 
   const successCount = results.filter((r) => r.success).length;
@@ -550,6 +550,121 @@ const revertExpiredSellers = async () => {
   };
 };
 
+const createUser = async ({ full_name, email, password, role }) => {
+  const normalizedEmail = normalizeEmail(email);
+  if (!isValidEmail(normalizedEmail)) {
+    throw new Error("Invalid email address");
+  }
+
+  const existingUser = await prisma.user.findUnique({
+    where: { email: normalizedEmail },
+  });
+
+  if (existingUser) {
+    throw new Error("Email is already in use");
+  }
+
+  const hashedPassword = await bcrypt.hash(password, 10);
+
+  const newUser = await prisma.user.create({
+    data: {
+      full_name,
+      email: normalizedEmail,
+      password_hash: hashedPassword,
+      role: role || "Bidder",
+      is_email_verified: true, // Admin created users are verified by default
+    },
+    select: {
+      id: true,
+      full_name: true,
+      email: true,
+      role: true,
+      created_at: true,
+    },
+  });
+
+  return newUser;
+};
+
+const updateUser = async (
+  id,
+  { full_name, email, role, password, address, birthdate }
+) => {
+  const userId = parseInt(id);
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  const updateData = {};
+  if (full_name !== undefined) updateData.full_name = full_name;
+  if (role !== undefined) updateData.role = role;
+  if (address !== undefined) updateData.address = address;
+
+  if (birthdate !== undefined) {
+    if (birthdate === null || birthdate === "") {
+      updateData.birthdate = null;
+    } else {
+      const dateObj = new Date(birthdate);
+      if (Number.isNaN(dateObj.getTime())) {
+        throw new Error("Birthdate is invalid");
+      }
+      updateData.birthdate = dateObj;
+    }
+  }
+
+  if (email) {
+    const normalizedEmail = normalizeEmail(email);
+    if (normalizedEmail !== user.email) {
+      const existingUser = await prisma.user.findUnique({
+        where: { email: normalizedEmail },
+      });
+      if (existingUser) {
+        throw new Error("Email is already in use");
+      }
+      updateData.email = normalizedEmail;
+    }
+  }
+
+  if (password) {
+    updateData.password_hash = await bcrypt.hash(password, 10);
+  }
+
+  const updatedUser = await prisma.user.update({
+    where: { id: userId },
+    data: updateData,
+    select: {
+      id: true,
+      full_name: true,
+      email: true,
+      role: true,
+      created_at: true,
+      address: true,
+      birthdate: true,
+    },
+  });
+
+  return updatedUser;
+};
+
+const deleteUser = async (id) => {
+  const userId = parseInt(id);
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  const updatedUser = await prisma.user.update({
+    where: { id: userId },
+    data: { role: "Banned" },
+    select: { id: true, role: true },
+  });
+
+  return { message: "User has been banned", user: updatedUser };
+};
+
 module.exports = {
   getMyProfile,
   getAllUsers,
@@ -565,4 +680,7 @@ module.exports = {
   rejectSellerRequest,
   getMySellerRequest,
   revertExpiredSellers,
+  createUser,
+  updateUser,
+  deleteUser,
 };
