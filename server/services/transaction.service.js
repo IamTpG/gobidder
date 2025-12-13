@@ -297,37 +297,74 @@ const upsertRating = async (transactionId, raterId, { score, comment }) => {
       },
     });
 
-    // If user already rated this transaction, do NOT allow another vote.
     if (existing) {
-      // We disallow changing the vote to enforce "only one vote" requirement.
-      throw new Error("You have already rated this transaction");
-    }
+      // Allow update
+      // 1. If score changed, adjust counters
+      if (existing.score !== score) {
+        // Revert old score
+        if (existing.score === "Positive") {
+          await pr.user.update({
+            where: { id: ratedUserId },
+            data: { rating_plus: { decrement: 1 } },
+          });
+        } else {
+          await pr.user.update({
+            where: { id: ratedUserId },
+            data: { rating_minus: { decrement: 1 } },
+          });
+        }
 
-    // create
-    const created = await pr.rating.create({
-      data: {
-        transaction_id: transactionId,
-        rater_id: raterId,
-        rated_user_id: ratedUserId,
-        score,
-        comment: comment || null,
-      },
-    });
+        // Apply new score
+        if (score === "Positive") {
+          await pr.user.update({
+            where: { id: ratedUserId },
+            data: { rating_plus: { increment: 1 } },
+          });
+        } else {
+          await pr.user.update({
+            where: { id: ratedUserId },
+            data: { rating_minus: { increment: 1 } },
+          });
+        }
+      }
 
-    // increment user counters
-    if (score === "Positive") {
-      await pr.user.update({
-        where: { id: ratedUserId },
-        data: { rating_plus: { increment: 1 } },
+      // 2. Update rating record
+      const updated = await pr.rating.update({
+        where: { id: existing.id },
+        data: {
+          score,
+          comment: comment || null,
+        },
       });
+
+      return updated;
     } else {
-      await pr.user.update({
-        where: { id: ratedUserId },
-        data: { rating_minus: { increment: 1 } },
+      // create new
+      const created = await pr.rating.create({
+        data: {
+          transaction_id: transactionId,
+          rater_id: raterId,
+          rated_user_id: ratedUserId,
+          score,
+          comment: comment || null,
+        },
       });
-    }
 
-    return created;
+      // increment user counters
+      if (score === "Positive") {
+        await pr.user.update({
+          where: { id: ratedUserId },
+          data: { rating_plus: { increment: 1 } },
+        });
+      } else {
+        await pr.user.update({
+          where: { id: ratedUserId },
+          data: { rating_minus: { increment: 1 } },
+        });
+      }
+
+      return created;
+    }
   });
 };
 
