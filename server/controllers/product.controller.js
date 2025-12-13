@@ -73,9 +73,15 @@ const getProductById = async (req, res) => {
       if (tx) {
         // If request is authenticated and user is seller or winner -> include full tx
         const userId = req.user?.id;
+        console.log(
+          `[DEBUG] Found Tx for Product ${productId}. Tx Users: Seller=${tx.seller_id}, Winner=${tx.winner_id}. Request User: ${userId}`
+        );
+
         if (userId && (userId === tx.seller_id || userId === tx.winner_id)) {
+          console.log("[DEBUG] User authorized to view transaction details.");
           transaction = tx;
         } else {
+          console.log("[DEBUG] User NOT authorized. Showing restricted view.");
           // For other users, expose only status and a generic note
           transaction = { status: tx.status, message: "Sản phẩm đã kết thúc" };
         }
@@ -506,7 +512,7 @@ const create = async (req, res) => {
 
     const newProduct = await productService.createProduct(
       sellerId,
-      productData,
+      productData
     );
 
     return res.status(201).json({
@@ -610,7 +616,7 @@ const update = async (req, res) => {
         categoryId: Number(categoryId),
         endTime: new Date(endTime),
         autoRenew: autoRenew === "true" || autoRenew === true,
-      },
+      }
     );
 
     return res.status(200).json({
@@ -650,7 +656,7 @@ const appendDescription = async (req, res) => {
     const updated = await productService.appendDescription(
       productId,
       sellerId,
-      text.trim(),
+      text.trim()
     );
     return res.status(200).json({ success: true, product: updated });
   } catch (error) {

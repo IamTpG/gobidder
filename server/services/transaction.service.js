@@ -39,8 +39,22 @@ const getTransactionByProduct = async (productId) => {
   const transaction = await prisma.transaction.findUnique({
     where: { product_id: id },
     include: {
-      seller: { select: { id: true, full_name: true, rating_plus: true, rating_minus: true } },
-      winner: { select: { id: true, full_name: true, rating_plus: true, rating_minus: true } },
+      seller: {
+        select: {
+          id: true,
+          full_name: true,
+          rating_plus: true,
+          rating_minus: true,
+        },
+      },
+      winner: {
+        select: {
+          id: true,
+          full_name: true,
+          rating_plus: true,
+          rating_minus: true,
+        },
+      },
       messages: { orderBy: { created_at: "asc" } },
       ratings: true,
       product: { select: { id: true, name: true, images: true } },
@@ -58,8 +72,22 @@ const getTransactionById = async (id) => {
   const transaction = await prisma.transaction.findUnique({
     where: { id: txId },
     include: {
-      seller: { select: { id: true, full_name: true, rating_plus: true, rating_minus: true } },
-      winner: { select: { id: true, full_name: true, rating_plus: true, rating_minus: true } },
+      seller: {
+        select: {
+          id: true,
+          full_name: true,
+          rating_plus: true,
+          rating_minus: true,
+        },
+      },
+      winner: {
+        select: {
+          id: true,
+          full_name: true,
+          rating_plus: true,
+          rating_minus: true,
+        },
+      },
       messages: { orderBy: { created_at: "asc" } },
       ratings: true,
       product: { select: { id: true, name: true, images: true } },
@@ -71,11 +99,19 @@ const getTransactionById = async (id) => {
 };
 
 // buyer uploads payment proof + shipping address
-const buyerUploadPayment = async (transactionId, buyerId, { shippingAddress, paymentInvoiceUrl }) => {
-  const tx = await prisma.transaction.findUnique({ where: { id: transactionId } });
+const buyerUploadPayment = async (
+  transactionId,
+  buyerId,
+  { shippingAddress, paymentInvoiceUrl }
+) => {
+  const tx = await prisma.transaction.findUnique({
+    where: { id: transactionId },
+  });
   if (!tx) throw new Error("Transaction not found");
-  if (tx.winner_id !== buyerId) throw new Error("You are not the buyer for this transaction");
-  if (tx.status !== "PendingPayment") throw new Error("Transaction not in PendingPayment");
+  if (tx.winner_id !== buyerId)
+    throw new Error("You are not the buyer for this transaction");
+  if (tx.status !== "PendingPayment")
+    throw new Error("Transaction not in PendingPayment");
 
   const updated = await prisma.transaction.update({
     where: { id: transactionId },
@@ -90,11 +126,19 @@ const buyerUploadPayment = async (transactionId, buyerId, { shippingAddress, pay
 };
 
 // seller confirms payment and uploads shipping invoice
-const sellerConfirmShipping = async (transactionId, sellerId, { shippingInvoiceUrl }) => {
-  const tx = await prisma.transaction.findUnique({ where: { id: transactionId } });
+const sellerConfirmShipping = async (
+  transactionId,
+  sellerId,
+  { shippingInvoiceUrl }
+) => {
+  const tx = await prisma.transaction.findUnique({
+    where: { id: transactionId },
+  });
   if (!tx) throw new Error("Transaction not found");
-  if (tx.seller_id !== sellerId) throw new Error("You are not the seller for this transaction");
-  if (tx.status !== "PendingShipping") throw new Error("Transaction not in PendingShipping");
+  if (tx.seller_id !== sellerId)
+    throw new Error("You are not the seller for this transaction");
+  if (tx.status !== "PendingShipping")
+    throw new Error("Transaction not in PendingShipping");
 
   const updated = await prisma.transaction.update({
     where: { id: transactionId },
@@ -110,10 +154,14 @@ const sellerConfirmShipping = async (transactionId, sellerId, { shippingInvoiceU
 
 // buyer confirms receipt
 const buyerConfirmReceipt = async (transactionId, buyerId) => {
-  const tx = await prisma.transaction.findUnique({ where: { id: transactionId } });
+  const tx = await prisma.transaction.findUnique({
+    where: { id: transactionId },
+  });
   if (!tx) throw new Error("Transaction not found");
-  if (tx.winner_id !== buyerId) throw new Error("You are not the buyer for this transaction");
-  if (tx.status !== "PendingReceipt") throw new Error("Transaction not in PendingReceipt");
+  if (tx.winner_id !== buyerId)
+    throw new Error("You are not the buyer for this transaction");
+  if (tx.status !== "PendingReceipt")
+    throw new Error("Transaction not in PendingReceipt");
 
   const updated = await prisma.transaction.update({
     where: { id: transactionId },
@@ -128,10 +176,14 @@ const buyerConfirmReceipt = async (transactionId, buyerId) => {
 
 // seller cancels transaction — add rating negative for winner
 const sellerCancel = async (transactionId, sellerId, { reason }) => {
-  const tx = await prisma.transaction.findUnique({ where: { id: transactionId } });
+  const tx = await prisma.transaction.findUnique({
+    where: { id: transactionId },
+  });
   if (!tx) throw new Error("Transaction not found");
-  if (tx.seller_id !== sellerId) throw new Error("You are not the seller for this transaction");
-  if (tx.status === "Cancelled") throw new Error("Transaction already cancelled");
+  if (tx.seller_id !== sellerId)
+    throw new Error("You are not the seller for this transaction");
+  if (tx.status === "Cancelled")
+    throw new Error("Transaction already cancelled");
 
   // Perform cancellation and create a negative rating for winner
   return await prisma.$transaction(async (pr) => {
@@ -154,7 +206,10 @@ const sellerCancel = async (transactionId, sellerId, { reason }) => {
       });
 
       // 3) Increment rating_minus for the winner
-      await pr.user.update({ where: { id: tx.winner_id }, data: { rating_minus: { increment: 1 } } });
+      await pr.user.update({
+        where: { id: tx.winner_id },
+        data: { rating_minus: { increment: 1 } },
+      });
     } catch (e) {
       // ignore rating creation errors but keep transaction cancelled
       console.error("Failed to create negative rating on cancel:", e);
@@ -168,11 +223,14 @@ const sellerCancel = async (transactionId, sellerId, { reason }) => {
 const addMessage = async (transactionId, senderId, receiverId, message) => {
   if (!message || !message.trim()) throw new Error("Message is required");
 
-  const tx = await prisma.transaction.findUnique({ where: { id: transactionId } });
+  const tx = await prisma.transaction.findUnique({
+    where: { id: transactionId },
+  });
   if (!tx) throw new Error("Transaction not found");
 
   // Only seller and winner allowed
-  if (![tx.seller_id, tx.winner_id].includes(senderId)) throw new Error("Not allowed");
+  if (![tx.seller_id, tx.winner_id].includes(senderId))
+    throw new Error("Not allowed");
 
   const msg = await prisma.chatMessage.create({
     data: {
@@ -187,7 +245,9 @@ const addMessage = async (transactionId, senderId, receiverId, message) => {
 };
 
 const getMessages = async (transactionId) => {
-  const tx = await prisma.transaction.findUnique({ where: { id: transactionId } });
+  const tx = await prisma.transaction.findUnique({
+    where: { id: transactionId },
+  });
   if (!tx) throw new Error("Transaction not found");
 
   const messages = await prisma.chatMessage.findMany({
@@ -200,27 +260,38 @@ const getMessages = async (transactionId) => {
 
 // Rating create/update; ensures user's rating_plus/minus counters are in sync
 const upsertRating = async (transactionId, raterId, { score, comment }) => {
-  if (!["Positive", "Negative"].includes(score)) throw new Error("Invalid score");
+  if (!["Positive", "Negative"].includes(score))
+    throw new Error("Invalid score");
 
-  const tx = await prisma.transaction.findUnique({ where: { id: transactionId } });
+  const tx = await prisma.transaction.findUnique({
+    where: { id: transactionId },
+  });
   if (!tx) throw new Error("Transaction not found");
 
   // rater must be seller or winner
-  if (![tx.seller_id, tx.winner_id].includes(raterId)) throw new Error("Not allowed to rate on this transaction");
+  if (![tx.seller_id, tx.winner_id].includes(raterId))
+    throw new Error("Not allowed to rate on this transaction");
 
   const ratedUserId = raterId === tx.seller_id ? tx.winner_id : tx.seller_id;
 
   return await prisma.$transaction(async (pr) => {
     // Check existing
-    const existing = await pr.rating.findUnique({ where: { transaction_id_rater_id: { transaction_id: transactionId, rater_id: raterId } } });
+    const existing = await pr.rating.findUnique({
+      where: {
+        transaction_id_rater_id: {
+          transaction_id: transactionId,
+          rater_id: raterId,
+        },
+      },
+    });
 
-      // If user already rated this transaction, do NOT allow another vote.
-      if (existing) {
-        // We disallow changing the vote to enforce "only one vote" requirement.
-        throw new Error("You have already rated this transaction");
-      }
+    // If user already rated this transaction, do NOT allow another vote.
+    if (existing) {
+      // We disallow changing the vote to enforce "only one vote" requirement.
+      throw new Error("You have already rated this transaction");
+    }
 
-      // create
+    // create
     const created = await pr.rating.create({
       data: {
         transaction_id: transactionId,
@@ -233,9 +304,15 @@ const upsertRating = async (transactionId, raterId, { score, comment }) => {
 
     // increment user counters
     if (score === "Positive") {
-      await pr.user.update({ where: { id: ratedUserId }, data: { rating_plus: { increment: 1 } } });
+      await pr.user.update({
+        where: { id: ratedUserId },
+        data: { rating_plus: { increment: 1 } },
+      });
     } else {
-      await pr.user.update({ where: { id: ratedUserId }, data: { rating_minus: { increment: 1 } } });
+      await pr.user.update({
+        where: { id: ratedUserId },
+        data: { rating_minus: { increment: 1 } },
+      });
     }
 
     return created;

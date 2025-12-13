@@ -13,12 +13,12 @@ const placeAutoBid = async (userId, productId, inputMaxPrice) => {
   // Check if user is banned from this product first
   const isBanned = await bannedBidderService.isBidderBanned(
     parseInt(productId),
-    userId,
+    userId
   );
 
   if (isBanned) {
     throw new Error(
-      "You are banned from bidding on this product by the seller",
+      "You are banned from bidding on this product by the seller"
     );
   }
 
