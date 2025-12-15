@@ -9,6 +9,7 @@ require("./config/passport");
 
 // Cron jobs
 const { scheduleSellerReversion } = require("./jobs/revert-sellers.job");
+const { scheduleAuctionEndCheck } = require("./jobs/check-auction-end.job");
 
 // Routes
 const authRoutes = require("./routes/auth.route");
@@ -57,6 +58,7 @@ const startServer = async () => {
       console.log(`Server running on port ${PORT}`);
       // Start cron jobs
       scheduleSellerReversion();
+      scheduleAuctionEndCheck();
     });
 
     process.on("SIGINT", async () => {
