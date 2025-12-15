@@ -920,6 +920,102 @@ const deleteProductAdmin = async (productId) => {
   return deletedProduct;
 };
 
+/**
+ * Cập nhật trạng thái sản phẩm từ Active sang Expired nếu đã qua thời gian kết thúc
+ * Được gọi bởi cron job mỗi phút
+ */
+const updateExpiredProducts = async () => {
+  try {
+    const now = new Date();
+
+    // Lấy tất cả sản phẩm Active có end_time đã qua
+    const expiredProducts = await prisma.product.findMany({
+      where: {
+        status: "Active",
+        end_time: {
+          lt: now, // less than (nhỏ hơn)
+        },
+      },
+      select: { id: true, name: true, seller_id: true },
+    });
+
+    if (expiredProducts.length === 0) {
+      return {
+        success: true,
+        message: "No expired products found",
+        count: 0,
+      };
+    }
+
+    // Cập nhật tất cả sản phẩm hết hạn
+    const updateResult = await prisma.product.updateMany({
+      where: {
+        status: "Active",
+        end_time: {
+          lt: now,
+        },
+      },
+      data: {
+        status: "Expired",
+      },
+    });
+
+    console.log(
+      `[Product Service] Updated ${updateResult.count} products to Expired status`,
+    );
+
+    // Log chi tiết
+    expiredProducts.forEach((product) => {
+      console.log(
+        `  - Product ID ${product.id} (${product.name}) - Seller ID: ${product.seller_id}`,
+      );
+    });
+
+    return {
+      success: true,
+      message: `Successfully updated ${updateResult.count} product(s) to Expired status`,
+      count: updateResult.count,
+      products: expiredProducts,
+    };
+  } catch (error) {
+    console.error("[Product Service] Error updating expired products:", error);
+    throw new Error(`Failed to update expired products: ${error.message}`);
+  }
+};
+
+/**
+ * Kiểm tra và cập nhật trạng thái sản phẩm trước khi trả về
+ * Được gọi khi lấy thông tin sản phẩm để đảm bảo real-time
+ */
+const ensureProductStatusIsValid = async (productId) => {
+  try {
+    const product = await prisma.product.findUnique({
+      where: { id: productId },
+      select: { id: true, status: true, end_time: true },
+    });
+
+    if (!product) return null;
+
+    // Nếu sản phẩm đang Active nhưng đã qua end_time thì cập nhật
+    if (product.status === "Active" && product.end_time < new Date()) {
+      const updatedProduct = await prisma.product.update({
+        where: { id: productId },
+        data: { status: "Expired" },
+      });
+
+      console.log(
+        `[Product Service] Updated product ${productId} to Expired status (real-time)`,
+      );
+      return updatedProduct;
+    }
+
+    return product;
+  } catch (error) {
+    console.error(`[Product Service] Error checking product status:`, error);
+    return null;
+  }
+};
+
 module.exports = {
   getProducts,
   getProductById,
@@ -938,4 +1034,6 @@ module.exports = {
   getAllProductsAdmin,
   updateProductAdmin,
   deleteProductAdmin,
+  updateExpiredProducts,
+  ensureProductStatusIsValid,
 };
