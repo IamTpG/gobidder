@@ -28,7 +28,7 @@ const banBidder = async (req, res) => {
     const result = await bannedBidderService.banBidderFromProduct(
       productId,
       bidderId,
-      sellerId,
+      sellerId
     );
 
     // Get bidder info and product info for email
@@ -47,13 +47,13 @@ const banBidder = async (req, res) => {
       try {
         await sendMail({
           to: bidder.email,
-          subject: "You have been banned from an auction - GoBidder",
-          text: `Dear ${bidder.full_name},\n\nYou have been banned from bidding on the product "${product.name}".\n\nYou will no longer be able to place bids on this product.\n\nBest regards,\nGoBidder Team`,
+          subject: "You have been rejected from an auction - GoBidder",
+          text: `Dear ${bidder.full_name},\n\nYou have been rejected from bidding on the product "${product.name}".\n\nYou will no longer be able to place bids on this product.\n\nBest regards,\nGoBidder Team`,
           html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-              <h2 style="color: #01AA85;">Auction Ban Notification</h2>
+              <h2 style="color: #01AA85;">Auction Rejected Notification</h2>
               <p>Dear ${bidder.full_name},</p>
-              <p>You have been banned from bidding on the product:</p>
+              <p>You have been rejected from bidding on the product:</p>
               <p style="font-weight: bold; font-size: 16px; margin: 20px 0;">"${product.name}"</p>
               <p>You will no longer be able to place bids on this product.</p>
               <hr style="margin: 30px 0; border: none; border-top: 1px solid #ddd;">
@@ -62,17 +62,20 @@ const banBidder = async (req, res) => {
           `,
         });
       } catch (emailError) {
-        console.error("Failed to send ban notification email:", emailError);
+        console.error(
+          "Failed to send rejected notification email:",
+          emailError
+        );
         // Don't fail the request if email fails
       }
     }
 
     return res.status(200).json({
-      message: "Bidder banned successfully and notified via email",
+      message: "Bidder rejected successfully and notified via email",
       data: result,
     });
   } catch (error) {
-    console.error("Error in banBidder:", error);
+    console.error("Error in rejectBidder:", error);
 
     if (
       error.message === "Product not found" ||
@@ -84,8 +87,8 @@ const banBidder = async (req, res) => {
     if (
       error.message ===
         "Unauthorized: You are not the seller of this product" ||
-      error.message === "Cannot ban bidder from non-active auction" ||
-      error.message === "This bidder is already banned from this product"
+      error.message === "Cannot reject bidder from non-active auction" ||
+      error.message === "This bidder is already rejected from this product"
     ) {
       return res.status(400).json({ message: error.message });
     }
@@ -113,7 +116,7 @@ const checkBannedStatus = async (req, res) => {
 
     const isBanned = await bannedBidderService.isBidderBanned(
       productId,
-      userId,
+      userId
     );
 
     return res.status(200).json({ isBanned });

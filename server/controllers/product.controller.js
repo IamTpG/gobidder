@@ -85,6 +85,8 @@ const getProductById = async (req, res) => {
           // For other users, expose only status and a generic note
           transaction = { status: tx.status, message: "Sản phẩm đã kết thúc" };
         }
+      } else {
+        console.log(`[DEBUG] No Tx found for Product ${productId}`);
       }
     } catch (e) {
       // ignore transaction lookup errors

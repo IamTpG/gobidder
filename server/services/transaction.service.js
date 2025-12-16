@@ -298,37 +298,7 @@ const upsertRating = async (transactionId, raterId, { score, comment }) => {
     });
 
     if (existing) {
-      // Allow update
-      // 1. If score changed, adjust counters
-      if (existing.score !== score) {
-        // Revert old score
-        if (existing.score === "Positive") {
-          await pr.user.update({
-            where: { id: ratedUserId },
-            data: { rating_plus: { decrement: 1 } },
-          });
-        } else {
-          await pr.user.update({
-            where: { id: ratedUserId },
-            data: { rating_minus: { decrement: 1 } },
-          });
-        }
-
-        // Apply new score
-        if (score === "Positive") {
-          await pr.user.update({
-            where: { id: ratedUserId },
-            data: { rating_plus: { increment: 1 } },
-          });
-        } else {
-          await pr.user.update({
-            where: { id: ratedUserId },
-            data: { rating_minus: { increment: 1 } },
-          });
-        }
-      }
-
-      // 2. Update rating record
+      // Update existing rating
       const updated = await pr.rating.update({
         where: { id: existing.id },
         data: {
@@ -337,9 +307,32 @@ const upsertRating = async (transactionId, raterId, { score, comment }) => {
         },
       });
 
+      // If score changed, adjust counters
+      if (existing.score !== score) {
+        if (existing.score === "Positive") {
+          // Was Positive, now Negative
+          await pr.user.update({
+            where: { id: ratedUserId },
+            data: {
+              rating_plus: { decrement: 1 },
+              rating_minus: { increment: 1 },
+            },
+          });
+        } else {
+          // Was Negative, now Positive
+          await pr.user.update({
+            where: { id: ratedUserId },
+            data: {
+              rating_minus: { decrement: 1 },
+              rating_plus: { increment: 1 },
+            },
+          });
+        }
+      }
+
       return updated;
     } else {
-      // create new
+      // Create new rating
       const created = await pr.rating.create({
         data: {
           transaction_id: transactionId,
