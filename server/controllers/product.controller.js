@@ -227,8 +227,8 @@ const createQuestion = async (req, res) => {
       `;
 
       try {
-        console.log(`🔔 Sending email to seller: ${product.seller.email}`);
-        console.log(`📧 Product Link: ${productLink}`);
+        console.log(`Sending email to seller: ${product.seller.email}`);
+        console.log(`Product Link: ${productLink}`);
 
         await sendMail({
           to: product.seller.email,
@@ -237,13 +237,13 @@ const createQuestion = async (req, res) => {
           html: htmlContent,
         });
 
-        console.log(`✅ Email sent successfully to ${product.seller.email}`);
+        console.log(`Email sent successfully to ${product.seller.email}`);
       } catch (emailError) {
-        console.error("❌ Failed to send email notification:", emailError);
+        console.error("Failed to send email notification:", emailError);
         // Không fail request nếu email lỗi
       }
     } else {
-      console.log("⚠️ No seller email found, skipping email notification");
+      console.log("No seller email found, skipping email notification");
     }
 
     // Transform response
@@ -276,6 +276,7 @@ const answerQuestion = async (req, res) => {
     const questionId = parseInt(req.params.questionId);
     const { answer_text } = req.body;
     const userId = req.user?.id;
+    const { sendMail } = require("../utils/utils");
 
     if (!answer_text || answer_text.trim().length === 0) {
       return res.status(400).json({ message: "Answer text is required" });
@@ -288,7 +289,14 @@ const answerQuestion = async (req, res) => {
     // Kiểm tra product và quyền của seller
     const product = await prisma.product.findUnique({
       where: { id: productId },
-      select: { seller_id: true },
+      select: {
+        id: true,
+        name: true,
+        seller_id: true,
+        seller: {
+          select: { full_name: true, email: true },
+        },
+      },
     });
 
     if (!product) {
@@ -299,6 +307,23 @@ const answerQuestion = async (req, res) => {
       return res
         .status(403)
         .json({ message: "Only the seller can answer questions" });
+    }
+
+    // Lấy câu hỏi hiện tại
+    const question = await prisma.qnA.findUnique({
+      where: { id: questionId },
+      select: {
+        id: true,
+        question_text: true,
+        questioner_id: true,
+        questioner: {
+          select: { email: true, full_name: true },
+        },
+      },
+    });
+
+    if (!question) {
+      return res.status(404).json({ message: "Question not found" });
     }
 
     // Cập nhật câu trả lời
@@ -319,6 +344,96 @@ const answerQuestion = async (req, res) => {
         },
       },
     });
+
+    // ========== GỬI EMAIL THÔNG BÁO ==========
+    try {
+      // 1. Lấy tất cả bidder trên sản phẩm này (từ bid_histories)
+      const bidders = await prisma.bidHistory.findMany({
+        where: { product_id: productId },
+        select: {
+          user: { select: { id: true, email: true, full_name: true } },
+        },
+        distinct: ["user_id"],
+      });
+
+      // 2. Lấy tất cả người đặt câu hỏi trên sản phẩm này
+      const questionAskers = await prisma.qnA.findMany({
+        where: { product_id: productId },
+        select: {
+          questioner: { select: { id: true, email: true, full_name: true } },
+        },
+        distinct: ["questioner_id"],
+      });
+
+      // 3. Tạo Set email duy nhất (tránh gửi email trùng)
+      const emailSet = new Set();
+
+      // Thêm bidder
+      bidders.forEach((bid) => {
+        if (bid.user?.email) {
+          emailSet.add(bid.user.email);
+        }
+      });
+
+      // Thêm người đặt câu hỏi
+      questionAskers.forEach((qa) => {
+        if (qa.questioner?.email) {
+          emailSet.add(qa.questioner.email);
+        }
+      });
+
+      // 4. Lấy frontend URL từ .env
+      const frontendUrl = process.env.FE_URL || "http://localhost:3000";
+      const productLink = `${frontendUrl}/products/${productId}`;
+
+      // 5. Gửi email cho tất cả người trong Set
+      const emailPromises = Array.from(emailSet).map((email) => {
+        const htmlContent = `
+          <h2>📢 Seller Replied to a Question</h2>
+          <p>Hello,</p>
+          <p>A seller has replied to a question on product <strong>"${product.name}"</strong> that you're interested in.</p>
+          
+          <div style="background-color: #f5f5f5; padding: 15px; border-radius: 8px; margin: 20px 0;">
+            <h3>Original Question:</h3>
+            <p style="font-style: italic;">"${question.question_text}"</p>
+            
+            <h3>Seller's Answer:</h3>
+            <p>"${answer_text.trim()}"</p>
+          </div>
+          
+          <p><strong>Seller:</strong> ${product.seller.full_name}</p>
+          
+          <p>
+            <a href="${productLink}" style="display: inline-block; padding: 10px 20px; background-color: #01AA85; color: white; text-decoration: none; border-radius: 5px;">
+              View Product & More Questions
+            </a>
+          </p>
+          
+          <p>Best regards,<br/>GoBidder Team</p>
+        `;
+
+        return sendMail({
+          to: email,
+          subject: `Seller Replied to Question on "${product.name}"`,
+          html: htmlContent,
+        }).catch((err) => {
+          console.error(`Failed to send email to ${email}:`, err.message);
+        });
+      });
+
+      // Gửi tất cả email (không cần đợi)
+      Promise.all(emailPromises).then(() => {
+        console.log(
+          `[Email] Sent notifications to ${emailSet.size} recipient(s)`,
+        );
+      });
+    } catch (emailError) {
+      console.error(
+        "[Email Error] Failed to send notifications:",
+        emailError.message,
+      );
+      // Không return error - API vẫn thành công, chỉ email fail
+    }
 
     // Transform response
     const response = {

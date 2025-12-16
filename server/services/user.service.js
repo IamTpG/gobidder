@@ -550,7 +550,6 @@ const revertExpiredSellers = async () => {
   };
 };
 
-
 const createUser = async ({ full_name, email, password, role }) => {
   const normalizedEmail = normalizeEmail(email);
   if (!isValidEmail(normalizedEmail)) {
@@ -587,7 +586,10 @@ const createUser = async ({ full_name, email, password, role }) => {
   return newUser;
 };
 
-const updateUser = async (id, { full_name, email, role, password }) => {
+const updateUser = async (
+  id,
+  { full_name, email, role, password, address, birthdate }
+) => {
   const userId = parseInt(id);
   const user = await prisma.user.findUnique({ where: { id: userId } });
 
@@ -596,8 +598,21 @@ const updateUser = async (id, { full_name, email, role, password }) => {
   }
 
   const updateData = {};
-  if (full_name) updateData.full_name = full_name;
-  if (role) updateData.role = role;
+  if (full_name !== undefined) updateData.full_name = full_name;
+  if (role !== undefined) updateData.role = role;
+  if (address !== undefined) updateData.address = address;
+
+  if (birthdate !== undefined) {
+    if (birthdate === null || birthdate === "") {
+      updateData.birthdate = null;
+    } else {
+      const dateObj = new Date(birthdate);
+      if (Number.isNaN(dateObj.getTime())) {
+        throw new Error("Birthdate is invalid");
+      }
+      updateData.birthdate = dateObj;
+    }
+  }
 
   if (email) {
     const normalizedEmail = normalizeEmail(email);
@@ -625,6 +640,8 @@ const updateUser = async (id, { full_name, email, role, password }) => {
       email: true,
       role: true,
       created_at: true,
+      address: true,
+      birthdate: true,
     },
   });
 

@@ -65,7 +65,7 @@ const getTransactionByProduct = async (productId) => {
   return transaction;
 };
 
-const getTransactionById = async (id) => {
+const getTransactionById = async (id, userId, userRole) => {
   const txId = parseInt(id);
   if (isNaN(txId)) throw new Error("Invalid transaction ID");
 
@@ -95,6 +95,18 @@ const getTransactionById = async (id) => {
   });
 
   if (!transaction) throw new Error("Transaction not found");
+
+  // Authorization Check
+  // Allow if user is Admin, OR if user is the seller, OR if user is the winner
+  // Note: userRole comes from JWT payload logic (see auth.controller.js)
+  const isAdmin = userRole === "Admin";
+  const isOwner =
+    transaction.seller_id === userId || transaction.winner_id === userId;
+
+  if (!isAdmin && !isOwner) {
+    throw new Error("Unauthorized access to this transaction");
+  }
+
   return transaction;
 };
 

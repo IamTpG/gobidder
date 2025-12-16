@@ -62,6 +62,8 @@ router.delete(
 // Lấy sản phẩm liên quan
 router.get("/:id/related", productController.getRelatedProducts);
 
+// Lấy một sản phẩm
+// router.get("/:id", productController.getProductById);
 // Lấy một sản phẩm (Sử dụng optionalAuth để xác định user nếu có login)
 const optionalAuth = require("../middlewares/optionalAuth.middleware");
 router.get("/:id", optionalAuth, productController.getProductById);

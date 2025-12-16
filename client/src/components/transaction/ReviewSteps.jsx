@@ -81,7 +81,7 @@ export const RatingStep = ({ tx, user, onRefresh, onError, onSuccess }) => {
 
       {tx.status === "Completed" && (
         <div className="ml-4">
-          {myRating ? (
+          {myRating && !showForm ? (
             <div className="p-3 bg-gray-50 border rounded-lg inline-block">
               <span className="text-sm font-semibold text-gray-700">
                 You rated:{" "}
@@ -96,6 +96,18 @@ export const RatingStep = ({ tx, user, onRefresh, onError, onSuccess }) => {
                   "{myRating.comment}"
                 </p>
               )}
+              <div className="mt-2">
+                <button
+                  onClick={() => {
+                    setScore(myRating.score);
+                    setComment(myRating.comment || "");
+                    setShowForm(true);
+                  }}
+                  className="text-xs text-primary hover:text-primary/80 font-medium underline"
+                >
+                  Edit Rating
+                </button>
+              </div>
             </div>
           ) : !showForm ? (
             <div className="flex gap-2">
@@ -142,7 +154,7 @@ export const RatingStep = ({ tx, user, onRefresh, onError, onSuccess }) => {
                   disabled={loading}
                   className="bg-primary text-white px-3 py-1.5 rounded text-sm hover:bg-primary/90"
                 >
-                  {loading ? "Submitting..." : "Submit"}
+                  {loading ? "Saving..." : "Save Rating"}
                 </button>
                 <button
                   onClick={() => setShowForm(false)}

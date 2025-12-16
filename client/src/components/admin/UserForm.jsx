@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { X, Eye, EyeOff } from "lucide-react";
 
 import Spinner from "../common/Spinner";
+import ConfirmDialog from "../common/ConfirmDialog";
+import Button from "../common/Button";
 
 const UserForm = ({ user, onClose, onSave }) => {
   const [formData, setFormData] = useState({
@@ -9,10 +11,13 @@ const UserForm = ({ user, onClose, onSave }) => {
     email: "",
     password: "",
     role: "Bidder",
+    address: "",
+    birthdate: "",
   });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showBanConfirm, setShowBanConfirm] = useState(false);
 
   const isEditMode = !!user;
 
@@ -22,7 +27,8 @@ const UserForm = ({ user, onClose, onSave }) => {
         full_name: user.full_name || "",
         email: user.email || "",
         role: user.role || "Bidder",
-        password: "", // Don't fill password on edit
+        address: user.address || "",
+        birthdate: user.birthdate ? user.birthdate.split("T")[0] : "",
       });
     }
   }, [user]);
@@ -32,16 +38,27 @@ const UserForm = ({ user, onClose, onSave }) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = async (e) => {
+  const handleFormSubmit = (e) => {
     e.preventDefault();
     setError("");
-    setLoading(true);
 
+    // Check if role is changing to Banned
+    if (formData.role === "Banned" && (!user || user.role !== "Banned")) {
+      setShowBanConfirm(true);
+      return;
+    }
+
+    submitData();
+  };
+
+  const submitData = async () => {
+    setLoading(true);
     try {
       await onSave(formData);
       onClose();
     } catch (err) {
       setError(err.response?.data?.message || "Failed to save user");
+      setShowBanConfirm(false); // Reset in case of error
     } finally {
       setLoading(false);
     }
@@ -49,28 +66,28 @@ const UserForm = ({ user, onClose, onSave }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 px-4">
-      <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl dark:bg-gray-800">
+      <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-xl font-bold dark:text-white">
+          <h2 className="text-xl font-bold text-gray-900">
             {isEditMode ? "Edit User" : "Add User"}
           </h2>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+            className="text-gray-500 hover:text-gray-700"
           >
             <X size={24} />
           </button>
         </div>
 
         {error && (
-          <div className="mb-4 rounded bg-red-100 p-2 text-red-700 dark:bg-red-900 dark:text-red-200">
+          <div className="mb-4 rounded bg-red-100 p-2 text-red-700">
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleFormSubmit}>
           <div className="mb-4">
-            <label className="mb-1 block text-sm font-medium dark:text-gray-300">
+            <label className="mb-1 block text-sm font-medium text-gray-700">
               Full Name
             </label>
             <input
@@ -79,27 +96,55 @@ const UserForm = ({ user, onClose, onSave }) => {
               value={formData.full_name}
               onChange={handleChange}
               required
-              className="w-full rounded border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-            />
-          </div>
-
-          <div className="mb-4">
-            <label className="mb-1 block text-sm font-medium dark:text-gray-300">
-              Email
-            </label>
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              required
-              className="w-full rounded border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+              className="w-full rounded border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
           </div>
 
           {!isEditMode && (
             <div className="mb-4">
-              <label className="mb-1 block text-sm font-medium dark:text-gray-300">
+              <label className="mb-1 block text-sm font-medium text-gray-700">
+                Email
+              </label>
+              <input
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                required
+                className="w-full rounded border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
+            </div>
+          )}
+
+          <div className="mb-4">
+            <label className="mb-1 block text-sm font-medium text-gray-700">
+              Address
+            </label>
+            <input
+              type="text"
+              name="address"
+              value={formData.address}
+              onChange={handleChange}
+              className="w-full rounded border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            />
+          </div>
+
+          <div className="mb-4">
+            <label className="mb-1 block text-sm font-medium text-gray-700">
+              Birthdate
+            </label>
+            <input
+              type="date"
+              name="birthdate"
+              value={formData.birthdate}
+              onChange={handleChange}
+              className="w-full rounded border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            />
+          </div>
+
+          {!isEditMode && (
+            <div className="mb-4">
+              <label className="mb-1 block text-sm font-medium text-gray-700">
                 Password
               </label>
               <div className="relative">
@@ -108,39 +153,14 @@ const UserForm = ({ user, onClose, onSave }) => {
                   name="password"
                   value={formData.password}
                   onChange={handleChange}
-                  required={!isEditMode}
+                  required
                   minLength={8}
-                  className="w-full rounded border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                  className="w-full rounded border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-2.5 text-gray-500 hover:text-gray-700 dark:text-gray-400"
-                >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
-              </div>
-            </div>
-          )}
-
-          {isEditMode && (
-            <div className="mb-4">
-              <label className="mb-1 block text-sm font-medium dark:text-gray-300">
-                New Password (Leave blank to keep current)
-              </label>
-              <div className="relative">
-                <input
-                  type={showPassword ? "text" : "password"}
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  minLength={8}
-                  className="w-full rounded border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-2.5 text-gray-500 hover:text-gray-700 dark:text-gray-400"
+                  className="absolute right-3 top-2.5 text-gray-500 hover:text-gray-700"
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
@@ -149,14 +169,14 @@ const UserForm = ({ user, onClose, onSave }) => {
           )}
 
           <div className="mb-6">
-            <label className="mb-1 block text-sm font-medium dark:text-gray-300">
+            <label className="mb-1 block text-sm font-medium text-gray-700">
               Role
             </label>
             <select
               name="role"
               value={formData.role}
               onChange={handleChange}
-              className="w-full rounded border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+              className="w-full rounded border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             >
               <option value="Bidder">Bidder</option>
               <option value="Seller">Seller</option>
@@ -170,21 +190,28 @@ const UserForm = ({ user, onClose, onSave }) => {
             <button
               type="button"
               onClick={onClose}
-              className="rounded px-4 py-2 text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+              className="rounded px-4 py-2 text-gray-600 hover:bg-gray-100"
             >
               Cancel
             </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="flex items-center rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:bg-blue-400"
-            >
+            <Button type="submit" disabled={loading} variant="primary">
               {loading && <Spinner size="sm" className="mr-2" />}
               {isEditMode ? "Save Changes" : "Create User"}
-            </button>
+            </Button>
           </div>
         </form>
       </div>
+
+      <ConfirmDialog
+        isOpen={showBanConfirm}
+        onClose={() => setShowBanConfirm(false)}
+        onConfirm={submitData}
+        title="Confirm Ban User"
+        message="Are you sure you want to ban this user? They will not be able to log in or perform any actions."
+        confirmText="Yes, Ban User"
+        confirmVariant="danger"
+        isLoading={loading}
+      />
     </div>
   );
 };
