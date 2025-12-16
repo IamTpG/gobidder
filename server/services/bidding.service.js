@@ -189,9 +189,17 @@ const placeAutoBid = async (userId, productId, inputMaxPrice) => {
       }
     }
 
-    // Return data needed for emails
-    // We only send emails if priceUpdated is true (transaction occurred)
-    // Or strictly based on requirements: "khi ra giá thành công, giá sản phẩm được cập nhật" -> imply priceUpdated
+    // Data for emails
+    const notificationData = {
+      productName: product.name,
+      newPrice: newCurrentPrice,
+      sellerId: product.seller_id,
+      newWinnerId: winnerId, // Who is winning now?
+      oldWinnerId: product.current_bidder_id, // Who was winning before?
+      bidderName: (await tx.user.findUnique({ where: { id: userId } }))
+        ?.full_name, // Name of person who placed the bid
+    };
+
     return {
       message: "Bid placed successfully",
       currentPrice: newCurrentPrice.toString(),

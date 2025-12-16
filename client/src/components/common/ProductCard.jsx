@@ -154,7 +154,12 @@ export const ProductCard = ({
       ${onClick ? "cursor-pointer" : ""} 
       ${className}
       ${isNew ? "border-2 border-amber-500 ring-4 ring-amber-300/50 shadow-lg" : ""}`}
-      onClick={onClick}
+      onClick={(e) => {
+        // Chỉ navigate nếu click không phải vào button hoặc icon khác
+        if (onClick && e.target.closest("button") === null) {
+          onClick(e);
+        }
+      }}
     >
       {/* Image Container */}
       <div className="relative h-64 bg-slate-100">
@@ -292,7 +297,9 @@ export const ProductCard = ({
                     ? "text-red-500 hover:bg-red-50"
                     : "text-slate-400 hover:bg-slate-100 hover:text-slate-600"
                 }`}
-                title={isInWatchlist ? "Remove from watchlist" : "Add to watchlist"}
+                title={
+                  isInWatchlist ? "Remove from watchlist" : "Add to watchlist"
+                }
               >
                 <HeartIcon filled={isInWatchlist} className="w-5 h-5" />
               </button>
@@ -303,11 +310,14 @@ export const ProductCard = ({
         {/* Bid Button */}
         <button
           onClick={(e) => {
+            e.stopPropagation();
+            // Nếu là chủ sản phẩm, cho edit; còn không thì navigate đến chi tiết sản phẩm
             if (props.isOwner && props.onEdit) {
-              e.stopPropagation();
               props.onEdit();
+            } else if (onClick) {
+              // Navigate đến trang chi tiết sản phẩm
+              onClick(e);
             } else if (onBid) {
-              e.stopPropagation();
               onBid();
             }
           }}

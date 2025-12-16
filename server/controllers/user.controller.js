@@ -357,15 +357,25 @@ const createUser = async (req, res) => {
 
 const updateUser = async (req, res) => {
   const { id } = req.params;
-  const { full_name, email, role, password } = req.body;
+  const { full_name, email, role, password, address, birthdate } = req.body;
   try {
     const updatedUser = await userService.updateUser(id, {
       full_name,
       email,
       role,
       password,
+      address,
+      birthdate,
     });
-    return res.json(updatedUser);
+    const message =
+      updatedUser.role === "Banned"
+        ? "User has been banned"
+        : "User updated successfully";
+
+    return res.json({
+      message,
+      user: updatedUser,
+    });
   } catch (err) {
     if (err.message === "User not found") {
       return res.status(404).json({ message: err.message });

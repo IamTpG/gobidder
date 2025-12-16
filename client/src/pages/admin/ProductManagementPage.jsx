@@ -239,6 +239,7 @@ const ProductManagementPage = () => {
                     activeTab={status}
                     onChange={handleStatusChange}
                     variant="pills"
+                    className="overflow-x-auto"
                   />
                 </div>
               </div>
