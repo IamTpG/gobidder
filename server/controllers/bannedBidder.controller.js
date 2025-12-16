@@ -28,7 +28,7 @@ const banBidder = async (req, res) => {
     const result = await bannedBidderService.banBidderFromProduct(
       productId,
       bidderId,
-      sellerId,
+      sellerId
     );
 
     // Get bidder info and product info for email
@@ -45,26 +45,64 @@ const banBidder = async (req, res) => {
     // Send email notification to banned bidder
     if (bidder && bidder.email && product) {
       try {
+        console.log(
+          `[BAN] Sending ban notification to ${bidder.email} for product ${product.name}`
+        );
+
+        const subject = `Notification: You have been banned from "${product.name}"`;
+        const text = `Dear ${bidder.full_name},\n\nWe are writing to inform you that the seller has banned you from bidding on the auction for "${product.name}".\n\nAs a result, your existing bids on this product have been removed, and you will not be able to place further bids on this item.\n\nIf you believe this is a mistake, please contact the seller directly or reach out to our support team.\n\nBest regards,\nGoBidder Team`;
+        const html = `
+          <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
+            <div style="background-color: #EF4444; padding: 20px; text-align: center;">
+              <h2 style="color: white; margin: 0; font-size: 24px;">Auction Ban Notification</h2>
+            </div>
+            <div style="padding: 30px; background-color: #ffffff;">
+              <p style="font-size: 16px; color: #333;">Dear <strong>${bidder.full_name}</strong>,</p>
+              
+              <p style="font-size: 16px; color: #333; line-height: 1.5;">
+                We are writing to inform you that the seller has banned you from bidding on the auction for:
+              </p>
+              
+              <div style="background-color: #f3f4f6; padding: 15px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #EF4444;">
+                <p style="margin: 0; font-weight: bold; font-size: 18px; color: #111;">${product.name}</p>
+              </div>
+              
+              <p style="font-size: 16px; color: #333; line-height: 1.5;">
+                As a result, <strong>your existing bids on this product have been removed</strong>, and you will not be able to place further bids on this item.
+              </p>
+              
+              <p style="font-size: 16px; color: #333; line-height: 1.5;">
+                If you believe this is a mistake, please contact the seller directly or reach out to our support team.
+              </p>
+              
+              <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
+              
+              <p style="color: #666; font-size: 14px; text-align: center;">
+                Best regards,<br>
+                <strong>GoBidder Team</strong>
+              </p>
+            </div>
+          </div>
+        `;
+
         await sendMail({
           to: bidder.email,
-          subject: "You have been banned from an auction - GoBidder",
-          text: `Dear ${bidder.full_name},\n\nYou have been banned from bidding on the product "${product.name}".\n\nYou will no longer be able to place bids on this product.\n\nBest regards,\nGoBidder Team`,
-          html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-              <h2 style="color: #01AA85;">Auction Ban Notification</h2>
-              <p>Dear ${bidder.full_name},</p>
-              <p>You have been banned from bidding on the product:</p>
-              <p style="font-weight: bold; font-size: 16px; margin: 20px 0;">"${product.name}"</p>
-              <p>You will no longer be able to place bids on this product.</p>
-              <hr style="margin: 30px 0; border: none; border-top: 1px solid #ddd;">
-              <p style="color: #666; font-size: 14px;">Best regards,<br>GoBidder Team</p>
-            </div>
-          `,
+          subject: subject,
+          text: text,
+          html: html,
         });
+        console.log(`[BAN] Email sent successfully to ${bidder.email}`);
       } catch (emailError) {
-        console.error("Failed to send ban notification email:", emailError);
-        // Don't fail the request if email fails
+        console.error(
+          "[BAN] Failed to send ban notification email:",
+          emailError
+        );
+        // Don't fail the request if email fails, but log it clearly
       }
+    } else {
+      console.warn(
+        "[BAN] Missing bidder email or product info, skipping email."
+      );
     }
 
     return res.status(200).json({
@@ -113,7 +151,7 @@ const checkBannedStatus = async (req, res) => {
 
     const isBanned = await bannedBidderService.isBidderBanned(
       productId,
-      userId,
+      userId
     );
 
     return res.status(200).json({ isBanned });
