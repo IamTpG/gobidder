@@ -28,6 +28,9 @@ const ProductInfoSidebar = ({
   isCheckingBan,
   isInWatchlist = false,
   onWatchlistToggle,
+  onBuyNow,
+  isBuyingNow = false,
+  buyNowError = null,
 }) => {
   // Tính số ngày còn lại đến khi kết thúc đấu giá
   const getDaysUntilEnd = (endDate) => {
@@ -43,7 +46,10 @@ const ProductInfoSidebar = ({
   const isSeller = user && product.seller && user.id === product.seller.id;
   const isWinner =
     user && product.currentBidder && user.id === product.currentBidder.id;
-  const isAuctionEnded = new Date() > new Date(product.auctionEndDate);
+  const isAuctionEnded =
+    new Date() > new Date(product.auctionEndDate) ||
+    product.status === "Sold" ||
+    product.status === "Expired";
 
   // Helper render User Card (Seller/Bidder)
   const UserInfoCard = ({ title, data, isHighlight = false }) => (
@@ -173,7 +179,7 @@ const ProductInfoSidebar = ({
             <div className="space-y-3">
               {isBanned && (
                 <div className="p-4 text-sm text-red-800 bg-red-50 border border-red-300 rounded-lg font-medium">
-                  ⚠️ You have been banned from bidding on this product by the
+                  You have been banned from bidding on this product by the
                   seller.
                 </div>
               )}
@@ -201,6 +207,35 @@ const ProductInfoSidebar = ({
                     isBidding={isBidding}
                     label="Place Bid"
                   />
+
+                  {/* Buy Now Button */}
+                  {product.buyNowPrice && user && (
+                    <>
+                      {buyNowError && (
+                        <div className="p-3 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg">
+                          {buyNowError}
+                        </div>
+                      )}
+                      <Button
+                        onClick={onBuyNow}
+                        disabled={
+                          isBuyingNow || isBidding || isBanned || isCheckingBan
+                        }
+                        variant="primary"
+                        className="w-full"
+                      >
+                        {isBuyingNow ? (
+                          <div className="flex items-center justify-center gap-2">
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                            <span>Processing...</span>
+                          </div>
+                        ) : (
+                          `Buy Now - ${formatPrice(product.buyNowPrice)}`
+                        )}
+                      </Button>
+                    </>
+                  )}
+
                   {!user && (
                     <button
                       onClick={onNavigateToAuth}

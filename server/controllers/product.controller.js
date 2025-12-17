@@ -972,6 +972,56 @@ const deleteProductAdmin = async (req, res) => {
   }
 };
 
+// Buy Now Purchase - Handle immediate purchase at buy now price
+const buyNowPurchase = async (req, res) => {
+  try {
+    const productId = parseInt(req.params.id);
+    const buyerId = req.user?.id;
+
+    // Validate product ID
+    if (isNaN(productId) || productId <= 0) {
+      return res.status(400).json({ message: "Invalid product ID" });
+    }
+
+    // Validate user is authenticated
+    if (!buyerId) {
+      return res.status(401).json({ message: "Please login to purchase" });
+    }
+
+    // Call service function
+    const result = await productService.buyNowPurchase(productId, buyerId);
+
+    return res.status(200).json({
+      message: "Purchase successful! Redirecting to payment...",
+      transaction: result.transaction,
+      product: result.product,
+    });
+  } catch (error) {
+    console.error("Error in buyNowPurchase:", error);
+
+    // Handle specific error messages
+    if (
+      error.message.includes("not found") ||
+      error.message.includes("does not have")
+    ) {
+      return res.status(404).json({ message: error.message });
+    }
+
+    if (
+      error.message.includes("cannot buy") ||
+      error.message.includes("banned") ||
+      error.message.includes("already ended") ||
+      error.message.includes("not available")
+    ) {
+      return res.status(403).json({ message: error.message });
+    }
+
+    return res
+      .status(500)
+      .json({ message: error.message || "Internal server error" });
+  }
+};
+
 module.exports = {
   getProducts,
   getProductById,
@@ -990,4 +1040,5 @@ module.exports = {
   getProductByIdAdmin,
   updateProductAdmin,
   deleteProductAdmin,
+  buyNowPurchase,
 };

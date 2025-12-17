@@ -923,6 +923,103 @@ const deleteProductAdmin = async (productId) => {
   return deletedProduct;
 };
 
+// Buy Now Purchase - Allows user to purchase product immediately at buy now price
+const buyNowPurchase = async (productId, buyerId) => {
+  // Fetch product with seller info
+  const product = await prisma.product.findUnique({
+    where: { id: productId },
+    include: {
+      seller: { select: { id: true, full_name: true, email: true } },
+      banned_bidders: { select: { bidder_id: true } },
+    },
+  });
+
+  // Validate product exists
+  if (!product) {
+    throw new Error("Product not found");
+  }
+
+  // Validate buy now price is set
+  if (!product.buy_now_price || product.buy_now_price <= 0) {
+    throw new Error("This product does not have a buy now price");
+  }
+
+  // Validate auction is still active
+  const now = new Date();
+  if (product.end_time <= now) {
+    throw new Error("This auction has already ended");
+  }
+
+  if (product.status !== "Active") {
+    throw new Error("This product is not available for purchase");
+  }
+
+  // Validate buyer is not the seller
+  if (product.seller_id === buyerId) {
+    throw new Error("You cannot buy your own product");
+  }
+
+  // Check if buyer is banned
+  const isBanned = product.banned_bidders.some(
+    (banned) => banned.bidder_id === buyerId
+  );
+  if (isBanned) {
+    throw new Error("You are banned from purchasing this product");
+  }
+
+  // Execute the buy now purchase in a transaction
+  const result = await prisma.$transaction(async (tx) => {
+    // Update product - set buyer as winner and price to buy now price
+    const updatedProduct = await tx.product.update({
+      where: { id: productId },
+      data: {
+        current_bidder_id: buyerId,
+        current_price: product.buy_now_price,
+        status: "Sold", // Mark as sold since buy now completes the auction
+        bid_count: product.bid_count + 1, // Increment bid count
+        end_time: new Date(), // Set end time to now so countdown shows 0
+      },
+    });
+
+    // Create transaction for payment
+    const transaction = await tx.transaction.create({
+      data: {
+        product_id: productId,
+        winner_id: buyerId,
+        seller_id: product.seller_id,
+        final_price: product.buy_now_price,
+        status: "PendingPayment",
+        created_at: new Date(),
+      },
+      include: {
+        product: {
+          select: { id: true, name: true, images: true },
+        },
+        seller: {
+          select: {
+            id: true,
+            full_name: true,
+            rating_plus: true,
+            rating_minus: true,
+          },
+        },
+        winner: {
+          select: {
+            id: true,
+            full_name: true,
+            rating_plus: true,
+            rating_minus: true,
+          },
+        },
+      },
+    });
+
+    return { product: updatedProduct, transaction };
+  });
+
+  return result;
+};
+
 module.exports = {
   getProducts,
   getProductById,
@@ -941,4 +1038,5 @@ module.exports = {
   getAllProductsAdmin,
   updateProductAdmin,
   deleteProductAdmin,
+  buyNowPurchase,
 };

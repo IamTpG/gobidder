@@ -16,6 +16,7 @@ import {
   placeBid,
   getMyAutoBid,
   createTransactionForProduct,
+  buyNowProduct,
 } from "../../services/api";
 import { useAuth } from "../../contexts/AuthContext";
 import ImageGallery from "../common/ImageGallery";
@@ -24,6 +25,7 @@ import AuctionSection from "../home/ProductSection";
 import ProductInfoSidebar from "./ProductInfoSidebar";
 import ProductQnA from "./ProductQnA";
 import TransactionRating from "./TransactionRating";
+import ConfirmDialog from "../common/ConfirmDialog";
 import "../../styles/ProductDetails.css";
 
 const ProductDetails = ({ product, onRefresh }) => {
@@ -44,6 +46,9 @@ const ProductDetails = ({ product, onRefresh }) => {
   const [bidError, setBidError] = useState(null);
   const [bidSuccessMsg, setBidSuccessMsg] = useState(null);
   const [isSubmittingAnswer, setIsSubmittingAnswer] = useState({});
+  const [isBuyingNow, setIsBuyingNow] = useState(false);
+  const [buyNowError, setBuyNowError] = useState(null);
+  const [showBuyNowConfirm, setShowBuyNowConfirm] = useState(false);
   const { banBidder, isLoading: isBanning, error: banError } = useBanBidder();
   const { isBanned, isLoading: isCheckingBan } = useBannedStatus(
     product?.id,
@@ -185,6 +190,44 @@ const ProductDetails = ({ product, onRefresh }) => {
     }
   };
 
+  const handleBuyNow = () => {
+    if (isBanned) {
+      setBuyNowError("You are banned from purchasing this product.");
+      return;
+    }
+    if (!user) return navigate("/auth", { state: { from: location } });
+
+    // Show confirmation dialog
+    setShowBuyNowConfirm(true);
+  };
+
+  const handleConfirmBuyNow = async () => {
+    try {
+      setIsBuyingNow(true);
+      setBuyNowError(null);
+      setShowBuyNowConfirm(false);
+
+      const result = await buyNowProduct(product.id);
+
+      // Navigate to transaction page
+      const txId = result.transaction?.id;
+      if (txId) {
+        navigate(`/transactions/${txId}`);
+      } else {
+        // Fallback: refresh product to show updated state
+        if (onRefresh) onRefresh();
+      }
+    } catch (err) {
+      setBuyNowError(err.response?.data?.message || "Buy now failed.");
+    } finally {
+      setIsBuyingNow(false);
+    }
+  };
+
+  const handleCancelBuyNow = () => {
+    setShowBuyNowConfirm(false);
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -210,6 +253,9 @@ const ProductDetails = ({ product, onRefresh }) => {
           isCheckingBan={isCheckingBan}
           isInWatchlist={user ? isInWatchlist(product.id) : false}
           onWatchlistToggle={handleWatchlistToggle}
+          onBuyNow={handleBuyNow}
+          isBuyingNow={isBuyingNow}
+          buyNowError={buyNowError}
         />
       </div>
 
@@ -361,6 +407,19 @@ const ProductDetails = ({ product, onRefresh }) => {
           />
         </div>
       )}
+
+      {/* Buy Now Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={showBuyNowConfirm}
+        onClose={handleCancelBuyNow}
+        onConfirm={handleConfirmBuyNow}
+        title="Confirm Purchase"
+        message={`Are you sure you want to buy "${product.name}" for $${formatPrice(product.buyNowPrice)}? This will end the auction immediately and proceed to payment.`}
+        confirmText="Buy Now"
+        cancelText="Cancel"
+        confirmVariant="primary"
+        isLoading={isBuyingNow}
+      />
 
       {banTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
