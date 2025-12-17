@@ -4,7 +4,7 @@ import { cancelTransaction } from "../../services/api";
 
 const TransactionCancel = ({ tx, onRefresh, onError, onSuccess }) => {
   const [showForm, setShowForm] = useState(false);
-  const [reason, setReason] = useState("");
+  const [reason, setReason] = useState("Bidder doesn't pay");
   const [processing, setProcessing] = useState(false);
 
   // Chỉ hiển thị nếu chưa hoàn thành hoặc chưa hủy
