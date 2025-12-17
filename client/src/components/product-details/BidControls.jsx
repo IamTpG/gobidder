@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 
 import Button from "../common/Button";
 import Spinner from "../common/Spinner";
+import ConfirmDialog from "../common/ConfirmDialog";
 import {
   formatPrice,
   validatePriceInput,
@@ -21,6 +22,7 @@ const BidControls = ({
 }) => {
   const [validationError, setValidationError] = useState("");
   const [displayValue, setDisplayValue] = useState("");
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const minBid = currentBid > 0 ? currentBid + minBidIncrement : startPrice;
 
   // Sync display value with bidAmount prop
@@ -95,60 +97,92 @@ const BidControls = ({
     }
   };
 
-  return (
-    <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-      <div className="flex flex-col space-y-3">
-        <div className="flex justify-between text-sm">
-          <span className="text-gray-600">Minimum bid:</span>
-          <span className="font-medium text-gray-900">
-            ${formatPrice(minBid)}
-          </span>
-        </div>
+  const handleBidClick = () => {
+    // Show confirmation dialog
+    setShowConfirmDialog(true);
+  };
 
-        <div className="flex gap-3">
-          <div className="relative flex-1">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">
-              $
+  const handleConfirmBid = () => {
+    setShowConfirmDialog(false);
+    onBid();
+  };
+
+  const handleCancelBid = () => {
+    setShowConfirmDialog(false);
+  };
+
+  return (
+    <>
+      <ConfirmDialog
+        isOpen={showConfirmDialog}
+        onClose={handleCancelBid}
+        onConfirm={handleConfirmBid}
+        title="Confirm Bid"
+        message={`Are you sure you want to place a bid of $${formatPrice(bidAmount)}?`}
+        confirmText="Place Bid"
+        cancelText="Cancel"
+        confirmVariant="primary"
+        isLoading={isBidding}
+      />
+
+      <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+        <div className="flex flex-col space-y-3">
+          <div className="flex justify-between text-sm">
+            <span className="text-gray-600">Minimum bid:</span>
+            <span className="font-medium text-gray-900">
+              ${formatPrice(minBid)}
             </span>
-            <input
-              type="text"
-              inputMode="decimal"
-              value={displayValue}
-              onChange={(e) => handleBidInputChange(e.target.value)}
-              onFocus={handleFocus}
-              onBlur={handleBlur}
-              className="w-full pl-8 pr-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-[#00B289] focus:ring-0 font-semibold text-gray-900 transition-colors"
-              placeholder="Enter amount"
-              disabled={disabled}
-            />
           </div>
 
-          <Button
-            onClick={onBid}
-            disabled={disabled || bidAmount < minBid || validationError !== ""}
-            variant="primary"
-            className="px-6 whitespace-nowrap"
-          >
-            {isBidding ? (
-              <div className="flex items-center gap-2">
-                <Spinner size="sm" className="text-white" />
-                <span>Bidding...</span>
-              </div>
-            ) : (
-              label
-            )}
-          </Button>
-        </div>
+          <div className="flex gap-3">
+            <div className="relative flex-1">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">
+                $
+              </span>
+              <input
+                type="text"
+                inputMode="decimal"
+                value={displayValue}
+                onChange={(e) => handleBidInputChange(e.target.value)}
+                onFocus={handleFocus}
+                onBlur={handleBlur}
+                className="w-full pl-8 pr-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-[#00B289] focus:ring-0 font-semibold text-gray-900 transition-colors"
+                placeholder="Enter amount"
+                disabled={disabled}
+              />
+            </div>
 
-        {/* Validation Error Message */}
-        {validationError && (
-          <p className="text-red-500 text-xs mt-1">{validationError}</p>
-        )}
+            <Button
+              onClick={handleBidClick}
+              disabled={
+                disabled || bidAmount < minBid || validationError !== ""
+              }
+              variant="primary"
+              className="px-6 whitespace-nowrap"
+            >
+              {isBidding ? (
+                <div className="flex items-center gap-2">
+                  <Spinner size="sm" className="text-white" />
+                  <span>Bidding...</span>
+                </div>
+              ) : (
+                label
+              )}
+            </Button>
+          </div>
 
-        {/* Các nút gợi ý nhanh (Quick bid buttons) */}
-        <div className="flex gap-2 overflow-x-auto pb-1">
-          {[minBid, minBid + minBidIncrement, minBid + minBidIncrement * 2].map(
-            (amount) => (
+          {/* Validation Error Message */}
+          {validationError && (
+            <p className="text-red-500 text-xs mt-1">{validationError}</p>
+          )}
+
+          {/* Các nút gợi ý nhanh (Quick bid buttons) */}
+          <div className="flex gap-2 overflow-x-auto pb-1">
+            {[
+              minBid,
+              minBid + minBidIncrement,
+              minBid + minBidIncrement * 2,
+            ].map((amount) => (
               <button
                 key={amount}
                 onClick={() => {
@@ -160,11 +194,11 @@ const BidControls = ({
               >
                 ${formatPrice(amount)}
               </button>
-            )
-          )}
+            ))}
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 
