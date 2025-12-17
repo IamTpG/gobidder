@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import api from "../../services/api";
 import Countdown from "./Countdown";
 import { HeartIcon } from "./Icons";
+import { formatPrice } from "../../utils/priceUtils";
 
 export const ProductCard = ({
   id,
@@ -55,23 +56,6 @@ export const ProductCard = ({
       year: "numeric",
       month: "short",
       day: "numeric",
-    });
-  };
-
-  // Format price for Float with 2 decimal places (USD format)
-  const formatPrice = (price) => {
-    if (!price && price !== 0) return "0.00";
-
-    // Convert string to number if needed (for backward compatibility)
-    const numPrice = typeof price === "string" ? parseFloat(price) : price;
-
-    // Validate number
-    if (isNaN(numPrice)) return "0.00";
-
-    // Format with exactly 2 decimal places and thousands separator
-    return numPrice.toLocaleString("en-US", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
     });
   };
 

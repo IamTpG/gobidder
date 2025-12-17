@@ -1,4 +1,5 @@
 import React from "react";
+import { formatPrice } from "../../utils/priceUtils";
 
 const TransactionInfo = ({ tx }) => {
   return (
@@ -15,7 +16,7 @@ const TransactionInfo = ({ tx }) => {
           <p className="text-xs text-gray-500 mt-2">
             Final price:{" "}
             <span className="text-primary font-bold">
-              {tx.final_price?.toLocaleString()}
+              ${formatPrice(tx.final_price)}
             </span>
           </p>
         </div>

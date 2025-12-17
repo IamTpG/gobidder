@@ -4,6 +4,7 @@ import { Editor } from "@tinymce/tinymce-react";
 
 import Button from "../common/Button";
 import Spinner from "../common/Spinner";
+import { validatePriceInput } from "../../utils/priceUtils";
 
 export default function ProductForm({
   initialValues = {},
@@ -38,6 +39,11 @@ export default function ProductForm({
   const [fileLabel, setFileLabel] = useState("No files selected");
 
   const [errors, setErrors] = useState({});
+  const [priceErrors, setPriceErrors] = useState({
+    startPrice: "",
+    stepPrice: "",
+    buyNowPrice: "",
+  });
 
   // Cập nhật form khi initialValues thay đổi (quan trọng cho EditPage khi data load chậm)
   useEffect(() => {
@@ -76,6 +82,15 @@ export default function ProductForm({
       newErrors.buyNowPrice = "Buy now price > 0";
     if (buyNowPrice && Number(buyNowPrice) <= Number(startPrice))
       newErrors.buyNowPrice = "Buy now price must be greater than start price";
+
+    // Check for decimal validation errors
+    if (
+      priceErrors.startPrice ||
+      priceErrors.stepPrice ||
+      priceErrors.buyNowPrice
+    ) {
+      return false;
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -218,10 +233,24 @@ export default function ProductForm({
           </label>
           <input
             type="number"
+            step="0.01"
             className="border border-gray-300 p-3 w-full rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
             value={startPrice}
-            onChange={(e) => setStartPrice(e.target.value)}
+            onChange={(e) => {
+              const value = e.target.value;
+              setStartPrice(value);
+              const validation = validatePriceInput(value);
+              setPriceErrors((prev) => ({
+                ...prev,
+                startPrice: validation.errorMessage,
+              }));
+            }}
           />
+          {priceErrors.startPrice && (
+            <p className="text-red-500 text-sm mt-1">
+              {priceErrors.startPrice}
+            </p>
+          )}
           {errors.startPrice && (
             <p className="text-red-500 text-sm mt-1">{errors.startPrice}</p>
           )}
@@ -232,10 +261,22 @@ export default function ProductForm({
           </label>
           <input
             type="number"
+            step="0.01"
             className="border border-gray-300 p-3 w-full rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
             value={stepPrice}
-            onChange={(e) => setStepPrice(e.target.value)}
+            onChange={(e) => {
+              const value = e.target.value;
+              setStepPrice(value);
+              const validation = validatePriceInput(value);
+              setPriceErrors((prev) => ({
+                ...prev,
+                stepPrice: validation.errorMessage,
+              }));
+            }}
           />
+          {priceErrors.stepPrice && (
+            <p className="text-red-500 text-sm mt-1">{priceErrors.stepPrice}</p>
+          )}
           {errors.stepPrice && (
             <p className="text-red-500 text-sm mt-1">{errors.stepPrice}</p>
           )}
@@ -246,10 +287,24 @@ export default function ProductForm({
           </label>
           <input
             type="number"
+            step="0.01"
             className="border border-gray-300 p-3 w-full rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
             value={buyNowPrice}
-            onChange={(e) => setBuyNowPrice(e.target.value)}
+            onChange={(e) => {
+              const value = e.target.value;
+              setBuyNowPrice(value);
+              const validation = validatePriceInput(value);
+              setPriceErrors((prev) => ({
+                ...prev,
+                buyNowPrice: validation.errorMessage,
+              }));
+            }}
           />
+          {priceErrors.buyNowPrice && (
+            <p className="text-red-500 text-sm mt-1">
+              {priceErrors.buyNowPrice}
+            </p>
+          )}
           {errors.buyNowPrice && (
             <p className="text-red-500 text-sm mt-1">{errors.buyNowPrice}</p>
           )}
