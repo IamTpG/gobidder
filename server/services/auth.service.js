@@ -23,7 +23,7 @@ const registerUser = async ({
     const response = await axios.post(
       "https://www.google.com/recaptcha/api/siteverify",
       null,
-      { params: { secret: recaptchaSecret, response: recaptchaToken } },
+      { params: { secret: recaptchaSecret, response: recaptchaToken } }
     );
 
     if (!response.data.success) {
