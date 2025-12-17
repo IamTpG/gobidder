@@ -164,7 +164,7 @@ const getProductById = async (productId) => {
 
   // Tạo Set các bidder_id bị ban để filter nhanh
   const bannedBidderIds = new Set(
-    product.banned_bidders.map((banned) => banned.bidder_id),
+    product.banned_bidders.map((banned) => banned.bidder_id)
   );
 
   // Transform data để khớp với Frontend format
@@ -369,6 +369,7 @@ const createProduct = async (sellerId, data) => {
     categoryId,
     endTime,
     autoRenew,
+    allowNoRatingBid,
   } = data;
 
   // Chuyển đổi dữ liệu tiền tệ sang Number
@@ -394,6 +395,7 @@ const createProduct = async (sellerId, data) => {
       current_price: 0,
 
       auto_renew: autoRenew || false,
+      allow_no_rating_bid: allowNoRatingBid ?? true,
       status: "Active",
 
       seller_id: sellerId,
@@ -454,6 +456,7 @@ const updateProduct = async (productId, sellerId, data) => {
       category_id: data.categoryId,
       end_time: data.endTime,
       auto_renew: data.autoRenew,
+      allow_no_rating_bid: data.allowNoRatingBid ?? true,
     },
   });
 

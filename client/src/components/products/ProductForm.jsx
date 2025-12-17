@@ -17,16 +17,19 @@ export default function ProductForm({
   // Khởi tạo state dựa trên initialValues (cho Edit) hoặc mặc định (cho Create)
   const [name, setName] = useState(initialValues.name || "");
   const [description, setDescription] = useState(
-    initialValues.description || "",
+    initialValues.description || ""
   );
   const [startPrice, setStartPrice] = useState(initialValues.startPrice || "");
   const [stepPrice, setStepPrice] = useState(initialValues.stepPrice || "");
   const [buyNowPrice, setBuyNowPrice] = useState(
-    initialValues.buyNowPrice || "",
+    initialValues.buyNowPrice || ""
   );
   const [categoryId, setCategoryId] = useState(initialValues.categoryId || "");
   const [endTime, setEndTime] = useState(initialValues.endTime || "");
   const [autoRenew, setAutoRenew] = useState(initialValues.autoRenew || false);
+  const [allowNoRatingBid, setAllowNoRatingBid] = useState(
+    initialValues.allowNoRatingBid ?? true
+  );
 
   // Image handling
   const [images, setImages] = useState(initialValues.images || []);
@@ -92,7 +95,7 @@ export default function ProductForm({
       setFileLabel(
         next.length > 0
           ? `${next.length} file${next.length > 1 ? "s" : ""} selected`
-          : "No files selected",
+          : "No files selected"
       );
       return next;
     });
@@ -114,7 +117,7 @@ export default function ProductForm({
       setFileLabel(
         next.length > 0
           ? `${next.length} file${next.length > 1 ? "s" : ""} selected`
-          : "No files selected",
+          : "No files selected"
       );
       return next;
     });
@@ -133,6 +136,7 @@ export default function ProductForm({
       categoryId,
       endTime,
       autoRenew,
+      allowNoRatingBid,
       images, // Dùng cho Edit (JSON payload)
       filesToUpload, // Dùng cho Create (Multipart form)
     };
@@ -332,6 +336,16 @@ export default function ProductForm({
           className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
         />
         <label className="text-gray-700">Auto Renew</label>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <input
+          type="checkbox"
+          checked={allowNoRatingBid}
+          onChange={(e) => setAllowNoRatingBid(e.target.checked)}
+          className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
+        />
+        <label className="text-gray-700">Allow bidders with no rating</label>
       </div>
 
       {/* Submit */}

@@ -107,7 +107,9 @@ const placeBid = async (req, res) => {
     }
     if (
       error.message.includes("Bid must be at least") ||
-      error.message === "Auction has ended"
+      error.message === "Auction has ended" ||
+      error.message.includes("rating is lower than") ||
+      error.message.includes("banned from bidding")
     ) {
       return res.status(400).json({ message: error.message });
     }

@@ -22,6 +22,23 @@ const placeAutoBid = async (userId, productId, inputMaxPrice) => {
     );
   }
 
+  // Check user rating
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { rating_plus: true, rating_minus: true },
+  });
+
+  if (user) {
+    const totalRatings = user.rating_plus + user.rating_minus;
+    if (totalRatings > 0) {
+      const positiveRatio = user.rating_plus / totalRatings;
+      // Use logic < 0.8 ensure 80%
+      if (positiveRatio < 0.8) {
+        throw new Error("Your rating is lower than 80% to place a bid");
+      }
+    }
+  }
+
   // Sử dụng transaction để đảm bảo tính toàn vẹn dữ liệu (Race condition)
   return await prisma.$transaction(async (tx) => {
     // Lấy thông tin sản phẩm
@@ -31,6 +48,30 @@ const placeAutoBid = async (userId, productId, inputMaxPrice) => {
 
     if (!product) {
       throw new Error("Product not found");
+    }
+
+    // Check user rating restriction
+    const user = await tx.user.findUnique({
+      where: { id: userId },
+      select: { rating_plus: true, rating_minus: true },
+    });
+
+    if (user) {
+      const totalRatings = user.rating_plus + user.rating_minus;
+      if (totalRatings === 0) {
+        // NEW: Check if product allows no-rating bidders
+        if (!product.allow_no_rating_bid) {
+          throw new Error(
+            "This product does not allow bidders without rating history."
+          );
+        }
+      } else {
+        // Existing 80% check
+        const positiveRatio = user.rating_plus / totalRatings;
+        if (positiveRatio < 0.8) {
+          throw new Error("Your rating is lower than 80% to place a bid");
+        }
+      }
     }
 
     if (product.seller_id === userId) {

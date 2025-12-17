@@ -82,6 +82,7 @@ model Product {
   step_price        Float
   buy_now_price     Float?
   auto_renew        Boolean        @default(false)
+  allow_no_rating_bid Boolean      @default(true)
   status            ProductStatus  @default(Pending)
   current_price     Float
   bid_count         Int            @default(0)
