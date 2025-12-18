@@ -370,6 +370,7 @@ const createProduct = async (sellerId, data) => {
     endTime,
     autoRenew,
     allowNoRatingBid,
+    allowLowRatingBid,
   } = data;
 
   // Chuyển đổi dữ liệu tiền tệ sang Number
@@ -396,6 +397,7 @@ const createProduct = async (sellerId, data) => {
 
       auto_renew: autoRenew || false,
       allow_no_rating_bid: allowNoRatingBid ?? true,
+      allow_low_rating_bid: allowLowRatingBid ?? false,
       status: "Active",
 
       seller_id: sellerId,
@@ -457,6 +459,7 @@ const updateProduct = async (productId, sellerId, data) => {
       end_time: data.endTime,
       auto_renew: data.autoRenew,
       allow_no_rating_bid: data.allowNoRatingBid ?? true,
+      allow_low_rating_bid: data.allowLowRatingBid ?? false,
     },
   });
 

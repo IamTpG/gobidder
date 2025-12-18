@@ -549,6 +549,7 @@ const create = async (req, res) => {
     endTime,
     autoRenew,
     allowNoRatingBid,
+    allowLowRatingBid,
   } = req.body;
 
   // Lấy mảng tệp đã được Multer xử lý
@@ -626,6 +627,8 @@ const create = async (req, res) => {
       autoRenew: autoRenew === "true", // Chuyển chuỗi sang boolean
       allowNoRatingBid:
         allowNoRatingBid === "true" || allowNoRatingBid === true,
+      allowLowRatingBid:
+        allowLowRatingBid === "true" || allowLowRatingBid === true,
     };
 
     const newProduct = await productService.createProduct(
@@ -662,6 +665,7 @@ const update = async (req, res) => {
     endTime,
     autoRenew,
     allowNoRatingBid,
+    allowLowRatingBid,
     oldImages, // Array of URLs to keep
   } = req.body;
 
@@ -737,6 +741,8 @@ const update = async (req, res) => {
         autoRenew: autoRenew === "true" || autoRenew === true,
         allowNoRatingBid:
           allowNoRatingBid === "true" || allowNoRatingBid === true,
+        allowLowRatingBid:
+          allowLowRatingBid === "true" || allowLowRatingBid === true,
       }
     );
 

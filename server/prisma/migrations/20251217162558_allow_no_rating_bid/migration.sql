@@ -1,0 +1,1 @@
+ALTER TABLE "Product" ADD COLUMN "allow_no_rating_bid" BOOLEAN NOT NULL DEFAULT true;

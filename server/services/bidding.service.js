@@ -22,7 +22,16 @@ const placeAutoBid = async (userId, productId, inputMaxPrice) => {
     );
   }
 
-  // Check user rating
+  // Check user rating (fetch product first to know restrictions)
+  const product = await prisma.product.findUnique({
+    where: { id: parseInt(productId) },
+    select: { allow_low_rating_bid: true, allow_no_rating_bid: true },
+  });
+
+  if (!product) {
+    throw new Error("Product not found");
+  }
+
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: { rating_plus: true, rating_minus: true },
@@ -30,11 +39,20 @@ const placeAutoBid = async (userId, productId, inputMaxPrice) => {
 
   if (user) {
     const totalRatings = user.rating_plus + user.rating_minus;
-    if (totalRatings > 0) {
+    if (totalRatings === 0) {
+      // Check if product allows no-rating bidders
+      if (!product.allow_no_rating_bid) {
+        throw new Error(
+          "This product does not allow bidders without rating history."
+        );
+      }
+    } else {
       const positiveRatio = user.rating_plus / totalRatings;
       // Use logic < 0.8 ensure 80%
-      if (positiveRatio < 0.8) {
-        throw new Error("Your rating is lower than 80% to place a bid");
+      if (positiveRatio < 0.8 && !product.allow_low_rating_bid) {
+        throw new Error(
+          "Your rating is lower than 80% to place a bid on this product"
+        );
       }
     }
   }
@@ -59,17 +77,19 @@ const placeAutoBid = async (userId, productId, inputMaxPrice) => {
     if (user) {
       const totalRatings = user.rating_plus + user.rating_minus;
       if (totalRatings === 0) {
-        // NEW: Check if product allows no-rating bidders
+        // Check if product allows no-rating bidders
         if (!product.allow_no_rating_bid) {
           throw new Error(
             "This product does not allow bidders without rating history."
           );
         }
       } else {
-        // Existing 80% check
+        // Check 80% rating threshold
         const positiveRatio = user.rating_plus / totalRatings;
-        if (positiveRatio < 0.8) {
-          throw new Error("Your rating is lower than 80% to place a bid");
+        if (positiveRatio < 0.8 && !product.allow_low_rating_bid) {
+          throw new Error(
+            "Your rating is lower than 80% to place a bid on this product"
+          );
         }
       }
     }

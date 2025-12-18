@@ -31,6 +31,9 @@ export default function ProductForm({
   const [allowNoRatingBid, setAllowNoRatingBid] = useState(
     initialValues.allowNoRatingBid ?? true
   );
+  const [allowLowRatingBid, setAllowLowRatingBid] = useState(
+    initialValues.allowLowRatingBid ?? false
+  );
 
   // Image handling
   const [images, setImages] = useState(initialValues.images || []);
@@ -152,6 +155,7 @@ export default function ProductForm({
       endTime,
       autoRenew,
       allowNoRatingBid,
+      allowLowRatingBid,
       images, // Dùng cho Edit (JSON payload)
       filesToUpload, // Dùng cho Create (Multipart form)
     };
@@ -401,6 +405,18 @@ export default function ProductForm({
           className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
         />
         <label className="text-gray-700">Allow bidders with no rating</label>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <input
+          type="checkbox"
+          checked={allowLowRatingBid}
+          onChange={(e) => setAllowLowRatingBid(e.target.checked)}
+          className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
+        />
+        <label className="text-gray-700">
+          Allow bidders with rating &lt; 80%
+        </label>
       </div>
 
       {/* Submit */}
