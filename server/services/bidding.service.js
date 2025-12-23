@@ -133,10 +133,17 @@ const placeAutoBid = async (userId, productId, inputMaxPrice) => {
       },
     });
 
-    // Thuật toán đấu giá
-    // Lấy Top 2 người có giá trần cao nhất
     const topBids = await tx.autoBid.findMany({
-      where: { product_id: parseInt(productId) },
+      where: {
+        product_id: parseInt(productId),
+        user: {
+          banned_from_products: {
+            none: {
+              product_id: parseInt(productId),
+            },
+          },
+        },
+      },
       orderBy: [
         { max_price: "desc" },
         { created_at: "asc" }, // Ai đặt giá đó sớm hơn thì thắng (nếu bằng giá)
