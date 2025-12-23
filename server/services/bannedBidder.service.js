@@ -70,11 +70,12 @@ const banBidderFromProduct = async (productId, bidderId, sellerId) => {
   if (product.current_bidder_id === bidderId) {
     // Find the second highest bidder (excluding the banned one)
     const validBids = product.bid_histories.filter(
-      (bid) => bid.user_id !== bidderId,
+      (bid) => bid.user_id !== bidderId
     );
 
     if (validBids.length > 0) {
-      // Get the highest valid bid
+      // Sort by bid_price descending to get the highest valid bid
+      validBids.sort((a, b) => Number(b.bid_price) - Number(a.bid_price));
       const secondHighestBid = validBids[0];
 
       await prisma.product.update({
@@ -85,12 +86,12 @@ const banBidderFromProduct = async (productId, bidderId, sellerId) => {
         },
       });
     } else {
-      // No other bids, revert to start price
+      // No other bids, no one is bidding anymore
       await prisma.product.update({
         where: { id: productId },
         data: {
           current_bidder_id: null,
-          current_price: product.start_price,
+          current_price: 0,
         },
       });
     }
