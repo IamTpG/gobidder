@@ -54,20 +54,21 @@ const ProductSection = ({
     return () => window.removeEventListener("resize", updateItemsPerView);
   }, [itemsPerView]);
 
-  // Tính số items có thể scroll
-  const maxIndex = Math.max(0, items.length - responsiveItemsPerView);
+  // Tính số trang (pages) - mỗi trang hiển thị responsiveItemsPerView items
+  const totalPages = Math.ceil(items.length / responsiveItemsPerView);
+  const maxIndex = Math.max(0, totalPages - 1);
 
-  const handlePrev = () => {
-    setCurrentIndex((prev) => Math.max(0, prev - 1));
-  };
+  // const handlePrev = () => {
+  //   setCurrentIndex((prev) => Math.max(0, prev - 1));
+  // };
 
-  const handleNext = () => {
-    setCurrentIndex((prev) => Math.min(maxIndex, prev + 1));
-  };
+  // const handleNext = () => {
+  //   setCurrentIndex((prev) => Math.min(maxIndex, prev + 1));
+  // };
 
   // Handle scroll snap on mobile with debounce
   const handleScroll = () => {
-    if (containerRef.current) {
+    if (containerRef.current && responsiveItemsPerView < items.length) {
       // Clear previous timeout
       if (scrollTimeoutRef.current) {
         clearTimeout(scrollTimeoutRef.current);
@@ -78,27 +79,24 @@ const ProductSection = ({
         const container = containerRef.current;
         if (!container) return;
 
-        // Get all card elements
-        const cards = container.querySelectorAll(".flex > div");
-        if (cards.length === 0) return;
+        // Tính toán trang hiện tại dựa trên vị trí scroll
+        const scrollLeft = container.scrollLeft;
+        const containerWidth = container.offsetWidth;
+        const scrollWidth = container.scrollWidth;
 
-        const containerRect = container.getBoundingClientRect();
-        let closestIndex = 0;
-        let minDistance = Infinity;
+        // Tính toán tổng chiều rộng cần scroll (trừ đi phần nhìn thấy)
+        const maxScrollLeft = scrollWidth - containerWidth;
 
-        // Find which card is closest to the left edge of container
-        cards.forEach((card, index) => {
-          const cardRect = card.getBoundingClientRect();
-          const distance = Math.abs(cardRect.left - containerRect.left);
+        // Tính toán index dựa trên tỷ lệ scroll
+        const scrollPercentage =
+          maxScrollLeft > 0 ? scrollLeft / maxScrollLeft : 0;
+        const newIndex = Math.round(scrollPercentage * maxIndex);
 
-          if (distance < minDistance) {
-            minDistance = distance;
-            closestIndex = index;
-          }
-        });
+        // Giới hạn trong phạm vi hợp lệ
+        const clampedIndex = Math.max(0, Math.min(maxIndex, newIndex));
 
-        if (closestIndex !== currentIndex) {
-          setCurrentIndex(closestIndex);
+        if (clampedIndex !== currentIndex) {
+          setCurrentIndex(clampedIndex);
         }
       }, 150); // 150ms debounce
     }
@@ -108,22 +106,21 @@ const ProductSection = ({
   useEffect(() => {
     if (containerRef.current) {
       const container = containerRef.current;
-      const cards = container.querySelectorAll(".flex > div");
+      const containerWidth = container.offsetWidth;
+      const scrollWidth = container.scrollWidth;
 
-      if (cards[currentIndex]) {
-        const targetCard = cards[currentIndex];
-        const containerRect = container.getBoundingClientRect();
-        const cardRect = targetCard.getBoundingClientRect();
+      // Tính toán tổng chiều rộng cần scroll
+      const maxScrollLeft = scrollWidth - containerWidth;
 
-        // Calculate scroll position
-        const scrollLeft =
-          container.scrollLeft + (cardRect.left - containerRect.left);
+      // Scroll đến vị trí tương ứng với currentIndex
+      // Chia đều khoảng scroll theo số trang
+      const scrollLeft =
+        maxIndex > 0 ? (currentIndex / maxIndex) * maxScrollLeft : 0;
 
-        container.scrollTo({
-          left: scrollLeft,
-          behavior: "smooth",
-        });
-      }
+      container.scrollTo({
+        left: scrollLeft,
+        behavior: "smooth",
+      });
     }
 
     // Cleanup timeout on unmount
@@ -132,7 +129,7 @@ const ProductSection = ({
         clearTimeout(scrollTimeoutRef.current);
       }
     };
-  }, [currentIndex]);
+  }, [currentIndex, maxIndex]);
 
   // Handle watchlist toggle
   const handleWatchlistToggle = async (productId) => {
@@ -154,8 +151,7 @@ const ProductSection = ({
         <div className="flex flex-col sm:flex-row items-start sm:items-start justify-between mb-8 gap-4">
           <div className="flex-1">
             {subtitle && (
-              <p className="text-sm font-medium text-slate-500 uppercase tracking-wide mb-2 flex items-center gap-2">
-                <span className="text-slate-400">→</span>
+              <p className="text-sm font-medium text-slate-500 uppercase tracking-wide mb-2">
                 {subtitle}
               </p>
             )}
@@ -165,7 +161,7 @@ const ProductSection = ({
           </div>
 
           {/* Navigation Controls - Desktop Only */}
-          {items.length > responsiveItemsPerView && (
+          {/* {items.length > responsiveItemsPerView && (
             <div className="hidden lg:flex items-center gap-3 ml-4">
               <button
                 onClick={handlePrev}
@@ -209,7 +205,7 @@ const ProductSection = ({
                 </svg>
               </button>
             </div>
-          )}
+          )} */}
         </div>
 
         {/* Filter (Optional) */}
@@ -253,21 +249,20 @@ const ProductSection = ({
 
             {/* Scroll Indicators for Mobile/Tablet */}
             {items.length > responsiveItemsPerView && (
-              <div className="flex lg:hidden justify-center gap-2 mt-6">
-                {items
-                  .slice(0, items.length - responsiveItemsPerView + 1)
-                  .map((_, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => setCurrentIndex(idx)}
-                      className={`h-2 rounded-full transition-all duration-300 ${
-                        currentIndex === idx
-                          ? "w-8 bg-primary"
-                          : "w-2 bg-slate-300 hover:bg-slate-400"
-                      }`}
-                      aria-label={`Go to slide ${idx + 1}`}
-                    />
-                  ))}
+              <div className="flex justify-center gap-2 mt-6">
+                {" "}
+                {Array.from({ length: totalPages }).map((_, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setCurrentIndex(idx)}
+                    className={`h-2 rounded-full transition-all duration-300 ${
+                      currentIndex === idx
+                        ? "w-8 bg-primary"
+                        : "w-2 bg-slate-300 hover:bg-slate-400"
+                    }`}
+                    aria-label={`Go to slide ${idx + 1}`}
+                  />
+                ))}
               </div>
             )}
 
