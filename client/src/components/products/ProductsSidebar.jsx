@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import Input from "../common/Input";
 
 const ProductsSidebar = ({
@@ -10,7 +10,36 @@ const ProductsSidebar = ({
   onCategoryChange,
   className = "",
 }) => {
-  const [expandedParents, setExpandedParents] = useState(new Set());
+  // Tự động expand parent category khi chọn sub-category
+  const getExpandedParents = useCallback(() => {
+    const expanded = new Set();
+    if (selectedCategoryId) {
+      const selectedId = Number(selectedCategoryId);
+      // Tìm parent category chứa selected category
+      categories.forEach((parent) => {
+        if (parent.id === selectedId) {
+          // Nếu chọn chính parent category
+          expanded.add(parent.id);
+        } else if (
+          parent.children &&
+          parent.children.some((child) => child.id === selectedId)
+        ) {
+          // Nếu chọn sub-category, expand parent
+          expanded.add(parent.id);
+        }
+      });
+    }
+    return expanded;
+  }, [selectedCategoryId, categories]);
+
+  const [expandedParents, setExpandedParents] = useState(() =>
+    getExpandedParents(),
+  );
+
+  // Update expanded parents khi selectedCategoryId thay đổi
+  useEffect(() => {
+    setExpandedParents(getExpandedParents());
+  }, [getExpandedParents]);
 
   const toggleParent = (parentId) => {
     setExpandedParents((prev) => {
