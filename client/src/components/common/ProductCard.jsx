@@ -1,10 +1,12 @@
 import React from "react";
 import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 
 import api from "../../services/api";
 import Countdown from "./Countdown";
 import { HeartIcon } from "./Icons";
 import { maskUserName } from "../../utils/formatters";
+import { useAuth } from "../../contexts/AuthContext";
 
 export const ProductCard = ({
   id,
@@ -33,6 +35,27 @@ export const ProductCard = ({
   step_price,
   ...props // Only pass valid DOM attributes
 }) => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Handle watchlist toggle - check authentication first
+  const handleWatchlistToggle = (e) => {
+    e.stopPropagation();
+
+    // Check if user is logged in (NO need to fetch watchlist)
+    if (!user) {
+      // Not logged in -> redirect to login page
+      navigate("/auth", { state: { from: location } });
+      return;
+    }
+
+    // User is logged in -> proceed with toggle
+    if (onWatchlistToggle) {
+      onWatchlistToggle(id);
+    }
+  };
+
   // Get first image from array or use placeholder
   const getImageUrl = () => {
     if (!images) return "https://via.placeholder.com/400x300?text=No+Image";
@@ -290,25 +313,24 @@ export const ProductCard = ({
               <span>Posted: {formatDate(created_at)}</span>
             </div>
 
-            {/* Watchlist Heart Icon */}
-            {onWatchlistToggle && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onWatchlistToggle(id);
-                }}
-                className={`p-1.5 rounded-full transition-all duration-200 hover:scale-110 ${
-                  isInWatchlist
-                    ? "text-red-500 hover:bg-red-50"
-                    : "text-slate-400 hover:bg-slate-100 hover:text-slate-600"
-                }`}
-                title={
-                  isInWatchlist ? "Remove from watchlist" : "Add to watchlist"
-                }
-              >
-                <HeartIcon filled={isInWatchlist} className="w-5 h-5" />
-              </button>
-            )}
+            {/* Watchlist Heart Icon - Always visible, check auth on click */}
+            <button
+              onClick={handleWatchlistToggle}
+              className={`p-1.5 rounded-full transition-all duration-200 hover:scale-110 ${
+                isInWatchlist
+                  ? "text-red-500 hover:bg-red-50"
+                  : "text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+              }`}
+              title={
+                !user
+                  ? "Login to add to watchlist"
+                  : isInWatchlist
+                    ? "Remove from watchlist"
+                    : "Add to watchlist"
+              }
+            >
+              <HeartIcon filled={isInWatchlist} className="w-5 h-5" />
+            </button>
           </div>
         )}
 
