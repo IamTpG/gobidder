@@ -72,31 +72,33 @@ model Category {
 }
 
 model Product {
-  id                Int            @id @default(autoincrement())
-  name              String
-  description       String
-  images            Json
-  created_at        DateTime       @default(now())
-  end_time          DateTime
-  start_price       Float
-  step_price        Float
-  buy_now_price     Float?
-  auto_renew        Boolean        @default(false)
-  status            ProductStatus  @default(Pending)
-  current_price     Float
-  bid_count         Int            @default(0)
-  seller_id         Int
-  category_id       Int
-  current_bidder_id Int?
-  auto_bids         AutoBid[]
-  banned_bidders    BannedBidder[]
-  bid_histories     BidHistory[]
-  category          Category       @relation(fields: [category_id], references: [id])
-  current_bidder    User?          @relation("CurrentHighestBidder", fields: [current_bidder_id], references: [id])
-  seller            User           @relation("ProductsSold", fields: [seller_id], references: [id], onDelete: Cascade)
-  qna_items         QnA[]
-  transaction       Transaction?
-  watchlist_users   WatchList[]
+  id                   Int            @id @default(autoincrement())
+  name                 String
+  description          String
+  images               Json
+  created_at           DateTime       @default(now())
+  end_time             DateTime
+  start_price          Float
+  step_price           Float
+  buy_now_price        Float?
+  auto_renew           Boolean        @default(false)
+  status               ProductStatus  @default(Pending)
+  current_price        Float
+  bid_count            Int            @default(0)
+  seller_id            Int
+  category_id          Int
+  current_bidder_id    Int?
+  allow_no_rating_bid  Boolean        @default(true)
+  allow_low_rating_bid Boolean        @default(true)
+  auto_bids            AutoBid[]
+  banned_bidders       BannedBidder[]
+  bid_histories        BidHistory[]
+  category             Category       @relation(fields: [category_id], references: [id])
+  current_bidder       User?          @relation("CurrentHighestBidder", fields: [current_bidder_id], references: [id])
+  seller               User           @relation("ProductsSold", fields: [seller_id], references: [id], onDelete: Cascade)
+  qna_items            QnA[]
+  transaction          Transaction?
+  watchlist_users      WatchList[]
 
   @@index([end_time])
   @@index([bid_count])
@@ -232,12 +234,14 @@ enum UserRole {
   Seller
   ExpiredSeller
   Admin
+  Banned
 }
 
 enum ProductStatus {
   Pending
   Active
   Sold
+  Won
   Expired
   Removed
 }

@@ -921,7 +921,9 @@ const deleteProductAdmin = async (productId) => {
 };
 
 /**
- * Cập nhật trạng thái sản phẩm từ Active sang Expired nếu đã qua thời gian kết thúc
+ * Cập nhật trạng thái sản phẩm từ Active sang Won hoặc Expired nếu đã qua thời gian kết thúc
+ * - Won: Nếu có current_bidder (có người thắng cuộc)
+ * - Expired: Nếu không có current_bidder (không có ai đặt giá)
  * Được gọi bởi cron job mỗi phút
  */
 const updateExpiredProducts = async () => {
@@ -936,7 +938,12 @@ const updateExpiredProducts = async () => {
           lt: now, // less than (nhỏ hơn)
         },
       },
-      select: { id: true, name: true, seller_id: true },
+      select: {
+        id: true,
+        name: true,
+        seller_id: true,
+        current_bidder_id: true,
+      },
     });
 
     if (expiredProducts.length === 0) {
@@ -947,34 +954,62 @@ const updateExpiredProducts = async () => {
       };
     }
 
-    // Cập nhật tất cả sản phẩm hết hạn
-    const updateResult = await prisma.product.updateMany({
-      where: {
-        status: "Active",
-        end_time: {
-          lt: now,
-        },
-      },
-      data: {
-        status: "Expired",
-      },
-    });
+    // Phân loại sản phẩm theo có người thắng hay không
+    const wonProducts = expiredProducts.filter(
+      (p) => p.current_bidder_id !== null,
+    );
+    const expiredNoWinner = expiredProducts.filter(
+      (p) => p.current_bidder_id === null,
+    );
+
+    // Cập nhật sản phẩm có người thắng thành Won
+    const wonResult =
+      wonProducts.length > 0
+        ? await prisma.product.updateMany({
+            where: {
+              id: { in: wonProducts.map((p) => p.id) },
+            },
+            data: {
+              status: "Won",
+            },
+          })
+        : { count: 0 };
+
+    // Cập nhật sản phẩm không có người thắng thành Expired
+    const expiredResult =
+      expiredNoWinner.length > 0
+        ? await prisma.product.updateMany({
+            where: {
+              id: { in: expiredNoWinner.map((p) => p.id) },
+            },
+            data: {
+              status: "Expired",
+            },
+          })
+        : { count: 0 };
 
     console.log(
-      `[Product Service] Updated ${updateResult.count} products to Expired status`,
+      `[Product Service] Updated ${wonResult.count} products to Won status, ${expiredResult.count} to Expired status`,
     );
 
     // Log chi tiết
-    expiredProducts.forEach((product) => {
+    wonProducts.forEach((product) => {
       console.log(
-        `  - Product ID ${product.id} (${product.name}) - Seller ID: ${product.seller_id}`,
+        `  - Won: Product ID ${product.id} (${product.name}) - Winner ID: ${product.current_bidder_id}`,
+      );
+    });
+    expiredNoWinner.forEach((product) => {
+      console.log(
+        `  - Expired: Product ID ${product.id} (${product.name}) - No winner`,
       );
     });
 
     return {
       success: true,
-      message: `Successfully updated ${updateResult.count} product(s) to Expired status`,
-      count: updateResult.count,
+      message: `Successfully updated ${wonResult.count} product(s) to Won status and ${expiredResult.count} to Expired status`,
+      count: wonResult.count + expiredResult.count,
+      wonCount: wonResult.count,
+      expiredCount: expiredResult.count,
       products: expiredProducts,
     };
   } catch (error) {
