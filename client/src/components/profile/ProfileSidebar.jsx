@@ -5,14 +5,12 @@ const SIDEBAR_ITEMS = [
   { key: "information", label: "Personal Information" },
   { key: "bids", label: "My Bids" },
   {
-    key: "products",
+    key: "my-products",
     label: "My Products",
     requireRole: ["Seller", "ExpiredSeller"],
   },
   { key: "watchlist", label: "Watchlist" },
-  { key: "security", label: "Security" },
-  { key: "notifications", label: "Notifications" },
-  { key: "billing", label: "Billing" },
+  { key: "ratings", label: "Ratings" },
 ];
 
 const ProfileSidebar = ({ activeKey, userRole }) => {

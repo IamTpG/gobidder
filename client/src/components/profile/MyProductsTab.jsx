@@ -36,7 +36,7 @@ const MyProductsTab = () => {
 
   return (
     <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 md:p-10 min-h-[500px]">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">My Products</h2>
           <p className="text-sm text-gray-500">
@@ -44,58 +44,79 @@ const MyProductsTab = () => {
           </p>
         </div>
 
-        {/* Status Filter Tabs */}
-        <div className="flex p-1 bg-gray-100 rounded-xl">
-          <button
-            onClick={() => handleStatusChange(undefined)}
-            className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all ${
-              !status
-                ? "bg-white text-gray-900 shadow-sm"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
-          >
-            All
-          </button>
-          <button
-            onClick={() => handleStatusChange("Active")}
-            className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all ${
-              status === "Active"
-                ? "bg-white text-[#00B289] shadow-sm"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
-          >
-            Active
-          </button>
-          <button
-            onClick={() => handleStatusChange("Won")}
-            className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all ${
-              status === "Won"
-                ? "bg-white text-[#00B289] shadow-sm"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
-          >
-            Won
-          </button>
-          <button
-            onClick={() => handleStatusChange("Sold")}
-            className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all ${
-              status === "Sold"
-                ? "bg-white text-[#00B289] shadow-sm"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
-          >
-            Sold
-          </button>
-          <button
-            onClick={() => handleStatusChange("Expired")}
-            className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all ${
-              status === "Expired"
-                ? "bg-white text-[#00B289] shadow-sm"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
-          >
-            Expired
-          </button>
+        <div className="flex flex-col gap-4">
+          {/* Status Filter Tabs */}
+          <div className="flex p-1 bg-gray-100 rounded-xl">
+            <button
+              onClick={() => handleStatusChange(undefined)}
+              className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all ${
+                !status
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              All
+            </button>
+            <button
+              onClick={() => handleStatusChange("Active")}
+              className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all ${
+                status === "Active"
+                  ? "bg-white text-[#00B289] shadow-sm"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              Active
+            </button>
+            <button
+              onClick={() => handleStatusChange("Won")}
+              className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all ${
+                status === "Won"
+                  ? "bg-white text-[#00B289] shadow-sm"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              Won
+            </button>
+            <button
+              onClick={() => handleStatusChange("Sold")}
+              className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all ${
+                status === "Sold"
+                  ? "bg-white text-[#00B289] shadow-sm"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              Sold
+            </button>
+            <button
+              onClick={() => handleStatusChange("Expired")}
+              className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all ${
+                status === "Expired"
+                  ? "bg-white text-[#00B289] shadow-sm"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              Expired
+            </button>
+            <button
+              onClick={() => handleStatusChange("Removed")}
+              className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all ${
+                status === "Removed"
+                  ? "bg-white text-[#00B289] shadow-sm"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              Removed
+            </button>
+          </div>
+          {/* Create Product Button - Always visible for active Seller */}
+          {canCreateProducts && (
+            <button
+              onClick={() => navigate("/products/create")}
+              className="bg-[#00B289] hover:bg-[#009974] text-white px-6 py-2.5 ml-auto rounded-xl font-semibold text-sm transition-colors whitespace-nowrap"
+            >
+              Create New Auction
+            </button>
+          )}
         </div>
       </div>
 

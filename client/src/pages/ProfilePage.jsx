@@ -10,6 +10,7 @@ import MyInfoTab from "../components/profile/MyInfoTab";
 import MyBidsTab from "../components/profile/MyBidsTab";
 import MyProductsTab from "../components/profile/MyProductsTab";
 import WatchlistTab from "../components/profile/WatchlistTab";
+import RatingsTab from "../components/profile/RatingsTab";
 
 const ProfilePage = () => {
   const [profile, setProfile] = useState(null);
@@ -80,10 +81,12 @@ const ProfilePage = () => {
         );
       case "bids":
         return <MyBidsTab />;
-      case "products":
+      case "my-products":
         return <MyProductsTab />;
       case "watchlist":
         return <WatchlistTab />;
+      case "ratings":
+        return <RatingsTab profile={profile} />;
       default:
         return <div>Select a tab</div>;
     }
