@@ -67,7 +67,7 @@ const HomePage = () => {
         </div>
       ) : (
         <ProductSection
-          subtitle="🔥 TRENDING NOW"
+          subtitle="TRENDING NOW"
           title="Most Popular Auctions"
           items={mostBidsItems}
           itemsPerView={5}
@@ -88,7 +88,7 @@ const HomePage = () => {
         </div>
       ) : (
         <ProductSection
-          subtitle="💎 PREMIUM COLLECTION"
+          subtitle="PREMIUM COLLECTION"
           title="Highest Value Items"
           items={highestPriceItems}
           itemsPerView={5}
