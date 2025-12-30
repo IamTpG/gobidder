@@ -10,6 +10,9 @@ require("./config/passport");
 // Cron jobs
 const { scheduleSellerReversion } = require("./jobs/revert-sellers.job");
 const { scheduleAuctionEndCheck } = require("./jobs/check-auction-end.job");
+const {
+  scheduleExpiredProductsUpdate,
+} = require("./jobs/expired-products.job");
 
 // Routes
 const authRoutes = require("./routes/auth.route");
@@ -29,7 +32,7 @@ app.use(
   cors({
     origin: process.env.FE_URL || "http://localhost:3000",
     credentials: true,
-  })
+  }),
 );
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -59,6 +62,7 @@ const startServer = async () => {
       // Start cron jobs
       scheduleSellerReversion();
       scheduleAuctionEndCheck();
+      scheduleExpiredProductsUpdate();
     });
 
     process.on("SIGINT", async () => {
