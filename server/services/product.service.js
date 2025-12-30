@@ -920,6 +920,137 @@ const deleteProductAdmin = async (productId) => {
   return deletedProduct;
 };
 
+/**
+ * Cập nhật trạng thái sản phẩm từ Active sang Won hoặc Expired nếu đã qua thời gian kết thúc
+ * - Won: Nếu có current_bidder (có người thắng cuộc)
+ * - Expired: Nếu không có current_bidder (không có ai đặt giá)
+ * Được gọi bởi cron job mỗi phút
+ */
+const updateExpiredProducts = async () => {
+  try {
+    const now = new Date();
+
+    // Lấy tất cả sản phẩm Active có end_time đã qua
+    const expiredProducts = await prisma.product.findMany({
+      where: {
+        status: "Active",
+        end_time: {
+          lt: now, // less than (nhỏ hơn)
+        },
+      },
+      select: {
+        id: true,
+        name: true,
+        seller_id: true,
+        current_bidder_id: true,
+      },
+    });
+
+    if (expiredProducts.length === 0) {
+      return {
+        success: true,
+        message: "No expired products found",
+        count: 0,
+      };
+    }
+
+    // Phân loại sản phẩm theo có người thắng hay không
+    const wonProducts = expiredProducts.filter(
+      (p) => p.current_bidder_id !== null,
+    );
+    const expiredNoWinner = expiredProducts.filter(
+      (p) => p.current_bidder_id === null,
+    );
+
+    // Cập nhật sản phẩm có người thắng thành Won
+    const wonResult =
+      wonProducts.length > 0
+        ? await prisma.product.updateMany({
+            where: {
+              id: { in: wonProducts.map((p) => p.id) },
+            },
+            data: {
+              status: "Won",
+            },
+          })
+        : { count: 0 };
+
+    // Cập nhật sản phẩm không có người thắng thành Expired
+    const expiredResult =
+      expiredNoWinner.length > 0
+        ? await prisma.product.updateMany({
+            where: {
+              id: { in: expiredNoWinner.map((p) => p.id) },
+            },
+            data: {
+              status: "Expired",
+            },
+          })
+        : { count: 0 };
+
+    console.log(
+      `[Product Service] Updated ${wonResult.count} products to Won status, ${expiredResult.count} to Expired status`,
+    );
+
+    // Log chi tiết
+    wonProducts.forEach((product) => {
+      console.log(
+        `  - Won: Product ID ${product.id} (${product.name}) - Winner ID: ${product.current_bidder_id}`,
+      );
+    });
+    expiredNoWinner.forEach((product) => {
+      console.log(
+        `  - Expired: Product ID ${product.id} (${product.name}) - No winner`,
+      );
+    });
+
+    return {
+      success: true,
+      message: `Successfully updated ${wonResult.count} product(s) to Won status and ${expiredResult.count} to Expired status`,
+      count: wonResult.count + expiredResult.count,
+      wonCount: wonResult.count,
+      expiredCount: expiredResult.count,
+      products: expiredProducts,
+    };
+  } catch (error) {
+    console.error("[Product Service] Error updating expired products:", error);
+    throw new Error(`Failed to update expired products: ${error.message}`);
+  }
+};
+
+/**
+ * Kiểm tra và cập nhật trạng thái sản phẩm trước khi trả về
+ * Được gọi khi lấy thông tin sản phẩm để đảm bảo real-time
+ */
+const ensureProductStatusIsValid = async (productId) => {
+  try {
+    const product = await prisma.product.findUnique({
+      where: { id: productId },
+      select: { id: true, status: true, end_time: true },
+    });
+
+    if (!product) return null;
+
+    // Nếu sản phẩm đang Active nhưng đã qua end_time thì cập nhật
+    if (product.status === "Active" && product.end_time < new Date()) {
+      const updatedProduct = await prisma.product.update({
+        where: { id: productId },
+        data: { status: "Expired" },
+      });
+
+      console.log(
+        `[Product Service] Updated product ${productId} to Expired status (real-time)`,
+      );
+      return updatedProduct;
+    }
+
+    return product;
+  } catch (error) {
+    console.error(`[Product Service] Error checking product status:`, error);
+    return null;
+  }
+};
+
 module.exports = {
   getProducts,
   getProductById,
@@ -938,4 +1069,6 @@ module.exports = {
   getAllProductsAdmin,
   updateProductAdmin,
   deleteProductAdmin,
+  updateExpiredProducts,
+  ensureProductStatusIsValid,
 };

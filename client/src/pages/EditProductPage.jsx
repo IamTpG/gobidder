@@ -85,6 +85,7 @@ export default function EditProductPage() {
         showDescription={true}
         submitLabel="Update Product"
         isEditMode={true}
+        hasBids={product?.bidCount > 0}
       />
     </div>
   );

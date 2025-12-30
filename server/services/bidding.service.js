@@ -1,6 +1,8 @@
 const prisma = require("../config/prisma");
 const bannedBidderService = require("./bannedBidder.service");
 
+const { sendMail } = require("../utils/utils");
+
 /**
  * Đặt giá tự động (Auto Bidding)
  * @param {Int} userId - ID người đặt giá
@@ -23,10 +25,14 @@ const placeAutoBid = async (userId, productId, inputMaxPrice) => {
   }
 
   // Sử dụng transaction để đảm bảo tính toàn vẹn dữ liệu (Race condition)
-  return await prisma.$transaction(async (tx) => {
-    // Lấy thông tin sản phẩm
+  const result = await prisma.$transaction(async (tx) => {
+    // Lấy thông tin sản phẩm và người bán/người giữ giá hiện tại
     const product = await tx.product.findUnique({
       where: { id: parseInt(productId) },
+      include: {
+        seller: true,
+        current_bidder: true,
+      },
     });
 
     if (!product) {
@@ -53,7 +59,14 @@ const placeAutoBid = async (userId, productId, inputMaxPrice) => {
       throw new Error(`Bid must be at least ${minRequiredPrice.toString()}`);
     }
 
+    // Capture previous bidder details before update
+    const previousBidder = product.current_bidder;
+
     // Lưu hoặc Cập nhật AutoBid của User (Upsert)
+    // Cần lấy luôn thông tin User để gửi email
+    const bidder = await tx.user.findUnique({ where: { id: userId } });
+    if (!bidder) throw new Error("Bidder not found");
+
     await tx.autoBid.upsert({
       where: {
         user_id_product_id: {
@@ -146,6 +159,7 @@ const placeAutoBid = async (userId, productId, inputMaxPrice) => {
 
     // Cập nhật Product
     // Chỉ update nếu giá thay đổi HOẶC người thắng thay đổi HOẶC có gia hạn
+    let priceUpdated = false;
     if (
       newCurrentPrice > product.current_price ||
       product.current_bidder_id !== winnerId ||
@@ -160,6 +174,7 @@ const placeAutoBid = async (userId, productId, inputMaxPrice) => {
           end_time: newEndTime,
         },
       });
+      priceUpdated = true;
 
       // Ghi lịch sử (Chỉ ghi giá công khai)
       // Chỉ ghi nếu có sự thay đổi về giá
@@ -190,9 +205,69 @@ const placeAutoBid = async (userId, productId, inputMaxPrice) => {
       currentPrice: newCurrentPrice.toString(),
       winnerId: winnerId,
       isExtended: isExtended,
-      notificationData, // Data for controller to send emails
+      emailData: priceUpdated
+        ? {
+            shouldSend: true,
+            productName: product.name,
+            sellerEmail: product.seller.email,
+            sellerName: product.seller.full_name,
+            bidderEmail: bidder.email, // Người đang đặt giá
+            bidderName: bidder.full_name,
+            newPrice: newCurrentPrice.toString(),
+            previousBidderEmail: previousBidder?.email,
+            previousBidderName: previousBidder?.full_name,
+            previousBidderId: previousBidder?.id,
+            newWinnerId: winnerId,
+          }
+        : null,
     };
   });
+
+  // Handle Emails outside transaction
+  if (result.emailData && result.emailData.shouldSend) {
+    const {
+      productName,
+      sellerEmail,
+      sellerName,
+      bidderEmail,
+      bidderName,
+      newPrice,
+      previousBidderEmail,
+      previousBidderName,
+      previousBidderId,
+      newWinnerId,
+    } = result.emailData;
+
+    // 1. Send email to Seller
+    sendMail({
+      to: sellerEmail,
+      subject: `New Bid on "${productName}"`,
+      text: `Hello ${sellerName},\n\nA new bid has been placed on your product "${productName}".\nCurrent Price: ${newPrice}\n\nCheck it out!`,
+      html: `<p>Hello <strong>${sellerName}</strong>,</p><p>A new bid has been placed on your product "<strong>${productName}</strong>".</p><p>Current Price: <strong>${newPrice}</strong></p>`,
+    }).catch(console.error);
+
+    // 2. Send email to Bidder (The one who just placed the bid)
+    sendMail({
+      to: bidderEmail,
+      subject: `Bid Successful: "${productName}"`,
+      text: `Hello ${bidderName},\n\nYou have successfully placed a bid on "${productName}".\nCurrent Price: ${newPrice}`,
+      html: `<p>Hello <strong>${bidderName}</strong>,</p><p>You have successfully placed a bid on "<strong>${productName}</strong>".</p><p>Current Price: <strong>${newPrice}</strong></p>`,
+    }).catch(console.error);
+
+    // 3. Send email to Previous Bidder (if they were outbid)
+    // Only if previous bidder exists AND is NOT the new winner (meaning lost)
+    // AND is NOT the person who just bid (already handled above)
+    if (previousBidderEmail && previousBidderId !== newWinnerId) {
+      sendMail({
+        to: previousBidderEmail,
+        subject: `You have been outbid on "${productName}"`,
+        text: `Hello ${previousBidderName},\n\nSomeone has placed a higher bid on "${productName}".\nCurrent Price: ${newPrice}\n\nPlace a new bid to reclaim your potential win!`,
+        html: `<p>Hello <strong>${previousBidderName}</strong>,</p><p>Someone has placed a higher bid on "<strong>${productName}</strong>".</p><p>Current Price: <strong>${newPrice}</strong></p><p><a href="${process.env.CLIENT_URL || "#"}">Place a new bid now!</a></p>`,
+      }).catch(console.error);
+    }
+  }
+
+  return result;
 };
 
 module.exports = {
