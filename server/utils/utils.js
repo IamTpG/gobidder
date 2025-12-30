@@ -43,7 +43,7 @@ const verifyOtpHelper = async (email, otp) => {
   });
 
   if (!otpRecord) {
-    throw new Error("Mã OTP không hợp lệ hoặc đã hết hạn.");
+    throw new Error("Invalid or expired OTP code.");
   }
 
   // Xóa OTP ngay sau khi verify thành công để tránh dùng lại
@@ -85,8 +85,6 @@ const sendOtpEmail = async (to, otp, { subject, text } = {}) => {
     return false;
   }
 };
-
-
 
 // Chuẩn hóa email
 const normalizeEmail = (email) => {
