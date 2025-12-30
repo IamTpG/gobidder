@@ -9,6 +9,7 @@ require("./config/passport");
 
 // Cron jobs
 const { scheduleSellerReversion } = require("./jobs/revert-sellers.job");
+const { scheduleAuctionEndCheck } = require("./jobs/check-auction-end.job");
 const {
   scheduleExpiredProductsUpdate,
 } = require("./jobs/expired-products.job");
@@ -60,6 +61,7 @@ const startServer = async () => {
       console.log(`Server running on port ${PORT}`);
       // Start cron jobs
       scheduleSellerReversion();
+      scheduleAuctionEndCheck();
       scheduleExpiredProductsUpdate();
     });
 
