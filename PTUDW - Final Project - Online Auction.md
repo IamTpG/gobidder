@@ -268,19 +268,19 @@ Với mỗi giao dịch **quan trọng**, hệ thống gửi 1 email cho các b�
 
 - Ra giá thành công, giá sản phẩm được cập nhật
   - Gửi người bán
-  - Gửi người ra giá
-  - Gửi người giữ giá trước đó (nếu có)
-- Người mua bị từ chối ra giá
-  - Người mua
+  - Gửi người ra giá & Gửi người giữ giá trước đó (nếu có)
 - Đấu giá kết thúc, không có người mua
   - Người bán
 - Đấu giá kết thúc
   - Người bán
   - Người thắng
+- Người mua bị từ chối ra giá
+  - Người mua
 - Người mua đặt câu hỏi
   - Người bán
 - Người bán trả lời
-  - Các người mua tham gia đấu giá & các người mua có đặt câu hỏi
+  - Các người mua tham gia đấu giá
+  - các người mua có đặt câu hỏi
 
 ### 6.2 Đấu giá tự động
 

@@ -21,6 +21,7 @@ import NotFoundPage from "../pages/NotFoundPage";
 import BidSettingPage from "../pages/admin/BidSettingPage";
 import SellerApprovalPage from "../pages/admin/SellerApprovalPage";
 import ProductManagementPage from "../pages/admin/ProductManagementPage";
+import UserManagementPage from "../pages/admin/UserManagementPage";
 import AdminLayout from "../layouts/AdminLayout";
 
 const AppRouter = () => {
@@ -110,6 +111,7 @@ const AppRouter = () => {
           <Route path="bid-settings" element={<BidSettingPage />} />
           <Route path="products" element={<ProductManagementPage />} />
           <Route path="seller-approval" element={<SellerApprovalPage />} />
+          <Route path="users" element={<UserManagementPage />} />
         </Route>
 
         {/* 404 - Page Not Found */}

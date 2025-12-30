@@ -13,12 +13,12 @@ const placeAutoBid = async (userId, productId, inputMaxPrice) => {
   // Check if user is banned from this product first
   const isBanned = await bannedBidderService.isBidderBanned(
     parseInt(productId),
-    userId,
+    userId
   );
 
   if (isBanned) {
     throw new Error(
-      "You are banned from bidding on this product by the seller",
+      "You are banned from bidding on this product by the seller"
     );
   }
 
@@ -174,11 +174,23 @@ const placeAutoBid = async (userId, productId, inputMaxPrice) => {
       }
     }
 
+    // Data for emails
+    const notificationData = {
+      productName: product.name,
+      newPrice: newCurrentPrice,
+      sellerId: product.seller_id,
+      newWinnerId: winnerId, // Who is winning now?
+      oldWinnerId: product.current_bidder_id, // Who was winning before?
+      bidderName: (await tx.user.findUnique({ where: { id: userId } }))
+        ?.full_name, // Name of person who placed the bid
+    };
+
     return {
       message: "Bid placed successfully",
       currentPrice: newCurrentPrice.toString(),
       winnerId: winnerId,
       isExtended: isExtended,
+      notificationData, // Data for controller to send emails
     };
   });
 };
