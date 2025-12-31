@@ -25,6 +25,8 @@ export const ProductCard = ({
   className = "",
   isInWatchlist = false,
   onWatchlistToggle,
+  isOwner = false,
+  onEdit,
   // Destructure other props to prevent passing non-DOM attributes
   seller,
   category,
@@ -101,13 +103,7 @@ export const ProductCard = ({
 
   // Button styles based on status from DB
   const getButtonStyles = () => {
-    if (props.isOwner) {
-      if (status === "Sold" || status === "Expired" || status === "Removed") {
-        return "hidden";
-      }
-      return "bg-[#01AA85] text-white hover:bg-[#018f70] hover:shadow-lg transition-all duration-300";
-    }
-    if (props.isOwner) {
+    if (isOwner) {
       if (status === "Sold" || status === "Expired" || status === "Removed") {
         return "hidden";
       }
@@ -123,10 +119,7 @@ export const ProductCard = ({
   };
 
   const getButtonText = () => {
-    if (props.isOwner) {
-      return "Edit";
-    }
-    if (props.isOwner) {
+    if (isOwner) {
       return "Edit";
     }
     switch (status) {
@@ -186,7 +179,7 @@ export const ProductCard = ({
       }}
     >
       {/* Image Container */}
-      <div className="relative h-64 bg-slate-100">
+      <div className="relative h-64 bg-slate-100 overflow-hidden">
         {/* New Badge */}
         {isNew && (
           <div className="absolute top-4 left-4 z-20">
@@ -199,7 +192,7 @@ export const ProductCard = ({
         <img
           src={getImageUrl()}
           alt={name || "Product"}
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-110"
         />
 
         {/* Countdown Timer - Bottom overlay */}
@@ -208,7 +201,7 @@ export const ProductCard = ({
             endTime={end_time}
             variant="overlay"
             showLabels={true}
-            className="absolute left-0 right-0 bottom-0"
+            className="absolute left-0 right-0 bottom-0 z-10"
           />
         )}
       </div>
@@ -238,7 +231,7 @@ export const ProductCard = ({
                 />
               </svg>
               <span className="font-medium">
-                {props.isOwner
+                {isOwner
                   ? current_bidder.full_name
                   : maskUserName(current_bidder.full_name)}
               </span>
@@ -339,8 +332,8 @@ export const ProductCard = ({
           onClick={(e) => {
             e.stopPropagation();
             // Nếu là chủ sản phẩm, cho edit; còn không thì navigate đến chi tiết sản phẩm
-            if (props.isOwner && props.onEdit) {
-              props.onEdit();
+            if (isOwner && onEdit) {
+              onEdit();
             } else if (onClick) {
               // Navigate đến trang chi tiết sản phẩm
               onClick(e);
@@ -349,7 +342,7 @@ export const ProductCard = ({
             }
           }}
           disabled={
-            !props.isOwner &&
+            !isOwner &&
             (status === "Sold" ||
               status === "Expired" ||
               status === "Removed" ||
