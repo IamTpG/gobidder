@@ -23,7 +23,10 @@ const registerUser = async ({
     const response = await axios.post(
       "https://www.google.com/recaptcha/api/siteverify",
       null,
-      { params: { secret: recaptchaSecret, response: recaptchaToken } },
+      {
+        params: { secret: recaptchaSecret, response: recaptchaToken },
+        timeout: 30000, // 30 giây timeout cho reCAPTCHA verification
+      },
     );
 
     if (!response.data.success) {

@@ -65,7 +65,10 @@ const ProductsSidebar = ({
             </div>
           ) : (
             categories.map((parent) => {
-              const hasChildren = parent.children && parent.children.length > 0;
+              // Others không hiển thị sub-category
+              const isOthers = parent.name.toLowerCase() === "others";
+              const hasChildren =
+                !isOthers && parent.children && parent.children.length > 0;
               const isExpanded = expandedParents.has(parent.id);
               const isParentSelected = selectedCategoryId === String(parent.id);
 

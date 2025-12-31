@@ -13,6 +13,7 @@ export default function ProductForm({
   showDescription = false,
   submitLabel = "Submit",
   isEditMode = false,
+  hasBids = false,
 }) {
   // Khởi tạo state dựa trên initialValues (cho Edit) hoặc mặc định (cho Create)
   const [name, setName] = useState(initialValues.name || "");
@@ -27,6 +28,9 @@ export default function ProductForm({
   const [categoryId, setCategoryId] = useState(initialValues.categoryId || "");
   const [endTime, setEndTime] = useState(initialValues.endTime || "");
   const [autoRenew, setAutoRenew] = useState(initialValues.autoRenew || false);
+  const [allowUnratedBidders, setAllowUnratedBidders] = useState(
+    initialValues.allowUnratedBidders || false,
+  );
 
   // Image handling
   const [images, setImages] = useState(initialValues.images || []);
@@ -47,9 +51,20 @@ export default function ProductForm({
       setEndTime(initialValues.endTime || "");
       setAutoRenew(initialValues.autoRenew || false);
       setImages(initialValues.images || []);
+      setAllowUnratedBidders(initialValues.allowUnratedBidders || false);
       // Description thường không update lại trong Edit theo yêu cầu của bạn, nhưng nếu cần thì thêm vào đây
     }
   }, [initialValues]);
+
+  // Helper function to check decimal places
+  const hasMoreThanTwoDecimals = (value) => {
+    if (!value || value === "") return false;
+    const str = value.toString();
+    const decimalIndex = str.indexOf(".");
+    if (decimalIndex === -1) return false;
+    const decimalPart = str.substring(decimalIndex + 1);
+    return decimalPart.length > 2;
+  };
 
   const validate = () => {
     const newErrors = {};
@@ -67,12 +82,24 @@ export default function ProductForm({
 
     if (!startPrice || Number(startPrice) <= 0)
       newErrors.startPrice = "Start price > 0";
+    else if (hasMoreThanTwoDecimals(startPrice))
+      newErrors.startPrice =
+        "Start price cannot have more than 2 decimal places";
+
     if (!stepPrice || Number(stepPrice) <= 0)
       newErrors.stepPrice = "Step price > 0";
-    if (buyNowPrice && Number(buyNowPrice) <= 0)
-      newErrors.buyNowPrice = "Buy now price > 0";
-    if (buyNowPrice && Number(buyNowPrice) <= Number(startPrice))
-      newErrors.buyNowPrice = "Buy now price must be greater than start price";
+    else if (hasMoreThanTwoDecimals(stepPrice))
+      newErrors.stepPrice = "Step price cannot have more than 2 decimal places";
+
+    if (buyNowPrice) {
+      if (Number(buyNowPrice) <= 0) newErrors.buyNowPrice = "Buy now price > 0";
+      else if (hasMoreThanTwoDecimals(buyNowPrice))
+        newErrors.buyNowPrice =
+          "Buy now price cannot have more than 2 decimal places";
+      else if (Number(buyNowPrice) <= Number(startPrice))
+        newErrors.buyNowPrice =
+          "Buy now price must be greater than start price";
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -133,6 +160,7 @@ export default function ProductForm({
       categoryId,
       endTime,
       autoRenew,
+      allowUnratedBidders,
       images, // Dùng cho Edit (JSON payload)
       filesToUpload, // Dùng cho Create (Multipart form)
     };
@@ -148,12 +176,21 @@ export default function ProductForm({
           Product Name
         </label>
         <input
-          className="border border-gray-300 p-3 w-full rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+          className={`border border-gray-300 p-3 w-full rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
+            isEditMode && hasBids ? "bg-gray-100 cursor-not-allowed" : ""
+          }`}
           value={name}
           onChange={(e) => setName(e.target.value)}
+          disabled={isEditMode && hasBids}
         />
         {errors.name && (
           <p className="text-red-500 text-sm mt-1">{errors.name}</p>
+        )}
+        {isEditMode && hasBids && (
+          <p className="text-sm text-gray-500 mt-1">
+            Cannot edit name when product has bids. You can only append
+            description.
+          </p>
         )}
       </div>
 
@@ -190,9 +227,12 @@ export default function ProductForm({
       <div>
         <label className="block font-medium text-gray-700 mb-2">Category</label>
         <select
-          className="border border-gray-300 p-3 w-full rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+          className={`border border-gray-300 p-3 w-full rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
+            isEditMode && hasBids ? "bg-gray-100 cursor-not-allowed" : ""
+          }`}
           value={categoryId}
           onChange={(e) => setCategoryId(e.target.value)}
+          disabled={isEditMode && hasBids}
         >
           <option value="">-- Select Category --</option>
           {categories.map((c) => (
@@ -214,9 +254,13 @@ export default function ProductForm({
           </label>
           <input
             type="number"
-            className="border border-gray-300 p-3 w-full rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+            step="0.01"
+            className={`border border-gray-300 p-3 w-full rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
+              isEditMode && hasBids ? "bg-gray-100 cursor-not-allowed" : ""
+            }`}
             value={startPrice}
             onChange={(e) => setStartPrice(e.target.value)}
+            disabled={isEditMode && hasBids}
           />
           {errors.startPrice && (
             <p className="text-red-500 text-sm mt-1">{errors.startPrice}</p>
@@ -228,9 +272,13 @@ export default function ProductForm({
           </label>
           <input
             type="number"
-            className="border border-gray-300 p-3 w-full rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+            step="0.01"
+            className={`border border-gray-300 p-3 w-full rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
+              isEditMode && hasBids ? "bg-gray-100 cursor-not-allowed" : ""
+            }`}
             value={stepPrice}
             onChange={(e) => setStepPrice(e.target.value)}
+            disabled={isEditMode && hasBids}
           />
           {errors.stepPrice && (
             <p className="text-red-500 text-sm mt-1">{errors.stepPrice}</p>
@@ -242,9 +290,13 @@ export default function ProductForm({
           </label>
           <input
             type="number"
-            className="border border-gray-300 p-3 w-full rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+            step="0.01"
+            className={`border border-gray-300 p-3 w-full rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
+              isEditMode && hasBids ? "bg-gray-100 cursor-not-allowed" : ""
+            }`}
             value={buyNowPrice}
             onChange={(e) => setBuyNowPrice(e.target.value)}
+            disabled={isEditMode && hasBids}
           />
           {errors.buyNowPrice && (
             <p className="text-red-500 text-sm mt-1">{errors.buyNowPrice}</p>
@@ -257,6 +309,12 @@ export default function ProductForm({
         <label className="block font-medium text-gray-700">
           Images (at least 3)
         </label>
+        {isEditMode && hasBids && (
+          <p className="text-sm text-gray-500">
+            Cannot edit images when product has bids. You can only append
+            description.
+          </p>
+        )}
         <div className="flex gap-2">
           <input
             type="text"
@@ -264,8 +322,14 @@ export default function ProductForm({
             value={imageUrlInput}
             onChange={(e) => setImageUrlInput(e.target.value)}
             className="border border-gray-300 p-3 rounded-lg flex-1"
+            disabled={isEditMode && hasBids}
           />
-          <Button type="button" variant="primary" onClick={handleAddImageByUrl}>
+          <Button
+            type="button"
+            variant="primary"
+            onClick={handleAddImageByUrl}
+            disabled={isEditMode && hasBids}
+          >
             Add
           </Button>
         </div>
@@ -277,10 +341,15 @@ export default function ProductForm({
             accept="image/*"
             onChange={handleImages}
             className="hidden"
+            disabled={isEditMode && hasBids}
           />
           <label
             htmlFor="product-file-input"
-            className="cursor-pointer inline-flex items-center px-4 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition"
+            className={`inline-flex items-center px-4 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition ${
+              isEditMode && hasBids
+                ? "opacity-50 cursor-not-allowed"
+                : "cursor-pointer"
+            }`}
           >
             Choose files
           </label>
@@ -301,6 +370,7 @@ export default function ProductForm({
               <button
                 type="button"
                 onClick={() => removeImage(index)}
+                disabled={isEditMode && hasBids}
                 className="absolute top-1 right-1 bg-red-500 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity"
               >
                 X
@@ -315,23 +385,47 @@ export default function ProductForm({
         <label className="block font-medium text-gray-700 mb-2">End Time</label>
         <input
           type="datetime-local"
-          className="border border-gray-300 p-3 w-full rounded-lg"
+          className={`border border-gray-300 p-3 w-full rounded-lg ${
+            isEditMode && hasBids ? "bg-gray-100 cursor-not-allowed" : ""
+          }`}
           value={endTime}
           onChange={(e) => setEndTime(e.target.value)}
+          disabled={isEditMode && hasBids}
         />
         {errors.endTime && (
           <p className="text-red-500 text-sm mt-1">{errors.endTime}</p>
         )}
       </div>
 
-      <div className="flex items-center gap-2">
-        <input
-          type="checkbox"
-          checked={autoRenew}
-          onChange={(e) => setAutoRenew(e.target.checked)}
-          className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
-        />
-        <label className="text-gray-700">Auto Renew</label>
+      <div className="space-y-3">
+        <div className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            checked={autoRenew}
+            onChange={(e) => setAutoRenew(e.target.checked)}
+            className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
+            disabled={isEditMode && hasBids}
+          />
+          <label
+            className={`text-gray-700 ${isEditMode && hasBids ? "opacity-50" : ""}`}
+          >
+            Auto Renew
+          </label>
+        </div>
+        <div className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            checked={allowUnratedBidders}
+            onChange={(e) => setAllowUnratedBidders(e.target.checked)}
+            className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
+            disabled={isEditMode && hasBids}
+          />
+          <label
+            className={`text-gray-700 ${isEditMode && hasBids ? "opacity-50" : ""}`}
+          >
+            Allow unrated bidders to bid on this product
+          </label>
+        </div>
       </div>
 
       {/* Submit */}
