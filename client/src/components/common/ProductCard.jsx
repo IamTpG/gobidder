@@ -25,7 +25,6 @@ export const ProductCard = ({
   className = "",
   isInWatchlist = false,
   onWatchlistToggle,
-  isOwner = false,
   onEdit,
   // Destructure other props to prevent passing non-DOM attributes
   seller,
@@ -40,6 +39,9 @@ export const ProductCard = ({
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Check if current user is the seller/owner of this product
+  const isProductOwner = user && seller_id && user.id === seller_id;
 
   // Handle watchlist toggle - check authentication first
   const handleWatchlistToggle = (e) => {
@@ -103,7 +105,7 @@ export const ProductCard = ({
 
   // Button styles based on status from DB
   const getButtonStyles = () => {
-    if (isOwner) {
+    if (isProductOwner) {
       if (status === "Sold" || status === "Expired" || status === "Removed") {
         return "hidden";
       }
@@ -119,7 +121,7 @@ export const ProductCard = ({
   };
 
   const getButtonText = () => {
-    if (isOwner) {
+    if (isProductOwner) {
       return "Edit";
     }
     switch (status) {
@@ -231,7 +233,7 @@ export const ProductCard = ({
                 />
               </svg>
               <span className="font-medium">
-                {isOwner
+                {isProductOwner
                   ? current_bidder.full_name
                   : maskUserName(current_bidder.full_name)}
               </span>
@@ -332,7 +334,7 @@ export const ProductCard = ({
           onClick={(e) => {
             e.stopPropagation();
             // Nếu là chủ sản phẩm, cho edit; còn không thì navigate đến chi tiết sản phẩm
-            if (isOwner && onEdit) {
+            if (isProductOwner && onEdit) {
               onEdit();
             } else if (onClick) {
               // Navigate đến trang chi tiết sản phẩm
@@ -342,7 +344,7 @@ export const ProductCard = ({
             }
           }}
           disabled={
-            !isOwner &&
+            !isProductOwner &&
             (status === "Sold" ||
               status === "Expired" ||
               status === "Removed" ||
