@@ -40,7 +40,7 @@ const CategoryManagement = ({
   const displayCategories = allCategoriesProp
     ? flattenCategories(
         allCategoriesProp.filter((cat) => !cat.parent_id),
-        0,
+        0
       )
     : flattenCategories(categories, 0);
 
@@ -134,11 +134,11 @@ const CategoryManagement = ({
       if (onUpdate) {
         await onUpdate();
       }
-      setDeleteDialog({ isOpen: false, categoryId: null, categoryName: "" });
     } catch (err) {
       setError(err.response?.data?.message || "Failed to delete category");
     } finally {
       setLoading(false);
+      setDeleteDialog({ isOpen: false, categoryId: null, categoryName: "" });
     }
   };
 
@@ -212,7 +212,7 @@ const CategoryManagement = ({
                       <span className="text-sm text-gray-600">
                         {category.parent_id
                           ? (allCategoriesProp || displayCategories).find(
-                              (c) => c.id === category.parent_id,
+                              (c) => c.id === category.parent_id
                             )?.name || "-"
                           : "-"}
                       </span>
@@ -224,11 +224,11 @@ const CategoryManagement = ({
                             // Tìm category đầy đủ với children từ allCategoriesProp hoặc categories
                             const fullCategory = allCategoriesProp
                               ? allCategoriesProp.find(
-                                  (c) => c.id === category.id,
+                                  (c) => c.id === category.id
                                 )
                               : categories.find((c) => c.id === category.id) ||
                                 displayCategories.find(
-                                  (c) => c.id === category.id,
+                                  (c) => c.id === category.id
                                 );
                             handleOpenModal(fullCategory || category);
                           }}
@@ -372,7 +372,7 @@ const CategoryManagement = ({
                 // Nếu là category con, không hiển thị "None (Top Level)"
                 parentCategories
                   .filter(
-                    (cat) => !editingCategory || cat.id !== editingCategory.id,
+                    (cat) => !editingCategory || cat.id !== editingCategory.id
                   )
                   .map((cat) => (
                     <option key={cat.id} value={cat.id}>
@@ -392,7 +392,7 @@ const CategoryManagement = ({
                     parentCategories
                       .filter(
                         (cat) =>
-                          !editingCategory || cat.id !== editingCategory.id,
+                          !editingCategory || cat.id !== editingCategory.id
                       )
                       .map((cat) => (
                         <option key={cat.id} value={cat.id}>
