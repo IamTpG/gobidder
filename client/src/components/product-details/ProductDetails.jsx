@@ -47,7 +47,6 @@ const ProductDetails = ({ product, onRefresh }) => {
   const { banBidder, isLoading: isBanning, error: banError } = useBanBidder();
   const { isBanned, isLoading: isCheckingBan } = useBannedStatus(
     product?.id,
-    !!user && !isSeller,
     !!user && !isSeller
   );
 

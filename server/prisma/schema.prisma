@@ -249,6 +249,7 @@ enum ProductStatus {
   Pending
   Active
   Sold
+  Won
   Expired
   Removed
   Won

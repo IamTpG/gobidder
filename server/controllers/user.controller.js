@@ -107,7 +107,7 @@ const confirmEmailChange = async (req, res) => {
       {
         newEmail,
         otp,
-      }
+      },
     );
 
     res.clearCookie("reset_token", {
@@ -125,7 +125,7 @@ const confirmEmailChange = async (req, res) => {
         role: result.user.role,
       },
       "access_token",
-      "1d"
+      "1d",
     );
 
     return res.json(result);
@@ -402,6 +402,17 @@ const deleteUser = async (req, res) => {
   }
 };
 
+// Lấy tất cả ratings mà user nhận được
+const getMyRatings = async (req, res) => {
+  try {
+    const ratings = await userService.getMyRatings(req.user.id);
+    return res.json(ratings);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
 module.exports = {
   getMe,
   getUsers,
@@ -423,4 +434,5 @@ module.exports = {
   createUser,
   updateUser,
   deleteUser,
+  getMyRatings,
 };

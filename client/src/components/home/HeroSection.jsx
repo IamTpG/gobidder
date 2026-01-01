@@ -2,9 +2,11 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 
 import Button from "../common/Button";
+import { useAuth } from "../../contexts/AuthContext";
 
 const HeroSection = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   return (
     <section className="relative bg-gradient-to-br from-[#F5E6D3] via-[#F8EDE0] to-[#FAF0E6] overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -13,7 +15,6 @@ const HeroSection = () => {
           <div className="max-w-xl">
             {/* Badge */}
             <div className="inline-flex items-center gap-2 bg-white px-3 py-1 rounded-full shadow-sm mb-3 border border-slate-200">
-              <span className="text-sm">⏰</span>
               <span className="text-[10px] font-semibold text-slate-700 uppercase tracking-wide">
                 BIDDING OUR
               </span>
@@ -40,6 +41,7 @@ const HeroSection = () => {
                 variant="primary"
                 size="lg"
                 className="px-5 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 text-sm"
+                onClick={() => navigate(user ? "/products" : "/auth")}
               >
                 Start A Bid
                 <svg
