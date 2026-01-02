@@ -1,6 +1,35 @@
 const prisma = require("../config/prisma");
 const categoryService = require("./category.service");
 
+// Helper function để xử lý searchTerm cho PostgreSQL full-text search
+// Chuyển đổi nhiều từ thành format tsquery (word1 & word2 & word3)
+const formatSearchTerm = (searchTerm) => {
+  if (!searchTerm || !searchTerm.trim()) return null;
+
+  const trimmed = searchTerm.trim();
+
+  // Nếu chỉ có 1 từ, trả về trực tiếp
+  if (!trimmed.includes(" ")) {
+    // Escape các ký tự đặc biệt của tsquery: : & | ! ( )
+    return trimmed.replace(/[:&|!()]/g, "");
+  }
+
+  // Nếu có nhiều từ, tách và kết hợp với & (AND operator)
+  const words = trimmed
+    .split(/\s+/)
+    .filter((word) => word.length > 0)
+    .map((word) => {
+      // Escape các ký tự đặc biệt của tsquery
+      return word.replace(/[:&|!()]/g, "");
+    })
+    .filter((word) => word.length > 0);
+
+  if (words.length === 0) return null;
+
+  // Kết hợp các từ với & (AND operator)
+  return words.join(" & ");
+};
+
 // Lấy tất cả sản phẩm
 const getProducts = async ({ page, limit, categoryId, sort, q, skip }) => {
   const where = {
@@ -14,14 +43,13 @@ const getProducts = async ({ page, limit, categoryId, sort, q, skip }) => {
     where.category_id = { in: categoryIds };
   }
 
-  const searchTerm = q?.trim();
+  const searchTerm = formatSearchTerm(q);
   const isPriceSort = sort === "price_asc" || sort === "price_desc";
 
   // Full-text search: Sử dụng Prisma full-text search API
   if (searchTerm) {
     where.OR = [
       { name: { search: searchTerm } },
-      ,
       { description: { search: searchTerm } },
     ];
   }
@@ -669,7 +697,7 @@ const getProductsBySellerId = async ({
     where.category_id = { in: categoryIds };
   }
 
-  const searchTerm = q?.trim();
+  const searchTerm = formatSearchTerm(q);
   const isPriceSort = sort === "price_asc" || sort === "price_desc";
 
   // Full-text search: Sử dụng Prisma full-text search API
@@ -785,7 +813,7 @@ const getAllProductsAdmin = async ({
     where.category_id = { in: categoryIds };
   }
 
-  const searchTerm = q?.trim();
+  const searchTerm = formatSearchTerm(q);
   const isPriceSort = sort === "price_asc" || sort === "price_desc";
 
   // Full-text search: Sử dụng Prisma full-text search API
