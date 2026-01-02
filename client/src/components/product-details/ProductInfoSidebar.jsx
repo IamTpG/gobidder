@@ -190,15 +190,53 @@ const ProductInfoSidebar = ({
 
               {/* Check if user is unrated and product doesn't allow unrated bidders */}
               {(() => {
+                if (!user) {
+                  return null; // User not logged in
+                }
+
+                // Check if user rating data is loaded.
+                const totalRatings =
+                  (user?.ratingPlus || 0) + (user?.ratingMinus || 0);
+                const ratingPercentage =
+                  totalRatings > 0
+                    ? ((user?.ratingPlus || 0) / totalRatings) * 100
+                    : 100;
                 const isUnratedUser =
-                  user &&
-                  (user.ratingPlus || 0) === 0 &&
-                  (user.ratingMinus || 0) === 0;
+                  (user.ratingPlus || 0) === 0 && (user.ratingMinus || 0) === 0;
                 const productDisallowsUnrated =
                   product.allowUnratedBidders === false;
                 const shouldBlockUnrated =
                   isUnratedUser && productDisallowsUnrated;
 
+                // Check if user has low rating (below 80%)
+                const isLowRatingUser =
+                  totalRatings > 0 && ratingPercentage < 80;
+                const productDisallowsLowRating =
+                  product.allowLowRatingBidders === false;
+                const shouldBlockLowRating =
+                  isLowRatingUser && productDisallowsLowRating;
+
+                // DEBUG LOG
+                console.log("🔍 RATING CHECK:", {
+                  user: {
+                    ratingPlus: user.ratingPlus,
+                    ratingMinus: user.ratingMinus,
+                  },
+                  product: {
+                    allowUnratedBidders: product.allowUnratedBidders,
+                    allowLowRatingBidders: product.allowLowRatingBidders,
+                  },
+                  calculated: {
+                    totalRatings,
+                    ratingPercentage: ratingPercentage.toFixed(2) + "%",
+                    isUnratedUser,
+                    isLowRatingUser,
+                    shouldBlockUnrated,
+                    shouldBlockLowRating,
+                  },
+                });
+
+                // Show warning for unrated users
                 if (shouldBlockUnrated) {
                   return (
                     <div className="p-4 text-sm text-amber-800 bg-amber-50 border border-amber-300 rounded-lg font-medium">
@@ -209,6 +247,18 @@ const ProductInfoSidebar = ({
                   );
                 }
 
+                // Show warning for low-rated users
+                if (shouldBlockLowRating) {
+                  return (
+                    <div className="p-4 text-sm text-amber-800 bg-amber-50 border border-amber-300 rounded-lg font-medium">
+                      This seller doesn't allow bidders with rating below 80%.
+                      Your current rating is {ratingPercentage.toFixed(0)}%.
+                      Please improve your rating to bid on this product.
+                    </div>
+                  );
+                }
+
+                // Only show bid controls if not banned, not unrated-blocked, and not low-rating-blocked
                 if (!isBanned) {
                   return (
                     <>

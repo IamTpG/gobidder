@@ -551,6 +551,7 @@ const create = async (req, res) => {
     endTime,
     autoRenew,
     allowUnratedBidders,
+    allowLowRatingBidders,
   } = req.body;
 
   // Lấy mảng tệp đã được Multer xử lý
@@ -627,6 +628,7 @@ const create = async (req, res) => {
       endTime,
       autoRenew: autoRenew === "true", // Chuyển chuỗi sang boolean
       allowUnratedBidders: allowUnratedBidders === "true", // Chuyển chuỗi sang boolean
+      allowLowRatingBidders: allowLowRatingBidders !== "false", // Default to true unless explicitly set to "false"
     };
 
     const newProduct = await productService.createProduct(
@@ -663,6 +665,7 @@ const update = async (req, res) => {
     endTime,
     autoRenew,
     allowUnratedBidders,
+    allowLowRatingBidders,
     oldImages, // Array of URLs to keep
   } = req.body;
 
@@ -738,6 +741,8 @@ const update = async (req, res) => {
         autoRenew: autoRenew === "true" || autoRenew === true,
         allowUnratedBidders:
           allowUnratedBidders === "true" || allowUnratedBidders === true,
+        allowLowRatingBidders:
+          allowLowRatingBidders !== "false" && allowLowRatingBidders !== false,
       }
     );
 

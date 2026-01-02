@@ -188,6 +188,7 @@ const getProductById = async (productId) => {
     status: product.status,
     autoRenew: product.auto_renew,
     allowUnratedBidders: product.allow_no_rating_bid,
+    allowLowRatingBidders: product.allow_low_rating_bid,
 
     // Thông tin người bán
     seller: {
@@ -371,6 +372,7 @@ const createProduct = async (sellerId, data) => {
     endTime,
     autoRenew,
     allowUnratedBidders,
+    allowLowRatingBidders,
   } = data;
 
   // Chuyển đổi dữ liệu tiền tệ sang Number
@@ -398,6 +400,8 @@ const createProduct = async (sellerId, data) => {
       auto_renew: autoRenew || false,
       allow_no_rating_bid:
         allowUnratedBidders !== undefined ? allowUnratedBidders : true,
+      allow_low_rating_bid:
+        allowLowRatingBidders !== undefined ? allowLowRatingBidders : true,
       status: "Active",
 
       seller_id: sellerId,
@@ -462,6 +466,10 @@ const updateProduct = async (productId, sellerId, data) => {
         data.allowUnratedBidders !== undefined
           ? data.allowUnratedBidders
           : product.allow_no_rating_bid,
+      allow_low_rating_bid:
+        data.allowLowRatingBidders !== undefined
+          ? data.allowLowRatingBidders
+          : product.allow_low_rating_bid,
     },
   });
 

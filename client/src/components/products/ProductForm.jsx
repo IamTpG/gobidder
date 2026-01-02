@@ -18,18 +18,21 @@ export default function ProductForm({
   // Khởi tạo state dựa trên initialValues (cho Edit) hoặc mặc định (cho Create)
   const [name, setName] = useState(initialValues.name || "");
   const [description, setDescription] = useState(
-    initialValues.description || "",
+    initialValues.description || ""
   );
   const [startPrice, setStartPrice] = useState(initialValues.startPrice || "");
   const [stepPrice, setStepPrice] = useState(initialValues.stepPrice || "");
   const [buyNowPrice, setBuyNowPrice] = useState(
-    initialValues.buyNowPrice || "",
+    initialValues.buyNowPrice || ""
   );
   const [categoryId, setCategoryId] = useState(initialValues.categoryId || "");
   const [endTime, setEndTime] = useState(initialValues.endTime || "");
   const [autoRenew, setAutoRenew] = useState(initialValues.autoRenew || false);
   const [allowUnratedBidders, setAllowUnratedBidders] = useState(
-    initialValues.allowUnratedBidders || false,
+    initialValues.allowUnratedBidders || false
+  );
+  const [allowLowRatingBidders, setAllowLowRatingBidders] = useState(
+    initialValues.allowLowRatingBidders !== false
   );
 
   // Image handling
@@ -52,6 +55,7 @@ export default function ProductForm({
       setAutoRenew(initialValues.autoRenew || false);
       setImages(initialValues.images || []);
       setAllowUnratedBidders(initialValues.allowUnratedBidders || false);
+      setAllowLowRatingBidders(initialValues.allowLowRatingBidders !== false);
       // Description thường không update lại trong Edit theo yêu cầu của bạn, nhưng nếu cần thì thêm vào đây
     }
   }, [initialValues]);
@@ -119,7 +123,7 @@ export default function ProductForm({
       setFileLabel(
         next.length > 0
           ? `${next.length} file${next.length > 1 ? "s" : ""} selected`
-          : "No files selected",
+          : "No files selected"
       );
       return next;
     });
@@ -141,7 +145,7 @@ export default function ProductForm({
       setFileLabel(
         next.length > 0
           ? `${next.length} file${next.length > 1 ? "s" : ""} selected`
-          : "No files selected",
+          : "No files selected"
       );
       return next;
     });
@@ -161,6 +165,7 @@ export default function ProductForm({
       endTime,
       autoRenew,
       allowUnratedBidders,
+      allowLowRatingBidders,
       images, // Dùng cho Edit (JSON payload)
       filesToUpload, // Dùng cho Create (Multipart form)
     };
@@ -424,6 +429,20 @@ export default function ProductForm({
             className={`text-gray-700 ${isEditMode && hasBids ? "opacity-50" : ""}`}
           >
             Allow unrated bidders to bid on this product
+          </label>
+        </div>
+        <div className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            checked={allowLowRatingBidders}
+            onChange={(e) => setAllowLowRatingBidders(e.target.checked)}
+            className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
+            disabled={isEditMode && hasBids}
+          />
+          <label
+            className={`text-gray-700 ${isEditMode && hasBids ? "opacity-50" : ""}`}
+          >
+            Allow bidders with rating below 80% to bid on this product
           </label>
         </div>
       </div>

@@ -76,9 +76,11 @@ export const AuthProvider = ({ children }) => {
   const checkAuthStatusAfterRedirect = async () => {
     setLoading(true);
     try {
-      const response = await api.get("/auth/status");
-      const userData = response.data.user;
-      setUser(userData);
+      await api.get("/auth/status");
+      // Fetch full profile (including ratings) immediately
+      const response = await api.get("/users/me");
+      setUser(response.data);
+      // We don't save to localStorage here manually because the useEffect will match the data and save it automatically
       window.history.replaceState({}, document.title, window.location.pathname);
     } catch (error) {
       setUser(null);

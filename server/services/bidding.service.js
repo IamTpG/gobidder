@@ -71,6 +71,20 @@ const placeAutoBid = async (userId, productId, inputMaxPrice) => {
       throw new Error("This product does not allow bidders with no ratings");
     }
 
+    // Kiểm tra xem người dùng có rating dưới 80% không
+    // Rating = rating_plus / (rating_plus + rating_minus)
+    const totalRatings = bidder.rating_plus + bidder.rating_minus;
+    const ratingPercentage =
+      totalRatings > 0 ? (bidder.rating_plus / totalRatings) * 100 : 100;
+    const isLowRatingBidder = totalRatings > 0 && ratingPercentage < 80;
+
+    // Nếu sản phẩm không cho phép low rating bidders và người này có rating dưới 80%
+    if (!product.allow_low_rating_bid && isLowRatingBidder) {
+      throw new Error(
+        "This product does not allow bidders with rating below 80%"
+      );
+    }
+
     // Kiểm tra giá sàn hợp lệ (Phải lớn hơn giá hiện tại + bước giá)
     // Lưu ý: Nếu chưa có ai đặt, giá phải >= giá khởi điểm
     const minRequiredPrice =
