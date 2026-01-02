@@ -4,6 +4,7 @@ import { Editor } from "@tinymce/tinymce-react";
 
 import Button from "../common/Button";
 import Spinner from "../common/Spinner";
+import { formatNumberInput, parseNumberInput } from "../../utils/formatters";
 
 export default function ProductForm({
   initialValues = {},
@@ -258,14 +259,13 @@ export default function ProductForm({
             Start Price
           </label>
           <input
-            type="number"
-            step="0.01"
+            type="text"
             className={`border border-gray-300 p-3 w-full rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
               isEditMode && hasBids ? "bg-gray-100 cursor-not-allowed" : ""
             }`}
-            value={startPrice}
+            value={formatNumberInput(startPrice)}
             onChange={(e) => {
-              const val = e.target.value;
+              const val = parseNumberInput(e.target.value);
               if (/^\d*\.?\d{0,2}$/.test(val)) setStartPrice(val);
             }}
             disabled={isEditMode && hasBids}
@@ -279,14 +279,13 @@ export default function ProductForm({
             Step Price
           </label>
           <input
-            type="number"
-            step="0.01"
+            type="text"
             className={`border border-gray-300 p-3 w-full rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
               isEditMode && hasBids ? "bg-gray-100 cursor-not-allowed" : ""
             }`}
-            value={stepPrice}
+            value={formatNumberInput(stepPrice)}
             onChange={(e) => {
-              const val = e.target.value;
+              const val = parseNumberInput(e.target.value);
               if (/^\d*\.?\d{0,2}$/.test(val)) setStepPrice(val);
             }}
             disabled={isEditMode && hasBids}
@@ -300,14 +299,13 @@ export default function ProductForm({
             Buy Now Price (Optional)
           </label>
           <input
-            type="number"
-            step="0.01"
+            type="text"
             className={`border border-gray-300 p-3 w-full rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
               isEditMode && hasBids ? "bg-gray-100 cursor-not-allowed" : ""
             }`}
-            value={buyNowPrice}
+            value={formatNumberInput(buyNowPrice)}
             onChange={(e) => {
-              const val = e.target.value;
+              const val = parseNumberInput(e.target.value);
               if (/^\d*\.?\d{0,2}$/.test(val)) setBuyNowPrice(val);
             }}
             disabled={isEditMode && hasBids}

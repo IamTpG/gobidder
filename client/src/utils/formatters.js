@@ -30,3 +30,19 @@ export const calculateRating = (plus, minus) => {
   const percentage = ((plus / total) * 100).toFixed(1);
   return `${plus}/${total} (${percentage}%)`;
 };
+
+export const formatNumberInput = (value) => {
+  if (value === undefined || value === null || value === "") return "";
+  const str = value.toString();
+  // Split integer and decimal parts
+  const parts = str.split(".");
+  // Format integer part with commas
+  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  // Rejoin with decimal part (if exists)
+  return parts.join(".");
+};
+
+export const parseNumberInput = (value) => {
+  if (!value) return "";
+  return value.toString().replace(/,/g, "");
+};
