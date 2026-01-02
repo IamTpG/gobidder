@@ -29,7 +29,7 @@ export default function EditProductPage() {
       const date = new Date(product.auctionEndDate);
       // Adjust for timezone offset to show correct local time in input
       const localDate = new Date(
-        date.getTime() - date.getTimezoneOffset() * 60000,
+        date.getTime() - date.getTimezoneOffset() * 60000
       );
       formattedTime = localDate.toISOString().slice(0, 16);
     }
@@ -45,6 +45,8 @@ export default function EditProductPage() {
       categoryId: product.categoryId,
       endTime: formattedTime,
       autoRenew: product.autoRenew,
+      allowUnratedBidders: product.allowUnratedBidders,
+      allowLowRatingBidders: product.allowLowRatingBidders,
       images: product.images || [],
     };
   }, [product]);

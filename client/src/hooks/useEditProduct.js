@@ -72,6 +72,8 @@ export const useEditProduct = (productId) => {
         data.append("categoryId", formData.categoryId);
         data.append("endTime", new Date(formData.endTime).toISOString());
         data.append("autoRenew", formData.autoRenew);
+        data.append("allowUnratedBidders", formData.allowUnratedBidders);
+        data.append("allowLowRatingBidders", formData.allowLowRatingBidders);
 
         // Handle images
         // formData.images contains all current images (URLs and base64 previews)
@@ -79,7 +81,7 @@ export const useEditProduct = (productId) => {
 
         // 1. Filter old images (URLs)
         const oldImages = formData.images.filter(
-          (img) => typeof img === "string" && !img.startsWith("data:"),
+          (img) => typeof img === "string" && !img.startsWith("data:")
         );
         oldImages.forEach((url) => data.append("oldImages", url));
 
@@ -157,7 +159,7 @@ export const appendDescription = async (productId, text) => {
       `/products/${productId}/append-description`,
       {
         text: text.trim(),
-      },
+      }
     );
     return response.data;
   } catch (err) {
