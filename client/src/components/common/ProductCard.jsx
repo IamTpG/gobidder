@@ -1,9 +1,12 @@
 import React from "react";
 import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 
 import api from "../../services/api";
 import Countdown from "./Countdown";
 import { HeartIcon } from "./Icons";
+import { maskUserName } from "../../utils/formatters";
+import { useAuth } from "../../contexts/AuthContext";
 
 export const ProductCard = ({
   id,
@@ -22,6 +25,7 @@ export const ProductCard = ({
   className = "",
   isInWatchlist = false,
   onWatchlistToggle,
+  onEdit,
   // Destructure other props to prevent passing non-DOM attributes
   seller,
   category,
@@ -32,6 +36,30 @@ export const ProductCard = ({
   step_price,
   ...props // Only pass valid DOM attributes
 }) => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Check if current user is the seller/owner of this product
+  const isProductOwner = user && seller_id && user.id === seller_id;
+
+  // Handle watchlist toggle - check authentication first
+  const handleWatchlistToggle = (e) => {
+    e.stopPropagation();
+
+    // Check if user is logged in (NO need to fetch watchlist)
+    if (!user) {
+      // Not logged in -> redirect to login page
+      navigate("/auth", { state: { from: location } });
+      return;
+    }
+
+    // User is logged in -> proceed with toggle
+    if (onWatchlistToggle) {
+      onWatchlistToggle(id);
+    }
+  };
+
   // Get first image from array or use placeholder
   const getImageUrl = () => {
     if (!images) return "https://via.placeholder.com/400x300?text=No+Image";
@@ -77,13 +105,7 @@ export const ProductCard = ({
 
   // Button styles based on status from DB
   const getButtonStyles = () => {
-    if (props.isOwner) {
-      if (status === "Sold" || status === "Expired" || status === "Removed") {
-        return "hidden";
-      }
-      return "bg-[#01AA85] text-white hover:bg-[#018f70] hover:shadow-lg transition-all duration-300";
-    }
-    if (props.isOwner) {
+    if (isProductOwner) {
       if (status === "Sold" || status === "Expired" || status === "Removed") {
         return "hidden";
       }
@@ -99,10 +121,7 @@ export const ProductCard = ({
   };
 
   const getButtonText = () => {
-    if (props.isOwner) {
-      return "Edit";
-    }
-    if (props.isOwner) {
+    if (isProductOwner) {
       return "Edit";
     }
     switch (status) {
@@ -162,7 +181,7 @@ export const ProductCard = ({
       }}
     >
       {/* Image Container */}
-      <div className="relative h-64 bg-slate-100">
+      <div className="relative h-64 bg-slate-100 overflow-hidden">
         {/* New Badge */}
         {isNew && (
           <div className="absolute top-4 left-4 z-20">
@@ -175,7 +194,7 @@ export const ProductCard = ({
         <img
           src={getImageUrl()}
           alt={name || "Product"}
-          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+          className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-110"
         />
 
         {/* Countdown Timer - Bottom overlay */}
@@ -184,7 +203,7 @@ export const ProductCard = ({
             endTime={end_time}
             variant="overlay"
             showLabels={true}
-            className="absolute left-0 right-0 bottom-0"
+            className="absolute left-0 right-0 bottom-0 z-10"
           />
         )}
       </div>
@@ -213,7 +232,11 @@ export const ProductCard = ({
                   d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
                 />
               </svg>
-              <span className="font-medium">{current_bidder.full_name}</span>
+              <span className="font-medium">
+                {isProductOwner
+                  ? current_bidder.full_name
+                  : maskUserName(current_bidder.full_name)}
+              </span>
             </div>
           ) : (
             <div className="text-slate-400 italic">No bids yet</div>
@@ -251,19 +274,19 @@ export const ProductCard = ({
           </div>
         </div>
 
-        {/* Buy Now Price */}
-        {buy_now_price && (
-          <div className="mb-3 p-2 bg-green-50 border border-green-200 rounded-lg">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-green-700 font-medium">
-                Buy Now:
-              </span>
-              <span className="text-sm font-bold text-green-700">
-                ${formatPrice(buy_now_price)}
-              </span>
-            </div>
+        {/* Buy Now Price - Always rendered to maintain consistent card height */}
+        <div
+          className={`mb-3 p-2 rounded-lg ${
+            buy_now_price ? "bg-green-50 border border-green-200" : "invisible"
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-green-700 font-medium">Buy Now:</span>
+            <span className="text-sm font-bold text-green-700">
+              {buy_now_price ? `$${formatPrice(buy_now_price)}` : "$0.00"}
+            </span>
           </div>
-        )}
+        </div>
 
         {/* Posted Date */}
         {created_at && (
@@ -285,25 +308,24 @@ export const ProductCard = ({
               <span>Posted: {formatDate(created_at)}</span>
             </div>
 
-            {/* Watchlist Heart Icon */}
-            {onWatchlistToggle && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onWatchlistToggle(id);
-                }}
-                className={`p-1.5 rounded-full transition-all duration-200 hover:scale-110 ${
-                  isInWatchlist
-                    ? "text-red-500 hover:bg-red-50"
-                    : "text-slate-400 hover:bg-slate-100 hover:text-slate-600"
-                }`}
-                title={
-                  isInWatchlist ? "Remove from watchlist" : "Add to watchlist"
-                }
-              >
-                <HeartIcon filled={isInWatchlist} className="w-5 h-5" />
-              </button>
-            )}
+            {/* Watchlist Heart Icon - Always visible, check auth on click */}
+            <button
+              onClick={handleWatchlistToggle}
+              className={`p-1.5 rounded-full transition-all duration-200 hover:scale-110 ${
+                isInWatchlist
+                  ? "text-red-500 hover:bg-red-50"
+                  : "text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+              }`}
+              title={
+                !user
+                  ? "Login to add to watchlist"
+                  : isInWatchlist
+                    ? "Remove from watchlist"
+                    : "Add to watchlist"
+              }
+            >
+              <HeartIcon filled={isInWatchlist} className="w-5 h-5" />
+            </button>
           </div>
         )}
 
@@ -312,8 +334,8 @@ export const ProductCard = ({
           onClick={(e) => {
             e.stopPropagation();
             // Nếu là chủ sản phẩm, cho edit; còn không thì navigate đến chi tiết sản phẩm
-            if (props.isOwner && props.onEdit) {
-              props.onEdit();
+            if (isProductOwner && onEdit) {
+              onEdit();
             } else if (onClick) {
               // Navigate đến trang chi tiết sản phẩm
               onClick(e);
@@ -322,7 +344,7 @@ export const ProductCard = ({
             }
           }}
           disabled={
-            !props.isOwner &&
+            !isProductOwner &&
             (status === "Sold" ||
               status === "Expired" ||
               status === "Removed" ||
