@@ -10,6 +10,14 @@ const placeBid = async (req, res) => {
     return res.status(400).json({ message: "Max price is required" });
   }
 
+  // Validate decimal places
+  const strPrice = maxPrice.toString();
+  if (strPrice.includes(".") && strPrice.split(".")[1].length > 2) {
+    return res
+      .status(400)
+      .json({ message: "Bid amount cannot have more than 2 decimal places" });
+  }
+
   try {
     const result = await biddingService.placeAutoBid(
       userId,

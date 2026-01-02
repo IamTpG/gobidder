@@ -2,6 +2,16 @@ const productService = require("../services/product.service");
 const { sendMail } = require("../utils/utils");
 const prisma = require("../config/prisma");
 const path = require("path");
+
+const hasMoreThanTwoDecimals = (value) => {
+  if (!value || value === "") return false;
+  const str = value.toString();
+  const decimalIndex = str.indexOf(".");
+  if (decimalIndex === -1) return false;
+  const decimalPart = str.substring(decimalIndex + 1);
+  return decimalPart.length > 2;
+};
+
 // Lấy tất cả sản phẩm
 const getProducts = async (req, res) => {
   try {
@@ -583,6 +593,17 @@ const create = async (req, res) => {
     return res.status(400).json({ message: "Prices must be positive numbers" });
   }
 
+  if (
+    hasMoreThanTwoDecimals(startPrice) ||
+    hasMoreThanTwoDecimals(stepPrice) ||
+    hasMoreThanTwoDecimals(buyNowPrice)
+  ) {
+    if (files) deleteLocalFiles(files);
+    return res
+      .status(400)
+      .json({ message: "Prices cannot have more than 2 decimal places" });
+  }
+
   if (new Date(endTime) <= new Date()) {
     if (files) deleteLocalFiles(files);
     return res.status(400).json({ message: "End time must be in the future" });
@@ -717,6 +738,16 @@ const update = async (req, res) => {
 
     if (Number(startPrice) <= 0 || Number(stepPrice) <= 0) {
       return res.status(400).json({ message: "Prices must be positive" });
+    }
+
+    if (
+      hasMoreThanTwoDecimals(startPrice) ||
+      hasMoreThanTwoDecimals(stepPrice) ||
+      hasMoreThanTwoDecimals(buyNowPrice)
+    ) {
+      return res
+        .status(400)
+        .json({ message: "Prices cannot have more than 2 decimal places" });
     }
 
     // Validate EndTime
@@ -917,6 +948,16 @@ const updateProductAdmin = async (req, res) => {
 
   if (Number(startPrice) <= 0 || Number(stepPrice) <= 0) {
     return res.status(400).json({ message: "Prices must be positive numbers" });
+  }
+
+  if (
+    hasMoreThanTwoDecimals(startPrice) ||
+    hasMoreThanTwoDecimals(stepPrice) ||
+    hasMoreThanTwoDecimals(buyNowPrice)
+  ) {
+    return res
+      .status(400)
+      .json({ message: "Prices cannot have more than 2 decimal places" });
   }
 
   // Validate EndTime (nếu có)

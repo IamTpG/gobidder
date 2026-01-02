@@ -115,7 +115,7 @@ const ProductDetails = ({ product, onRefresh }) => {
       setBidError(null);
       setBidSuccessMsg(null);
 
-      const result = await placeBid(product.id, bidAmount);
+      const result = await placeBid(product.id, Number(bidAmount));
 
       setBidSuccessMsg("Bid placed successfully!");
       if (Number(result.currentPrice) <= Number(product.currentBid)) {

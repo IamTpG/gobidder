@@ -264,7 +264,10 @@ export default function ProductForm({
               isEditMode && hasBids ? "bg-gray-100 cursor-not-allowed" : ""
             }`}
             value={startPrice}
-            onChange={(e) => setStartPrice(e.target.value)}
+            onChange={(e) => {
+              const val = e.target.value;
+              if (/^\d*\.?\d{0,2}$/.test(val)) setStartPrice(val);
+            }}
             disabled={isEditMode && hasBids}
           />
           {errors.startPrice && (
@@ -282,7 +285,10 @@ export default function ProductForm({
               isEditMode && hasBids ? "bg-gray-100 cursor-not-allowed" : ""
             }`}
             value={stepPrice}
-            onChange={(e) => setStepPrice(e.target.value)}
+            onChange={(e) => {
+              const val = e.target.value;
+              if (/^\d*\.?\d{0,2}$/.test(val)) setStepPrice(val);
+            }}
             disabled={isEditMode && hasBids}
           />
           {errors.stepPrice && (
@@ -300,7 +306,10 @@ export default function ProductForm({
               isEditMode && hasBids ? "bg-gray-100 cursor-not-allowed" : ""
             }`}
             value={buyNowPrice}
-            onChange={(e) => setBuyNowPrice(e.target.value)}
+            onChange={(e) => {
+              const val = e.target.value;
+              if (/^\d*\.?\d{0,2}$/.test(val)) setBuyNowPrice(val);
+            }}
             disabled={isEditMode && hasBids}
           />
           {errors.buyNowPrice && (

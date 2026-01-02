@@ -34,7 +34,12 @@ const BidControls = ({
             <input
               type="number"
               value={bidAmount}
-              onChange={(e) => onBidChange(Number(e.target.value))}
+              onChange={(e) => {
+                const val = e.target.value;
+                if (/^\d*\.?\d{0,2}$/.test(val)) {
+                  onBidChange(val);
+                }
+              }}
               className="w-full pl-8 pr-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-[#00B289] focus:ring-0 font-semibold text-gray-900 transition-colors"
               placeholder="Enter amount"
               min={minBid}
@@ -71,7 +76,7 @@ const BidControls = ({
               >
                 ${amount.toLocaleString()}
               </button>
-            ),
+            )
           )}
         </div>
       </div>
