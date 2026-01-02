@@ -424,13 +424,13 @@ const answerQuestion = async (req, res) => {
       // Gửi tất cả email (không cần đợi)
       Promise.all(emailPromises).then(() => {
         console.log(
-          `[Email] Sent notifications to ${emailSet.size} recipient(s)`,
+          `[Email] Sent notifications to ${emailSet.size} recipient(s)`
         );
       });
     } catch (emailError) {
       console.error(
         "[Email Error] Failed to send notifications:",
-        emailError.message,
+        emailError.message
       );
       // Không return error - API vẫn thành công, chỉ email fail
     }
@@ -550,6 +550,7 @@ const create = async (req, res) => {
     categoryId,
     endTime,
     autoRenew,
+    allowUnratedBidders,
   } = req.body;
 
   // Lấy mảng tệp đã được Multer xử lý
@@ -625,6 +626,7 @@ const create = async (req, res) => {
       categoryId: Number(categoryId), // Đảm bảo là số
       endTime,
       autoRenew: autoRenew === "true", // Chuyển chuỗi sang boolean
+      allowUnratedBidders: allowUnratedBidders === "true", // Chuyển chuỗi sang boolean
     };
 
     const newProduct = await productService.createProduct(
@@ -660,6 +662,7 @@ const update = async (req, res) => {
     categoryId,
     endTime,
     autoRenew,
+    allowUnratedBidders,
     oldImages, // Array of URLs to keep
   } = req.body;
 
@@ -733,6 +736,8 @@ const update = async (req, res) => {
         categoryId: Number(categoryId),
         endTime: new Date(endTime),
         autoRenew: autoRenew === "true" || autoRenew === true,
+        allowUnratedBidders:
+          allowUnratedBidders === "true" || allowUnratedBidders === true,
       }
     );
 

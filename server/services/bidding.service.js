@@ -47,6 +47,30 @@ const placeAutoBid = async (userId, productId, inputMaxPrice) => {
       throw new Error("Auction has ended");
     }
 
+    // Kiểm tra xem người dùng có phải là unrated bidder không
+    // Unrated = rating_plus = 0 AND rating_minus = 0
+    const bidder = await tx.user.findUnique({
+      where: { id: userId },
+      select: {
+        rating_plus: true,
+        rating_minus: true,
+        email: true,
+        full_name: true,
+      },
+    });
+
+    if (!bidder) {
+      throw new Error("Bidder not found");
+    }
+
+    const isUnratedBidder =
+      bidder.rating_plus === 0 && bidder.rating_minus === 0;
+
+    // Nếu sản phẩm không cho phép unrated bidders và người này là unrated
+    if (!product.allow_no_rating_bid && isUnratedBidder) {
+      throw new Error("This product does not allow bidders with no ratings");
+    }
+
     // Kiểm tra giá sàn hợp lệ (Phải lớn hơn giá hiện tại + bước giá)
     // Lưu ý: Nếu chưa có ai đặt, giá phải >= giá khởi điểm
     const minRequiredPrice =
@@ -63,9 +87,6 @@ const placeAutoBid = async (userId, productId, inputMaxPrice) => {
     const previousBidder = product.current_bidder;
 
     // Lưu hoặc Cập nhật AutoBid của User (Upsert)
-    // Cần lấy luôn thông tin User để gửi email
-    const bidder = await tx.user.findUnique({ where: { id: userId } });
-    if (!bidder) throw new Error("Bidder not found");
 
     await tx.autoBid.upsert({
       where: {

@@ -188,29 +188,53 @@ const ProductInfoSidebar = ({
                 </div>
               )}
 
-              {!isBanned && (
-                <>
-                  <BidControls
-                    currentBid={Number(product.currentBid)}
-                    startPrice={Number(product.startPrice)}
-                    bidAmount={bidAmount}
-                    onBidChange={onBidChange}
-                    onBid={onPlaceBid}
-                    minBidIncrement={Number(product.stepPrice)}
-                    disabled={isBidding || isBanned || isCheckingBan}
-                    isBidding={isBidding}
-                    label="Place Bid"
-                  />
-                  {!user && (
-                    <button
-                      onClick={onNavigateToAuth}
-                      className="w-full text-xs text-primary underline"
-                    >
-                      Login to bid
-                    </button>
-                  )}
-                </>
-              )}
+              {/* Check if user is unrated and product doesn't allow unrated bidders */}
+              {(() => {
+                const isUnratedUser =
+                  user &&
+                  (user.ratingPlus || 0) === 0 &&
+                  (user.ratingMinus || 0) === 0;
+                const productDisallowsUnrated =
+                  product.allowUnratedBidders === false;
+                const shouldBlockUnrated =
+                  isUnratedUser && productDisallowsUnrated;
+
+                if (shouldBlockUnrated) {
+                  return (
+                    <div className="p-4 text-sm text-amber-800 bg-amber-50 border border-amber-300 rounded-lg font-medium">
+                      This seller doesn't allow bidders with no ratings. Please
+                      complete some transactions to earn ratings before bidding
+                      on this product.
+                    </div>
+                  );
+                }
+
+                if (!isBanned) {
+                  return (
+                    <>
+                      <BidControls
+                        currentBid={Number(product.currentBid)}
+                        startPrice={Number(product.startPrice)}
+                        bidAmount={bidAmount}
+                        onBidChange={onBidChange}
+                        onBid={onPlaceBid}
+                        minBidIncrement={Number(product.stepPrice)}
+                        disabled={isBidding || isBanned || isCheckingBan}
+                        isBidding={isBidding}
+                        label="Place Bid"
+                      />
+                      {!user && (
+                        <button
+                          onClick={onNavigateToAuth}
+                          className="w-full text-xs text-primary underline"
+                        >
+                          Login to bid
+                        </button>
+                      )}
+                    </>
+                  );
+                }
+              })()}
             </div>
           ) : (
             <div className="bg-blue-50 border border-blue-100 p-4 rounded-lg text-center text-blue-800 text-sm">

@@ -31,21 +31,33 @@ const getMyProfile = async (userId) => {
     throw new Error("User not found");
   }
 
-  const { password_hash, google_id, ...rest } = user;
+  const {
+    password_hash,
+    google_id,
+    rating_plus,
+    rating_minus,
+    full_name,
+    created_at,
+    ...rest
+  } = user;
 
   // Tính toán rating score tổng hợp
-  const totalRatings = user.rating_plus + user.rating_minus;
+  const totalRatings = rating_plus + rating_minus;
   const ratingScore =
-    totalRatings > 0 ? ((user.rating_plus / totalRatings) * 100).toFixed(1) : 0;
-  const ratingDifference = user.rating_plus - user.rating_minus;
+    totalRatings > 0 ? ((rating_plus / totalRatings) * 100).toFixed(1) : 0;
+  const ratingDifference = rating_plus - rating_minus;
 
   return {
     ...rest,
-    auth_provider: google_id ? "google" : "local",
-    can_change_credentials: Boolean(password_hash),
+    fullName: full_name, // Transform to camelCase
+    createdAt: created_at, // Transform to camelCase
+    authProvider: google_id ? "google" : "local", // Transform to camelCase
+    canChangeCredentials: Boolean(password_hash), // Transform to camelCase
+    ratingPlus: rating_plus, // Transform to camelCase
+    ratingMinus: rating_minus, // Transform to camelCase
     rating: {
-      positive: user.rating_plus,
-      negative: user.rating_minus,
+      positive: rating_plus,
+      negative: rating_minus,
       total: totalRatings,
       score: parseFloat(ratingScore),
       difference: ratingDifference,
@@ -112,7 +124,7 @@ const changeUserPassword = async (userId, { currentPassword, newPassword }) => {
 
   if (!user || !user.password_hash) {
     throw new Error(
-      "Password change is only available for email/password accounts",
+      "Password change is only available for email/password accounts"
     );
   }
 
@@ -149,7 +161,7 @@ const requestEmailChangeService = async (userId, { newEmail, password }) => {
 
   if (!user || !user.password_hash) {
     throw new Error(
-      "Email change is only available for email/password accounts",
+      "Email change is only available for email/password accounts"
     );
   }
 
@@ -204,7 +216,7 @@ const requestEmailChangeService = async (userId, { newEmail, password }) => {
 const confirmEmailChangeService = async (
   userId,
   currentEmail,
-  { newEmail, otp },
+  { newEmail, otp }
 ) => {
   const normalizedEmail = normalizeEmail(newEmail);
 
@@ -352,7 +364,7 @@ const requestSellerUpgrade = async (userId) => {
 
   if (user.role === "ExpiredSeller") {
     throw new Error(
-      "Please wait until all your products are sold/expired before requesting seller upgrade again",
+      "Please wait until all your products are sold/expired before requesting seller upgrade again"
     );
   }
 
@@ -498,7 +510,7 @@ const revertExpiredSellers = async () => {
         console.error(`Failed to process seller ${seller.id}:`, error);
         return { id: seller.id, success: false, error: error.message };
       }
-    }),
+    })
   );
 
   // Also check ExpiredSellers without products and downgrade them
@@ -530,7 +542,7 @@ const revertExpiredSellers = async () => {
         console.error(`Failed to cleanup ExpiredSeller ${user.id}:`, error);
         return { id: user.id, success: false, error: error.message };
       }
-    }),
+    })
   );
 
   const successCount = results.filter((r) => r.success).length;
@@ -588,7 +600,7 @@ const createUser = async ({ full_name, email, password, role }) => {
 
 const updateUser = async (
   id,
-  { full_name, email, role, password, address, birthdate },
+  { full_name, email, role, password, address, birthdate }
 ) => {
   const userId = parseInt(id);
   const user = await prisma.user.findUnique({ where: { id: userId } });
