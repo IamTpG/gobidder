@@ -11,6 +11,7 @@ import Badge from "../common/Badge";
 import CountdownTimer from "../common/CountdownTimer";
 import Button from "../common/Button";
 import { HeartIcon } from "../common/Icons";
+import ConfirmDialog from "../common/ConfirmDialog";
 
 const ProductInfoSidebar = ({
   product,
@@ -45,6 +46,8 @@ const ProductInfoSidebar = ({
     user && product.currentBidder && user.id === product.currentBidder.id;
   const isAuctionEnded = new Date() > new Date(product.auctionEndDate);
 
+  const [showConfirm, setShowConfirm] = React.useState(false);
+
   // Helper render User Card (Seller/Bidder)
   const UserInfoCard = ({ title, data, isHighlight = false }) => (
     <div
@@ -67,10 +70,15 @@ const ProductInfoSidebar = ({
       <p
         className={`text-sm font-bold ${isHighlight ? "text-primary-dark" : "text-gray-900"}`}
       >
-        {isHighlight && isWinner ? "You (Current Leader)" : data.name}
+        {isHighlight ? "You (Current Leader)" : data.name}
       </p>
     </div>
   );
+
+  const handleConfirmBid = () => {
+    setShowConfirm(false);
+    onPlaceBid();
+  };
 
   return (
     <div className="space-y-4">
@@ -267,7 +275,7 @@ const ProductInfoSidebar = ({
                         startPrice={Number(product.startPrice)}
                         bidAmount={bidAmount}
                         onBidChange={onBidChange}
-                        onBid={onPlaceBid}
+                        onBid={() => setShowConfirm(true)}
                         minBidIncrement={Number(product.stepPrice)}
                         disabled={isBidding || isBanned || isCheckingBan}
                         isBidding={isBidding}
@@ -300,6 +308,17 @@ const ProductInfoSidebar = ({
           )}
         </div>
       )}
+
+      {/* Confirm Dialog */}
+      <ConfirmDialog
+        isOpen={showConfirm}
+        onClose={() => setShowConfirm(false)}
+        onConfirm={handleConfirmBid}
+        title="Confirm Bid"
+        message={`Are you sure you want to place a bid of ${formatPrice(bidAmount)}?`}
+        confirmText="Place Bid"
+        confirmVariant="primary"
+      />
     </div>
   );
 };
