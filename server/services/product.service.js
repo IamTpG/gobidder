@@ -1,6 +1,35 @@
 const prisma = require("../config/prisma");
 const categoryService = require("./category.service");
 
+// Helper function để xử lý searchTerm cho PostgreSQL full-text search
+// Chuyển đổi nhiều từ thành format tsquery (word1 & word2 & word3)
+const formatSearchTerm = (searchTerm) => {
+  if (!searchTerm || !searchTerm.trim()) return null;
+
+  const trimmed = searchTerm.trim();
+
+  // Nếu chỉ có 1 từ, trả về trực tiếp
+  if (!trimmed.includes(" ")) {
+    // Escape các ký tự đặc biệt của tsquery: : & | ! ( )
+    return trimmed.replace(/[:&|!()]/g, "");
+  }
+
+  // Nếu có nhiều từ, tách và kết hợp với & (AND operator)
+  const words = trimmed
+    .split(/\s+/)
+    .filter((word) => word.length > 0)
+    .map((word) => {
+      // Escape các ký tự đặc biệt của tsquery
+      return word.replace(/[:&|!()]/g, "");
+    })
+    .filter((word) => word.length > 0);
+
+  if (words.length === 0) return null;
+
+  // Kết hợp các từ với & (AND operator)
+  return words.join(" & ");
+};
+
 // Lấy tất cả sản phẩm
 const getProducts = async ({ page, limit, categoryId, sort, q, skip }) => {
   const where = {
@@ -14,61 +43,82 @@ const getProducts = async ({ page, limit, categoryId, sort, q, skip }) => {
     where.category_id = { in: categoryIds };
   }
 
-  const searchTerm = q?.trim();
+  const searchTerm = formatSearchTerm(q);
+  const isPriceSort = sort === "price_asc" || sort === "price_desc";
+
+  // Full-text search: Sử dụng Prisma full-text search API
   if (searchTerm) {
     where.OR = [
-      { name: { equals: searchTerm, mode: "insensitive" } },
-      { name: { startsWith: searchTerm + " ", mode: "insensitive" } },
-      { name: { endsWith: " " + searchTerm, mode: "insensitive" } },
-      { name: { contains: " " + searchTerm + " ", mode: "insensitive" } },
-      { description: { equals: searchTerm, mode: "insensitive" } },
-      { description: { startsWith: searchTerm + " ", mode: "insensitive" } },
-      { description: { endsWith: " " + searchTerm, mode: "insensitive" } },
-      {
-        description: { contains: " " + searchTerm + " ", mode: "insensitive" },
-      },
+      { name: { search: searchTerm } },
+      { description: { search: searchTerm } },
     ];
   }
 
+  let products;
   let orderBy;
-  switch (sort) {
-    case "price_asc":
-      orderBy = { current_price: "asc" };
-      break;
-    case "price_desc":
-      orderBy = { current_price: "desc" };
-      break;
-    case "end_time_asc":
-      orderBy = { end_time: "asc" };
-      break;
-    case "end_time_desc":
-      orderBy = { end_time: "desc" };
-      break;
-    case "bid_count":
-      orderBy = { bid_count: "desc" };
-      break;
-    case "created_at":
-    default:
-      orderBy = { created_at: "desc" };
-  }
 
-  const products = await prisma.product.findMany({
-    where,
-    skip,
-    orderBy,
-    take: limit,
-    include: {
-      seller: {
-        select: { id: true, full_name: true, email: true },
+  // Nếu sort theo price, lấy tất cả products rồi sort trong JavaScript
+  if (isPriceSort) {
+    // Lấy tất cả products matching conditions (không paginate ngay)
+    const allProducts = await prisma.product.findMany({
+      where,
+      include: {
+        seller: {
+          select: { id: true, full_name: true, email: true },
+        },
+        category: {
+          select: { id: true, name: true },
+        },
+        current_bidder: {
+          select: { id: true, full_name: true },
+        },
       },
-      category: {
-        select: { id: true, name: true },
+    });
+
+    // Sort theo max(current_price, start_price)
+    allProducts.sort((a, b) => {
+      const priceA = Math.max(a.current_price, a.start_price);
+      const priceB = Math.max(b.current_price, b.start_price);
+      return sort === "price_asc" ? priceA - priceB : priceB - priceA;
+    });
+
+    // Paginate sau khi sort
+    products = allProducts.slice(skip, skip + limit);
+  } else {
+    // Sort bình thường - dùng Prisma query
+    switch (sort) {
+      case "end_time_asc":
+        orderBy = { end_time: "asc" };
+        break;
+      case "end_time_desc":
+        orderBy = { end_time: "desc" };
+        break;
+      case "bid_count":
+        orderBy = { bid_count: "desc" };
+        break;
+      case "created_at":
+      default:
+        orderBy = { created_at: "desc" };
+    }
+
+    products = await prisma.product.findMany({
+      where,
+      skip,
+      orderBy,
+      take: limit,
+      include: {
+        seller: {
+          select: { id: true, full_name: true, email: true },
+        },
+        category: {
+          select: { id: true, name: true },
+        },
+        current_bidder: {
+          select: { id: true, full_name: true },
+        },
       },
-      current_bidder: {
-        select: { id: true, full_name: true },
-      },
-    },
-  });
+    });
+  }
 
   const totalItems = await prisma.product.count({ where });
   const totalPages = Math.ceil(totalItems / limit);
@@ -647,61 +697,82 @@ const getProductsBySellerId = async ({
     where.category_id = { in: categoryIds };
   }
 
-  const searchTerm = q?.trim();
+  const searchTerm = formatSearchTerm(q);
+  const isPriceSort = sort === "price_asc" || sort === "price_desc";
+
+  // Full-text search: Sử dụng Prisma full-text search API
   if (searchTerm) {
     where.OR = [
-      { name: { equals: searchTerm, mode: "insensitive" } },
-      { name: { startsWith: searchTerm + " ", mode: "insensitive" } },
-      { name: { endsWith: " " + searchTerm, mode: "insensitive" } },
-      { name: { contains: " " + searchTerm + " ", mode: "insensitive" } },
-      { description: { equals: searchTerm, mode: "insensitive" } },
-      { description: { startsWith: searchTerm + " ", mode: "insensitive" } },
-      { description: { endsWith: " " + searchTerm, mode: "insensitive" } },
-      {
-        description: { contains: " " + searchTerm + " ", mode: "insensitive" },
-      },
+      { name: { search: searchTerm } },
+      { description: { search: searchTerm } },
     ];
   }
 
-  let orderBy;
-  switch (sort) {
-    case "price_asc":
-      orderBy = { current_price: "asc" };
-      break;
-    case "price_desc":
-      orderBy = { current_price: "desc" };
-      break;
-    case "end_time_asc":
-      orderBy = { end_time: "asc" };
-      break;
-    case "end_time_desc":
-      orderBy = { end_time: "desc" };
-      break;
-    case "bid_count":
-      orderBy = { bid_count: "desc" };
-      break;
-    case "created_at":
-    default:
-      orderBy = { created_at: "desc" };
-  }
+  let products;
 
-  const products = await prisma.product.findMany({
-    where,
-    skip,
-    orderBy,
-    take: limit,
-    include: {
-      seller: {
-        select: { id: true, full_name: true, email: true },
+  // Nếu sort theo price, lấy tất cả products rồi sort trong JavaScript
+  if (isPriceSort) {
+    // Lấy tất cả products matching conditions (không paginate ngay)
+    const allProducts = await prisma.product.findMany({
+      where,
+      include: {
+        seller: {
+          select: { id: true, full_name: true, email: true },
+        },
+        category: {
+          select: { id: true, name: true },
+        },
+        current_bidder: {
+          select: { id: true, full_name: true },
+        },
       },
-      category: {
-        select: { id: true, name: true },
+    });
+
+    // Sort theo max(current_price, start_price)
+    allProducts.sort((a, b) => {
+      const priceA = Math.max(a.current_price, a.start_price);
+      const priceB = Math.max(b.current_price, b.start_price);
+      return sort === "price_asc" ? priceA - priceB : priceB - priceA;
+    });
+
+    // Paginate sau khi sort
+    products = allProducts.slice(skip, skip + limit);
+  } else {
+    // Sort bình thường - dùng Prisma query
+    let orderBy;
+    switch (sort) {
+      case "end_time_asc":
+        orderBy = { end_time: "asc" };
+        break;
+      case "end_time_desc":
+        orderBy = { end_time: "desc" };
+        break;
+      case "bid_count":
+        orderBy = { bid_count: "desc" };
+        break;
+      case "created_at":
+      default:
+        orderBy = { created_at: "desc" };
+    }
+
+    products = await prisma.product.findMany({
+      where,
+      skip,
+      orderBy,
+      take: limit,
+      include: {
+        seller: {
+          select: { id: true, full_name: true, email: true },
+        },
+        category: {
+          select: { id: true, name: true },
+        },
+        current_bidder: {
+          select: { id: true, full_name: true },
+        },
       },
-      current_bidder: {
-        select: { id: true, full_name: true },
-      },
-    },
-  });
+    });
+  }
 
   const totalItems = await prisma.product.count({ where });
   const totalPages = Math.ceil(totalItems / limit);
@@ -742,61 +813,82 @@ const getAllProductsAdmin = async ({
     where.category_id = { in: categoryIds };
   }
 
-  const searchTerm = q?.trim();
+  const searchTerm = formatSearchTerm(q);
+  const isPriceSort = sort === "price_asc" || sort === "price_desc";
+
+  // Full-text search: Sử dụng Prisma full-text search API
   if (searchTerm) {
     where.OR = [
-      { name: { equals: searchTerm, mode: "insensitive" } },
-      { name: { startsWith: searchTerm + " ", mode: "insensitive" } },
-      { name: { endsWith: " " + searchTerm, mode: "insensitive" } },
-      { name: { contains: " " + searchTerm + " ", mode: "insensitive" } },
-      { description: { equals: searchTerm, mode: "insensitive" } },
-      { description: { startsWith: searchTerm + " ", mode: "insensitive" } },
-      { description: { endsWith: " " + searchTerm, mode: "insensitive" } },
-      {
-        description: { contains: " " + searchTerm + " ", mode: "insensitive" },
-      },
+      { name: { search: searchTerm } },
+      { description: { search: searchTerm } },
     ];
   }
 
-  let orderBy;
-  switch (sort) {
-    case "price_asc":
-      orderBy = { current_price: "asc" };
-      break;
-    case "price_desc":
-      orderBy = { current_price: "desc" };
-      break;
-    case "end_time_asc":
-      orderBy = { end_time: "asc" };
-      break;
-    case "end_time_desc":
-      orderBy = { end_time: "desc" };
-      break;
-    case "bid_count":
-      orderBy = { bid_count: "desc" };
-      break;
-    case "created_at":
-    default:
-      orderBy = { created_at: "desc" };
-  }
+  let products;
 
-  const products = await prisma.product.findMany({
-    where,
-    skip,
-    orderBy,
-    take: limit,
-    include: {
-      seller: {
-        select: { id: true, full_name: true, email: true },
+  // Nếu sort theo price, lấy tất cả products rồi sort trong JavaScript
+  if (isPriceSort) {
+    // Lấy tất cả products matching conditions (không paginate ngay)
+    const allProducts = await prisma.product.findMany({
+      where,
+      include: {
+        seller: {
+          select: { id: true, full_name: true, email: true },
+        },
+        category: {
+          select: { id: true, name: true },
+        },
+        current_bidder: {
+          select: { id: true, full_name: true },
+        },
       },
-      category: {
-        select: { id: true, name: true },
+    });
+
+    // Sort theo max(current_price, start_price)
+    allProducts.sort((a, b) => {
+      const priceA = Math.max(a.current_price, a.start_price);
+      const priceB = Math.max(b.current_price, b.start_price);
+      return sort === "price_asc" ? priceA - priceB : priceB - priceA;
+    });
+
+    // Paginate sau khi sort
+    products = allProducts.slice(skip, skip + limit);
+  } else {
+    // Sort bình thường - dùng Prisma query
+    let orderBy;
+    switch (sort) {
+      case "end_time_asc":
+        orderBy = { end_time: "asc" };
+        break;
+      case "end_time_desc":
+        orderBy = { end_time: "desc" };
+        break;
+      case "bid_count":
+        orderBy = { bid_count: "desc" };
+        break;
+      case "created_at":
+      default:
+        orderBy = { created_at: "desc" };
+    }
+
+    products = await prisma.product.findMany({
+      where,
+      skip,
+      orderBy,
+      take: limit,
+      include: {
+        seller: {
+          select: { id: true, full_name: true, email: true },
+        },
+        category: {
+          select: { id: true, name: true },
+        },
+        current_bidder: {
+          select: { id: true, full_name: true },
+        },
       },
-      current_bidder: {
-        select: { id: true, full_name: true },
-      },
-    },
-  });
+    });
+  }
 
   const totalItems = await prisma.product.count({ where });
   const totalPages = Math.ceil(totalItems / limit);
