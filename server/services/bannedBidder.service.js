@@ -66,26 +66,36 @@ const banBidderFromProduct = async (productId, bidderId, sellerId) => {
     },
   });
 
-  // 5. If banned bidder is current highest bidder, revert to second highest
+  // 5. If banned bidder is current highest bidder, revert to next valid bidder
   if (product.current_bidder_id === bidderId) {
-    // Find the second highest bidder (excluding the banned one)
+    // Fetch ALL banned bidders for this product
+    const allBanned = await prisma.bannedBidder.findMany({
+      where: { product_id: productId },
+      select: { bidder_id: true },
+    });
+
+    // Create a Set of banned IDs (including the one we just banned)
+    const bannedIds = new Set(allBanned.map((b) => b.bidder_id));
+    bannedIds.add(bidderId);
+
+    // Find the next highest bidder who IS NOT banned
     const validBids = product.bid_histories.filter(
-      (bid) => bid.user_id !== bidderId,
+      (bid) => !bannedIds.has(bid.user_id)
     );
 
     if (validBids.length > 0) {
       // Get the highest valid bid
-      const secondHighestBid = validBids[0];
+      const nextHighestBid = validBids[0];
 
       await prisma.product.update({
         where: { id: productId },
         data: {
-          current_bidder_id: secondHighestBid.user_id,
-          current_price: secondHighestBid.bid_price,
+          current_bidder_id: nextHighestBid.user_id,
+          current_price: nextHighestBid.bid_price,
         },
       });
     } else {
-      // No other bids, revert to start price
+      // No other valid bids, revert to start price
       await prisma.product.update({
         where: { id: productId },
         data: {
