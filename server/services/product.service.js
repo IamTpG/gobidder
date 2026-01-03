@@ -733,6 +733,85 @@ const getProductsBySellerId = async ({
   return response;
 };
 
+/**
+ * Buy Now functionality
+ * @param {Int} productId
+ * @param {Int} userId
+ */
+const buyNow = async (productId, userId) => {
+  // 1. Get product details
+  const product = await prisma.product.findUnique({
+    where: { id: productId },
+    include: {
+      seller: true,
+    },
+  });
+
+  if (!product) {
+    throw new Error("Product not found");
+  }
+
+  // 2. Validations
+  if (product.status !== "Active") {
+    throw new Error("Product is not active");
+  }
+
+  if (new Date(product.end_time) <= new Date()) {
+    throw new Error("Auction has already ended");
+  }
+
+  if (!product.buy_now_price) {
+    throw new Error("This product does not have a Buy Now price");
+  }
+
+  if (product.seller_id === userId) {
+    throw new Error("Seller cannot buy their own product");
+  }
+
+  // Check if user is banned from this product (re-using logic if needed, or simple check)
+  const isBanned = await prisma.bannedBidder.findUnique({
+    where: {
+      product_id_bidder_id: {
+        product_id: productId,
+        bidder_id: userId,
+      },
+    },
+  });
+
+  if (isBanned) {
+    throw new Error("You are banned from this product");
+  }
+
+  // 3. Execute Buy Now
+  // Update product: Set current_price = buy_now_price, current_bidder = userId, end_time = NOW
+  const now = new Date();
+
+  const updatedProduct = await prisma.product.update({
+    where: { id: productId },
+    data: {
+      current_price: product.buy_now_price,
+      current_bidder_id: userId,
+      end_time: now, // End auction immediately
+      bid_count: { increment: 1 }, // Count this as a bid/action
+    },
+    include: {
+      seller: { select: { id: true, full_name: true, email: true } },
+      current_bidder: { select: { id: true, full_name: true, email: true } },
+    },
+  });
+
+  // 4. Create BidHistory entry for the record
+  await prisma.bidHistory.create({
+    data: {
+      product_id: productId,
+      user_id: userId,
+      bid_price: product.buy_now_price,
+    },
+  });
+
+  return updatedProduct;
+};
+
 // ========== ADMIN SERVICES ==========
 
 // Lấy tất cả sản phẩm (Admin only - bao gồm tất cả status)
@@ -1083,6 +1162,7 @@ module.exports = {
   getProductsBySellerId,
   appendDescription,
   getAllProductsAdmin,
+  buyNow,
   updateProductAdmin,
   deleteProductAdmin,
   updateExpiredProducts,

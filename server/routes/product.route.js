@@ -114,6 +114,13 @@ router.post(
   productController.answerQuestion
 );
 
+// Buy Now (Authenticated)
+router.post(
+  "/:id/buy-now",
+  passport.authenticate("jwt", { session: false }),
+  productController.buyNow
+);
+
 router.post(
   "/",
   passport.authenticate("jwt", { session: false }),

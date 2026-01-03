@@ -47,6 +47,8 @@ const ProductInfoSidebar = ({
   const isAuctionEnded = new Date() > new Date(product.auctionEndDate);
 
   const [showConfirm, setShowConfirm] = React.useState(false);
+  const [showBuyNowConfirm, setShowBuyNowConfirm] = React.useState(false);
+  const [isBuying, setIsBuying] = React.useState(false);
 
   // Helper render User Card (Seller/Bidder)
   const UserInfoCard = ({ title, data, isHighlight = false }) => (
@@ -78,6 +80,23 @@ const ProductInfoSidebar = ({
   const handleConfirmBid = () => {
     setShowConfirm(false);
     onPlaceBid();
+  };
+
+  const handleConfirmBuyNow = async () => {
+    try {
+      setIsBuying(true);
+      const { buyNow } = require("../../services/api");
+      await buyNow(product.id);
+
+      if (onFinishPayment) {
+        await onFinishPayment();
+      }
+    } catch (error) {
+      console.error("Buy Now failed", error);
+    } finally {
+      setIsBuying(false);
+      setShowBuyNowConfirm(false);
+    }
   };
 
   return (
@@ -270,17 +289,31 @@ const ProductInfoSidebar = ({
                 if (!isBanned) {
                   return (
                     <>
-                      <BidControls
-                        currentBid={Number(product.currentBid)}
-                        startPrice={Number(product.startPrice)}
-                        bidAmount={bidAmount}
-                        onBidChange={onBidChange}
-                        onBid={() => setShowConfirm(true)}
-                        minBidIncrement={Number(product.stepPrice)}
-                        disabled={isBidding || isBanned || isCheckingBan}
-                        isBidding={isBidding}
-                        label="Place Bid"
-                      />
+                      <div className="space-y-3">
+                        <BidControls
+                          currentBid={Number(product.currentBid)}
+                          startPrice={Number(product.startPrice)}
+                          bidAmount={bidAmount}
+                          onBidChange={onBidChange}
+                          onBid={() => setShowConfirm(true)}
+                          minBidIncrement={Number(product.stepPrice)}
+                          disabled={isBidding || isBanned || isCheckingBan}
+                          isBidding={isBidding}
+                          label="Place Bid"
+                        />
+                        {product.buyNowPrice && (
+                          <Button
+                            variant="primary"
+                            onClick={() => setShowBuyNowConfirm(true)}
+                            className="w-full"
+                            disabled={isBidding || isBuying}
+                          >
+                            {isBuying
+                              ? "Processing..."
+                              : `Buy Now for ${formatPrice(product.buyNowPrice)}`}
+                          </Button>
+                        )}
+                      </div>
                       {!user && (
                         <button
                           onClick={onNavigateToAuth}
@@ -318,6 +351,18 @@ const ProductInfoSidebar = ({
         message={`Are you sure you want to place a bid of ${formatPrice(bidAmount)}?`}
         confirmText="Place Bid"
         confirmVariant="primary"
+      />
+
+      {/* Confirm Dialog for Buy Now */}
+      <ConfirmDialog
+        isOpen={showBuyNowConfirm}
+        onClose={() => setShowBuyNowConfirm(false)}
+        onConfirm={handleConfirmBuyNow}
+        title="Confirm Buy Now"
+        message={`Are you sure you want to buy this product immediately for ${formatPrice(product.buyNowPrice)}?`}
+        confirmText="Buy Now"
+        confirmVariant="primary"
+        isLoading={isBuying}
       />
     </div>
   );

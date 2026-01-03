@@ -18,7 +18,7 @@ export const getProductById = async (id) => {
 export const createProductQuestion = async (productId, questionData) => {
   const response = await api.post(
     `/products/${productId}/questions`,
-    questionData,
+    questionData
   );
   return response.data;
 };
@@ -26,11 +26,11 @@ export const createProductQuestion = async (productId, questionData) => {
 export const answerProductQuestion = async (
   productId,
   questionId,
-  answerData,
+  answerData
 ) => {
   const response = await api.post(
     `/products/${productId}/questions/${questionId}/answer`,
-    answerData,
+    answerData
   );
   return response.data;
 };
@@ -44,6 +44,11 @@ export const getMyAutoBid = async (productId) => {
   const response = await api.get(`/bid-history/me/product/${productId}`, {
     productId,
   });
+  return response.data;
+};
+
+export const buyNow = async (productId) => {
+  const response = await api.post(`/products/${productId}/buy-now`);
   return response.data;
 };
 
@@ -80,7 +85,7 @@ export default api;
 // Transaction endpoints (simulated payments)
 export const createTransactionForProduct = async (productId) => {
   const response = await api.post(
-    `/transactions/create-for-product/${productId}`,
+    `/transactions/create-for-product/${productId}`
   );
   return response.data;
 };
@@ -101,7 +106,7 @@ export const uploadPayment = async (transactionId, formData) => {
     formData,
     {
       headers: { "Content-Type": "multipart/form-data" },
-    },
+    }
   );
   return response.data;
 };
@@ -112,14 +117,14 @@ export const uploadShipping = async (transactionId, formData) => {
     formData,
     {
       headers: { "Content-Type": "multipart/form-data" },
-    },
+    }
   );
   return response.data;
 };
 
 export const confirmReceipt = async (transactionId) => {
   const response = await api.post(
-    `/transactions/${transactionId}/confirm-receipt`,
+    `/transactions/${transactionId}/confirm-receipt`
   );
   return response.data;
 };
@@ -139,7 +144,7 @@ export const fetchTransactionMessages = async (transactionId) => {
 export const sendTransactionMessage = async (transactionId, payload) => {
   const response = await api.post(
     `/transactions/${transactionId}/messages`,
-    payload,
+    payload
   );
   return response.data;
 };
@@ -147,7 +152,7 @@ export const sendTransactionMessage = async (transactionId, payload) => {
 export const postTransactionRating = async (transactionId, payload) => {
   const response = await api.post(
     `/transactions/${transactionId}/rating`,
-    payload,
+    payload
   );
   return response.data;
 };

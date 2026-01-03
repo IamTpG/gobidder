@@ -1019,6 +1019,45 @@ const deleteProductAdmin = async (req, res) => {
   }
 };
 
+// Buy Now
+const buyNow = async (req, res) => {
+  try {
+    const productId = parseInt(req.params.id);
+    const userId = req.user.id;
+
+    if (isNaN(productId) || productId <= 0) {
+      return res.status(400).json({ message: "Invalid product ID" });
+    }
+
+    const start = Date.now();
+    const result = await productService.buyNow(productId, userId);
+
+    console.log(
+      `[BuyNow] Product ${productId} bought by User ${userId} in ${
+        Date.now() - start
+      }ms`
+    );
+
+    // Send email notification (async)
+    const { sendMail } = require("../utils/utils");
+    if (result.seller && result.seller.email) {
+      sendMail({
+        to: result.seller.email,
+        subject: `Your product "${result.name}" has been sold via Buy Now!`,
+        text: `Congratulations! Your product "${result.name}" has been purchased instantly by ${result.current_bidder.full_name} for ${result.current_price}. Please proceed to transaction details.`,
+      }).catch((err) => console.error("BuyNow email error:", err));
+    }
+
+    return res.status(200).json({
+      message: "Product purchased successfully!",
+      data: result,
+    });
+  } catch (error) {
+    console.error("Error in buyNow:", error);
+    return res.status(400).json({ message: error.message });
+  }
+};
+
 module.exports = {
   getProducts,
   getProductById,
@@ -1037,4 +1076,5 @@ module.exports = {
   getProductByIdAdmin,
   updateProductAdmin,
   deleteProductAdmin,
+  buyNow,
 };
