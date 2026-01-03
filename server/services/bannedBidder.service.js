@@ -66,45 +66,52 @@ const banBidderFromProduct = async (productId, bidderId, sellerId) => {
     },
   });
 
-  // 5. If banned bidder is current highest bidder, revert to next valid bidder
-  if (product.current_bidder_id === bidderId) {
-    // Fetch ALL banned bidders for this product
-    const allBanned = await prisma.bannedBidder.findMany({
-      where: { product_id: productId },
-      select: { bidder_id: true },
-    });
+  // 5. Calculate valid bids and new winner if necessary
 
-    // Create a Set of banned IDs (including the one we just banned)
-    const bannedIds = new Set(allBanned.map((b) => b.bidder_id));
-    bannedIds.add(bidderId);
+  // Fetch ALL banned bidders for this product
+  const allBanned = await prisma.bannedBidder.findMany({
+    where: { product_id: productId },
+    select: { bidder_id: true },
+  });
 
-    // Find the next highest bidder who IS NOT banned
-    const validBids = product.bid_histories.filter(
-      (bid) => !bannedIds.has(bid.user_id)
-    );
+  // Create a Set of banned IDs (including the one we just banned if not yet in DB, though it is created in step 4)
+  const bannedIds = new Set(allBanned.map((b) => b.bidder_id));
+  bannedIds.add(bidderId);
 
-    if (validBids.length > 0) {
-      // Get the highest valid bid
-      const nextHighestBid = validBids[0];
+  // Find valid bids (excluding ALL banned users)
+  const validBids = product.bid_histories.filter(
+    (bid) => !bannedIds.has(bid.user_id)
+  );
 
-      await prisma.product.update({
-        where: { id: productId },
-        data: {
-          current_bidder_id: nextHighestBid.user_id,
-          current_price: nextHighestBid.bid_price,
-        },
-      });
-    } else {
-      // No other valid bids, revert to start price
-      await prisma.product.update({
-        where: { id: productId },
-        data: {
-          current_bidder_id: null,
-          current_price: product.start_price,
-        },
-      });
-    }
+  const updateData = {
+    bid_count: validBids.length,
+  };
+
+  // If banned bidder was the current winner, OR if we just want to ensure consistency,
+  // we check the top valid bid to determine the new leader.
+  // Actually, we should only change leader if the current leader is banned.
+  // But since we have the full valid list, we can just enforce the top valid bid as the leader.
+  // This covers the case where the leader was banned, AND accidental inconsistencies.
+
+  if (validBids.length > 0) {
+    const nextHighestBid = validBids[0];
+
+    // Only update if the leader is different or price is different (though usually price follows leader)
+    // But simplest is to just set it to the top valid bid.
+    // Wait, if the top valid bid is ALREADY the current leader, this is a no-op for those fields, which is fine.
+    updateData.current_bidder_id = nextHighestBid.user_id;
+    updateData.current_price = nextHighestBid.bid_price;
+  } else {
+    // No valid bids left
+    updateData.current_bidder_id = null;
+    updateData.current_price = product.start_price;
   }
+
+  // Perform the update
+  await prisma.product.update({
+    where: { id: productId },
+    data: updateData,
+  });
 
   // 6. Delete any auto-bid from banned bidder
   await prisma.autoBid.deleteMany({
