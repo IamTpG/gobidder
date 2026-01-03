@@ -20,12 +20,12 @@ const useBanBidder = () => {
         bidderId,
       });
 
-      setSuccess(response.data?.message || "Bidder banned successfully");
+      setSuccess(response.data?.message || "Bidder rejected successfully");
       return response.data;
     } catch (err) {
       const errorMsg =
         err.response?.data?.message ||
-        "Failed to ban bidder. Please try again.";
+        "Failed to reject bidder. Please try again.";
       setError(errorMsg);
       throw new Error(errorMsg);
     } finally {

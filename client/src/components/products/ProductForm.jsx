@@ -4,6 +4,7 @@ import { Editor } from "@tinymce/tinymce-react";
 
 import Button from "../common/Button";
 import Spinner from "../common/Spinner";
+import { formatNumberInput, parseNumberInput } from "../../utils/formatters";
 
 export default function ProductForm({
   initialValues = {},
@@ -18,18 +19,21 @@ export default function ProductForm({
   // Khởi tạo state dựa trên initialValues (cho Edit) hoặc mặc định (cho Create)
   const [name, setName] = useState(initialValues.name || "");
   const [description, setDescription] = useState(
-    initialValues.description || "",
+    initialValues.description || ""
   );
   const [startPrice, setStartPrice] = useState(initialValues.startPrice || "");
   const [stepPrice, setStepPrice] = useState(initialValues.stepPrice || "");
   const [buyNowPrice, setBuyNowPrice] = useState(
-    initialValues.buyNowPrice || "",
+    initialValues.buyNowPrice || ""
   );
   const [categoryId, setCategoryId] = useState(initialValues.categoryId || "");
   const [endTime, setEndTime] = useState(initialValues.endTime || "");
   const [autoRenew, setAutoRenew] = useState(initialValues.autoRenew || false);
   const [allowUnratedBidders, setAllowUnratedBidders] = useState(
-    initialValues.allowUnratedBidders || false,
+    initialValues.allowUnratedBidders || false
+  );
+  const [allowLowRatingBidders, setAllowLowRatingBidders] = useState(
+    initialValues.allowLowRatingBidders !== false
   );
 
   // Image handling
@@ -52,6 +56,7 @@ export default function ProductForm({
       setAutoRenew(initialValues.autoRenew || false);
       setImages(initialValues.images || []);
       setAllowUnratedBidders(initialValues.allowUnratedBidders || false);
+      setAllowLowRatingBidders(initialValues.allowLowRatingBidders !== false);
       // Description thường không update lại trong Edit theo yêu cầu của bạn, nhưng nếu cần thì thêm vào đây
     }
   }, [initialValues]);
@@ -119,7 +124,7 @@ export default function ProductForm({
       setFileLabel(
         next.length > 0
           ? `${next.length} file${next.length > 1 ? "s" : ""} selected`
-          : "No files selected",
+          : "No files selected"
       );
       return next;
     });
@@ -141,7 +146,7 @@ export default function ProductForm({
       setFileLabel(
         next.length > 0
           ? `${next.length} file${next.length > 1 ? "s" : ""} selected`
-          : "No files selected",
+          : "No files selected"
       );
       return next;
     });
@@ -161,6 +166,7 @@ export default function ProductForm({
       endTime,
       autoRenew,
       allowUnratedBidders,
+      allowLowRatingBidders,
       images, // Dùng cho Edit (JSON payload)
       filesToUpload, // Dùng cho Create (Multipart form)
     };
@@ -253,13 +259,15 @@ export default function ProductForm({
             Start Price
           </label>
           <input
-            type="number"
-            step="0.01"
+            type="text"
             className={`border border-gray-300 p-3 w-full rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
               isEditMode && hasBids ? "bg-gray-100 cursor-not-allowed" : ""
             }`}
-            value={startPrice}
-            onChange={(e) => setStartPrice(e.target.value)}
+            value={formatNumberInput(startPrice)}
+            onChange={(e) => {
+              const val = parseNumberInput(e.target.value);
+              if (/^\d*\.?\d{0,2}$/.test(val)) setStartPrice(val);
+            }}
             disabled={isEditMode && hasBids}
           />
           {errors.startPrice && (
@@ -271,13 +279,15 @@ export default function ProductForm({
             Step Price
           </label>
           <input
-            type="number"
-            step="0.01"
+            type="text"
             className={`border border-gray-300 p-3 w-full rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
               isEditMode && hasBids ? "bg-gray-100 cursor-not-allowed" : ""
             }`}
-            value={stepPrice}
-            onChange={(e) => setStepPrice(e.target.value)}
+            value={formatNumberInput(stepPrice)}
+            onChange={(e) => {
+              const val = parseNumberInput(e.target.value);
+              if (/^\d*\.?\d{0,2}$/.test(val)) setStepPrice(val);
+            }}
             disabled={isEditMode && hasBids}
           />
           {errors.stepPrice && (
@@ -289,13 +299,15 @@ export default function ProductForm({
             Buy Now Price (Optional)
           </label>
           <input
-            type="number"
-            step="0.01"
+            type="text"
             className={`border border-gray-300 p-3 w-full rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
               isEditMode && hasBids ? "bg-gray-100 cursor-not-allowed" : ""
             }`}
-            value={buyNowPrice}
-            onChange={(e) => setBuyNowPrice(e.target.value)}
+            value={formatNumberInput(buyNowPrice)}
+            onChange={(e) => {
+              const val = parseNumberInput(e.target.value);
+              if (/^\d*\.?\d{0,2}$/.test(val)) setBuyNowPrice(val);
+            }}
             disabled={isEditMode && hasBids}
           />
           {errors.buyNowPrice && (
@@ -424,6 +436,20 @@ export default function ProductForm({
             className={`text-gray-700 ${isEditMode && hasBids ? "opacity-50" : ""}`}
           >
             Allow unrated bidders to bid on this product
+          </label>
+        </div>
+        <div className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            checked={allowLowRatingBidders}
+            onChange={(e) => setAllowLowRatingBidders(e.target.checked)}
+            className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
+            disabled={isEditMode && hasBids}
+          />
+          <label
+            className={`text-gray-700 ${isEditMode && hasBids ? "opacity-50" : ""}`}
+          >
+            Allow bidders with rating below 80% to bid on this product
           </label>
         </div>
       </div>

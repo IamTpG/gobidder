@@ -132,15 +132,33 @@ export const RatingStep = ({ tx, user, onRefresh, onError, onSuccess }) => {
             </div>
           ) : (
             <div className="p-4 border rounded-lg bg-white max-w-md shadow-sm">
-              <div className="text-sm font-medium mb-2">
-                Rating:{" "}
-                <span
-                  className={
-                    score === "Positive" ? "text-green-600" : "text-red-600"
-                  }
-                >
-                  {score}
-                </span>
+              <div className="flex gap-4 mb-3">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="ratingScore"
+                    value="Positive"
+                    checked={score === "Positive"}
+                    onChange={(e) => setScore(e.target.value)}
+                    className="text-green-600 focus:ring-green-500"
+                  />
+                  <span className="text-sm font-medium text-green-700">
+                    Positive
+                  </span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="ratingScore"
+                    value="Negative"
+                    checked={score === "Negative"}
+                    onChange={(e) => setScore(e.target.value)}
+                    className="text-red-600 focus:ring-red-500"
+                  />
+                  <span className="text-sm font-medium text-red-700">
+                    Negative
+                  </span>
+                </label>
               </div>
               <textarea
                 className="w-full border p-2 rounded text-sm mb-3"

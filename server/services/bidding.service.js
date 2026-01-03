@@ -47,10 +47,102 @@ const placeAutoBid = async (userId, productId, inputMaxPrice) => {
       throw new Error("Auction has ended");
     }
 
+    // Kiểm tra xem người dùng có phải là unrated bidder không
+    // Unrated = rating_plus = 0 AND rating_minus = 0
+    const bidder = await tx.user.findUnique({
+      where: { id: userId },
+      select: {
+        rating_plus: true,
+        rating_minus: true,
+        email: true,
+        full_name: true,
+      },
+    });
+
+    if (!bidder) {
+      throw new Error("Bidder not found");
+    }
+
+    const isUnratedBidder =
+      bidder.rating_plus === 0 && bidder.rating_minus === 0;
+
+    // Nếu sản phẩm không cho phép unrated bidders và người này là unrated
+    if (!product.allow_no_rating_bid && isUnratedBidder) {
+      throw new Error("This product does not allow bidders with no ratings");
+    }
+
+    // Kiểm tra xem người dùng có rating dưới 80% không
+    // Rating = rating_plus / (rating_plus + rating_minus)
+    const totalRatings = bidder.rating_plus + bidder.rating_minus;
+    const ratingPercentage =
+      totalRatings > 0 ? (bidder.rating_plus / totalRatings) * 100 : 100;
+    const isLowRatingBidder = totalRatings > 0 && ratingPercentage < 80;
+
+    // Nếu sản phẩm không cho phép low rating bidders và người này có rating dưới 80%
+    if (!product.allow_low_rating_bid && isLowRatingBidder) {
+      throw new Error(
+        "This product does not allow bidders with rating below 80%"
+      );
+    }
+
+    // Check for correct price increment constraint (standard check)
+    // However, if it is a Buy Now (>= buy_now_price), we might skip step check?
+    // Usually Buy Now >= Start Price + steps? No, Buy Now is just a fixed price.
+    // But if they bid >= Buy Now, they are willing to pay Buy Now price.
+
+    // START: Buy Now Logic Upgrade
+    if (product.buy_now_price && maxPrice >= product.buy_now_price) {
+      const now = new Date();
+
+      // Update product to end immediately with Buy Now price
+      await tx.product.update({
+        where: { id: parseInt(productId) },
+        data: {
+          current_price: product.buy_now_price,
+          current_bidder_id: userId,
+          end_time: now, // End auction immediately
+          bid_count: { increment: 1 },
+        },
+      });
+
+      // Create history entry
+      await tx.bidHistory.create({
+        data: {
+          product_id: parseInt(productId),
+          user_id: userId,
+          bid_price: product.buy_now_price,
+        },
+      });
+
+      // Prepare return data
+      const previousBidder = product.current_bidder;
+
+      return {
+        message: "Buy Now successful",
+        currentPrice: product.buy_now_price.toString(),
+        winnerId: userId,
+        isExtended: false,
+        emailData: {
+          shouldSend: true,
+          productName: product.name,
+          sellerEmail: product.seller.email,
+          sellerName: product.seller.full_name,
+          bidderEmail: bidder.email,
+          bidderName: bidder.full_name,
+          newPrice: product.buy_now_price.toString(),
+          previousBidderEmail: previousBidder?.email,
+          previousBidderName: previousBidder?.full_name,
+          previousBidderId: previousBidder?.id,
+          newWinnerId: userId,
+        },
+      };
+    }
+    // END: Buy Now Logic
+
     // Kiểm tra giá sàn hợp lệ (Phải lớn hơn giá hiện tại + bước giá)
     // Lưu ý: Nếu chưa có ai đặt, giá phải >= giá khởi điểm
     const minRequiredPrice =
-      product.current_price === 0n
+      product.current_price === 0
         ? product.start_price
         : product.current_price + product.step_price;
 
@@ -63,9 +155,6 @@ const placeAutoBid = async (userId, productId, inputMaxPrice) => {
     const previousBidder = product.current_bidder;
 
     // Lưu hoặc Cập nhật AutoBid của User (Upsert)
-    // Cần lấy luôn thông tin User để gửi email
-    const bidder = await tx.user.findUnique({ where: { id: userId } });
-    if (!bidder) throw new Error("Bidder not found");
 
     await tx.autoBid.upsert({
       where: {

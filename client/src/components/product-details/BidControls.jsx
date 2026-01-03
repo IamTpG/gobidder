@@ -1,7 +1,7 @@
 import React from "react";
-
 import Button from "../common/Button";
 import Spinner from "../common/Spinner";
+import { formatNumberInput, parseNumberInput } from "../../utils/formatters";
 
 const BidControls = ({
   currentBid,
@@ -32,19 +32,23 @@ const BidControls = ({
               $
             </span>
             <input
-              type="number"
-              value={bidAmount}
-              onChange={(e) => onBidChange(Number(e.target.value))}
+              type="text"
+              value={formatNumberInput(bidAmount)}
+              onChange={(e) => {
+                const val = parseNumberInput(e.target.value);
+                if (/^\d*\.?\d{0,2}$/.test(val)) {
+                  onBidChange(val);
+                }
+              }}
               className="w-full pl-8 pr-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-[#00B289] focus:ring-0 font-semibold text-gray-900 transition-colors"
               placeholder="Enter amount"
-              min={minBid}
               disabled={disabled}
             />
           </div>
 
           <Button
             onClick={onBid}
-            disabled={disabled || bidAmount < minBid}
+            disabled={disabled || Number(bidAmount) < minBid}
             variant="primary"
             className="px-6 whitespace-nowrap"
           >
@@ -71,7 +75,7 @@ const BidControls = ({
               >
                 ${amount.toLocaleString()}
               </button>
-            ),
+            )
           )}
         </div>
       </div>

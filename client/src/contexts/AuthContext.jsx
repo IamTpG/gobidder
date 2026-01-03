@@ -24,9 +24,31 @@ export const AuthProvider = ({ children }) => {
     if (raw) {
       try {
         const cachedUser = JSON.parse(raw);
+        // Set cached user temporarily to prevent localStorage deletion
+        // API will update it with fresh data (including ratings) shortly
         if (isMounted) setUser(cachedUser);
+
+        // Refresh user data from API to get latest fields (like ratings)
+        api
+          .get("/users/me")
+          .then((response) => {
+            if (isMounted) setUser(response.data);
+          })
+          .catch((error) => {
+            console.error("Failed to refresh user data:", error);
+            // If refresh fails (e.g., token expired), clear cached user
+            if (error.response?.status === 401) {
+              if (isMounted) setUser(null);
+              localStorage.removeItem("auth:user");
+            }
+            // Otherwise keep using cached user as fallback
+          })
+          .finally(() => {
+            if (isMounted) setLoading(false);
+          });
       } catch {
         localStorage.removeItem("auth:user");
+        setLoading(false);
       }
     } else {
       checkAuthStatusAfterRedirect();
@@ -37,16 +59,27 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   useEffect(() => {
-    if (user) localStorage.setItem("auth:user", JSON.stringify(user));
-    else localStorage.removeItem("auth:user");
+    // Only save to localStorage if user has rating fields (complete data from API)
+    // This prevents saving incomplete cached data
+    const ratingPlus = user?.rating_plus ?? user?.ratingPlus;
+    const ratingMinus = user?.rating_minus ?? user?.ratingMinus;
+
+    if (user && ratingPlus !== undefined && ratingMinus !== undefined) {
+      localStorage.setItem("auth:user", JSON.stringify(user));
+    } else if (!user) {
+      localStorage.removeItem("auth:user");
+    }
+    // Don't save if user exists but missing rating fields (incomplete cached data)
   }, [user]);
 
   const checkAuthStatusAfterRedirect = async () => {
     setLoading(true);
     try {
-      const response = await api.get("/auth/status");
-      const userData = response.data.user;
-      setUser(userData);
+      await api.get("/auth/status");
+      // Fetch full profile (including ratings) immediately
+      const response = await api.get("/users/me");
+      setUser(response.data);
+      // We don't save to localStorage here manually because the useEffect will match the data and save it automatically
       window.history.replaceState({}, document.title, window.location.pathname);
     } catch (error) {
       setUser(null);
@@ -133,7 +166,7 @@ export const AuthProvider = ({ children }) => {
 
   const value = useMemo(
     () => ({ user, loading, login, register, logout, verifyOtp, refreshUser }),
-    [user, loading],
+    [user, loading]
   );
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

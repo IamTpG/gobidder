@@ -112,7 +112,7 @@ const changeUserPassword = async (userId, { currentPassword, newPassword }) => {
 
   if (!user || !user.password_hash) {
     throw new Error(
-      "Password change is only available for email/password accounts",
+      "Password change is only available for email/password accounts"
     );
   }
 
@@ -149,7 +149,7 @@ const requestEmailChangeService = async (userId, { newEmail, password }) => {
 
   if (!user || !user.password_hash) {
     throw new Error(
-      "Email change is only available for email/password accounts",
+      "Email change is only available for email/password accounts"
     );
   }
 
@@ -204,7 +204,7 @@ const requestEmailChangeService = async (userId, { newEmail, password }) => {
 const confirmEmailChangeService = async (
   userId,
   currentEmail,
-  { newEmail, otp },
+  { newEmail, otp }
 ) => {
   const normalizedEmail = normalizeEmail(newEmail);
 
@@ -352,7 +352,7 @@ const requestSellerUpgrade = async (userId) => {
 
   if (user.role === "ExpiredSeller") {
     throw new Error(
-      "Please wait until all your products are sold/expired before requesting seller upgrade again",
+      "Please wait until all your products are sold/expired before requesting seller upgrade again"
     );
   }
 
@@ -498,7 +498,7 @@ const revertExpiredSellers = async () => {
         console.error(`Failed to process seller ${seller.id}:`, error);
         return { id: seller.id, success: false, error: error.message };
       }
-    }),
+    })
   );
 
   // Also check ExpiredSellers without products and downgrade them
@@ -530,7 +530,7 @@ const revertExpiredSellers = async () => {
         console.error(`Failed to cleanup ExpiredSeller ${user.id}:`, error);
         return { id: user.id, success: false, error: error.message };
       }
-    }),
+    })
   );
 
   const successCount = results.filter((r) => r.success).length;
@@ -588,7 +588,7 @@ const createUser = async ({ full_name, email, password, role }) => {
 
 const updateUser = async (
   id,
-  { full_name, email, role, password, address, birthdate },
+  { full_name, email, role, password, address, birthdate }
 ) => {
   const userId = parseInt(id);
   const user = await prisma.user.findUnique({ where: { id: userId } });

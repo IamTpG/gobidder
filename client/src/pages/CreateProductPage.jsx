@@ -24,6 +24,8 @@ export default function CreateProductPage() {
       data.append("categoryId", formData.categoryId);
       data.append("endTime", new Date(formData.endTime).toISOString());
       data.append("autoRenew", formData.autoRenew);
+      data.append("allowUnratedBidders", formData.allowUnratedBidders);
+      data.append("allowLowRatingBidders", formData.allowLowRatingBidders);
 
       // Quan trọng: Append file gốc vào FormData
       formData.filesToUpload.forEach((file) => {

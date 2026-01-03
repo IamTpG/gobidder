@@ -11,6 +11,7 @@ import Badge from "../common/Badge";
 import CountdownTimer from "../common/CountdownTimer";
 import Button from "../common/Button";
 import { HeartIcon } from "../common/Icons";
+import ConfirmDialog from "../common/ConfirmDialog";
 
 const ProductInfoSidebar = ({
   product,
@@ -45,6 +46,11 @@ const ProductInfoSidebar = ({
     user && product.currentBidder && user.id === product.currentBidder.id;
   const isAuctionEnded = new Date() > new Date(product.auctionEndDate);
 
+  const [showConfirm, setShowConfirm] = React.useState(false);
+  const [showBuyNowConfirm, setShowBuyNowConfirm] = React.useState(false);
+  const [showBuyNowSuggestion, setShowBuyNowSuggestion] = React.useState(false);
+  const [isBuying, setIsBuying] = React.useState(false);
+
   // Helper render User Card (Seller/Bidder)
   const UserInfoCard = ({ title, data, isHighlight = false }) => (
     <div
@@ -67,10 +73,32 @@ const ProductInfoSidebar = ({
       <p
         className={`text-sm font-bold ${isHighlight ? "text-primary-dark" : "text-gray-900"}`}
       >
-        {isHighlight && isWinner ? "You (Current Leader)" : data.name}
+        {isHighlight ? "You (Current Leader)" : data.name}
       </p>
     </div>
   );
+
+  const handleConfirmBid = () => {
+    setShowConfirm(false);
+    onPlaceBid();
+  };
+
+  const handleConfirmBuyNow = async () => {
+    try {
+      setIsBuying(true);
+      const { buyNow } = require("../../services/api");
+      await buyNow(product.id);
+
+      if (onFinishPayment) {
+        await onFinishPayment();
+      }
+    } catch (error) {
+      console.error("Buy Now failed", error);
+    } finally {
+      setIsBuying(false);
+      setShowBuyNowConfirm(false);
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -109,7 +137,7 @@ const ProductInfoSidebar = ({
               ...product.currentBidder,
               name: maskUserName(product.currentBidder.name),
             }}
-            isHighlight={true}
+            isHighlight={isWinner}
           />
         )}
         {myAutoBidPrice > 0 && (
@@ -173,7 +201,7 @@ const ProductInfoSidebar = ({
             <div className="space-y-3">
               {isBanned && (
                 <div className="p-4 text-sm text-red-800 bg-red-50 border border-red-300 rounded-lg font-medium">
-                  ⚠️ You have been banned from bidding on this product by the
+                  You have been rejected from bidding on this product by the
                   seller.
                 </div>
               )}
@@ -188,29 +216,132 @@ const ProductInfoSidebar = ({
                 </div>
               )}
 
-              {!isBanned && (
-                <>
-                  <BidControls
-                    currentBid={Number(product.currentBid)}
-                    startPrice={Number(product.startPrice)}
-                    bidAmount={bidAmount}
-                    onBidChange={onBidChange}
-                    onBid={onPlaceBid}
-                    minBidIncrement={Number(product.stepPrice)}
-                    disabled={isBidding || isBanned || isCheckingBan}
-                    isBidding={isBidding}
-                    label="Place Bid"
-                  />
-                  {!user && (
-                    <button
-                      onClick={onNavigateToAuth}
-                      className="w-full text-xs text-primary underline"
-                    >
-                      Login to bid
-                    </button>
-                  )}
-                </>
-              )}
+              {/* Check if user is unrated and product doesn't allow unrated bidders */}
+              {(() => {
+                if (!user) {
+                  return null; // User not logged in
+                }
+
+                // Check if user rating data is loaded.
+                // Check if user rating data is loaded.
+                // Backend reverted to snake_case (rating_plus), so we need to handle that.
+                const userRatingPlus =
+                  user?.rating_plus ?? user?.ratingPlus ?? 0;
+                const userRatingMinus =
+                  user?.rating_minus ?? user?.ratingMinus ?? 0;
+
+                const totalRatings = userRatingPlus + userRatingMinus;
+                const ratingPercentage =
+                  totalRatings > 0
+                    ? (userRatingPlus / totalRatings) * 100
+                    : 100;
+                const isUnratedUser = totalRatings === 0;
+                const productDisallowsUnrated =
+                  product.allowUnratedBidders === false;
+                const shouldBlockUnrated =
+                  isUnratedUser && productDisallowsUnrated;
+
+                // Check if user has low rating (below 80%)
+                const isLowRatingUser =
+                  totalRatings > 0 && ratingPercentage < 80;
+                const productDisallowsLowRating =
+                  product.allowLowRatingBidders === false;
+                const shouldBlockLowRating =
+                  isLowRatingUser && productDisallowsLowRating;
+
+                // DEBUG LOG
+                console.log("🔍 RATING CHECK:", {
+                  user: {
+                    ratingPlus: userRatingPlus,
+                    ratingMinus: userRatingMinus,
+                    original: user,
+                  },
+                  product: {
+                    allowUnratedBidders: product.allowUnratedBidders,
+                    allowLowRatingBidders: product.allowLowRatingBidders,
+                  },
+                  calculated: {
+                    totalRatings,
+                    ratingPercentage: ratingPercentage.toFixed(2) + "%",
+                    isUnratedUser,
+                    isLowRatingUser,
+                    shouldBlockUnrated,
+                    shouldBlockLowRating,
+                  },
+                });
+
+                // Show warning for unrated users
+                if (shouldBlockUnrated) {
+                  return (
+                    <div className="p-4 text-sm text-amber-800 bg-amber-50 border border-amber-300 rounded-lg font-medium">
+                      This seller doesn't allow bidders with no ratings. Please
+                      complete some transactions to earn ratings before bidding
+                      on this product.
+                    </div>
+                  );
+                }
+
+                // Show warning for low-rated users
+                if (shouldBlockLowRating) {
+                  return (
+                    <div className="p-4 text-sm text-amber-800 bg-amber-50 border border-amber-300 rounded-lg font-medium">
+                      This seller doesn't allow bidders with rating below 80%.
+                      Your current rating is {ratingPercentage.toFixed(0)}%.
+                      Please improve your rating to bid on this product.
+                    </div>
+                  );
+                }
+
+                // Only show bid controls if not banned, not unrated-blocked, and not low-rating-blocked
+                if (!isBanned) {
+                  return (
+                    <>
+                      <div className="space-y-3">
+                        <BidControls
+                          currentBid={Number(product.currentBid)}
+                          startPrice={Number(product.startPrice)}
+                          bidAmount={bidAmount}
+                          onBidChange={onBidChange}
+                          onBid={() => {
+                            if (
+                              product.buyNowPrice &&
+                              Number(bidAmount) >= Number(product.buyNowPrice)
+                            ) {
+                              setShowBuyNowSuggestion(true);
+                            } else {
+                              setShowConfirm(true);
+                            }
+                          }}
+                          minBidIncrement={Number(product.stepPrice)}
+                          disabled={isBidding || isBanned || isCheckingBan}
+                          isBidding={isBidding}
+                          label="Place Bid"
+                        />
+                        {product.buyNowPrice && (
+                          <Button
+                            variant="primary"
+                            onClick={() => setShowBuyNowConfirm(true)}
+                            className="w-full"
+                            disabled={isBidding || isBuying}
+                          >
+                            {isBuying
+                              ? "Processing..."
+                              : `Buy Now for ${formatPrice(product.buyNowPrice)}`}
+                          </Button>
+                        )}
+                      </div>
+                      {!user && (
+                        <button
+                          onClick={onNavigateToAuth}
+                          className="w-full text-xs text-primary underline"
+                        >
+                          Login to bid
+                        </button>
+                      )}
+                    </>
+                  );
+                }
+              })()}
             </div>
           ) : (
             <div className="bg-blue-50 border border-blue-100 p-4 rounded-lg text-center text-blue-800 text-sm">
@@ -226,6 +357,44 @@ const ProductInfoSidebar = ({
           )}
         </div>
       )}
+
+      {/* Confirm Dialog */}
+      <ConfirmDialog
+        isOpen={showConfirm}
+        onClose={() => setShowConfirm(false)}
+        onConfirm={handleConfirmBid}
+        title="Confirm Bid"
+        message={`Are you sure you want to place a bid of ${formatPrice(bidAmount)}?`}
+        confirmText="Place Bid"
+        confirmVariant="primary"
+      />
+
+      {/* Confirm Dialog for Buy Now */}
+      <ConfirmDialog
+        isOpen={showBuyNowConfirm}
+        onClose={() => setShowBuyNowConfirm(false)}
+        onConfirm={handleConfirmBuyNow}
+        title="Confirm Buy Now"
+        message={`Are you sure you want to buy this product immediately for ${formatPrice(product.buyNowPrice)}?`}
+        confirmText="Buy Now"
+        isLoading={isBuying}
+      />
+
+      {/* Suggest Buy Now Dialog */}
+      <ConfirmDialog
+        isOpen={showBuyNowSuggestion}
+        onClose={() => setShowBuyNowSuggestion(false)}
+        onConfirm={() => {
+          setShowBuyNowSuggestion(false);
+          // Directly trigger buy now
+          handleConfirmBuyNow();
+        }}
+        title="Suggestion"
+        message="You are placing a bid higher than the Buy Now price. Do you want to buy it immediately?"
+        confirmText="Yes, Buy Now"
+        cancelText="No, cancel"
+        confirmVariant="primary"
+      />
     </div>
   );
 };

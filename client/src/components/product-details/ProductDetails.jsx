@@ -105,7 +105,7 @@ const ProductDetails = ({ product, onRefresh }) => {
 
   const handlePlaceBid = async () => {
     if (isBanned) {
-      setBidError("You are banned from bidding on this product.");
+      setBidError("You are rejected from bidding on this product.");
       return;
     }
     if (!user) return navigate("/auth", { state: { from: location } });
@@ -115,7 +115,7 @@ const ProductDetails = ({ product, onRefresh }) => {
       setBidError(null);
       setBidSuccessMsg(null);
 
-      const result = await placeBid(product.id, bidAmount);
+      const result = await placeBid(product.id, Number(bidAmount));
 
       setBidSuccessMsg("Bid placed successfully!");
       if (Number(result.currentPrice) <= Number(product.currentBid)) {
@@ -141,7 +141,7 @@ const ProductDetails = ({ product, onRefresh }) => {
         productId: product.id,
         bidderId: banTarget.userId,
       });
-      setBanFeedback("Bidder has been banned and the auction updated.");
+      setBanFeedback("Bidder has been rejected and the auction updated.");
       setBanTarget(null);
       if (onRefresh) onRefresh();
     } catch (e) {
@@ -213,7 +213,7 @@ const ProductDetails = ({ product, onRefresh }) => {
       </div>
 
       {/* Transaction Rating Section */}
-      {product?.transaction && (
+      {product?.transaction && product.transaction.status === "Completed" && (
         <TransactionRating
           transaction={product.transaction}
           user={user}
@@ -304,8 +304,8 @@ const ProductDetails = ({ product, onRefresh }) => {
                           <button
                             onClick={() => openBanModal(bid)}
                             className="text-red-600 hover:text-red-800 text-2xl font-bold leading-none transition-colors"
-                            aria-label="Ban bidder"
-                            title="Ban this bidder"
+                            aria-label="Reject bidder"
+                            title="Reject this bidder"
                           >
                             ×
                           </button>
@@ -366,11 +366,12 @@ const ProductDetails = ({ product, onRefresh }) => {
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-md border-t-4 border-primary">
             <div className="p-6 space-y-4">
               <h3 className="text-lg font-semibold text-gray-900">
-                Ban bidder?
+                Reject bidder?
               </h3>
               <p className="text-sm text-gray-600">
-                Are you sure you want to ban {banTarget.user} from this auction?
-                They will no longer be able to place bids on this product.
+                Are you sure you want to reject {banTarget.user} from this
+                auction? They will no longer be able to place bids on this
+                product.
               </p>
               <div className="flex justify-end gap-3">
                 <button
@@ -384,7 +385,7 @@ const ProductDetails = ({ product, onRefresh }) => {
                   disabled={isBanning}
                   className="px-4 py-2 text-sm font-semibold text-white rounded-lg bg-primary hover:bg-primary/90 disabled:opacity-70"
                 >
-                  {isBanning ? "Banning..." : "Confirm Ban"}
+                  {isBanning ? "Rejecting..." : "Confirm Reject"}
                 </button>
               </div>
             </div>

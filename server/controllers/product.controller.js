@@ -2,6 +2,16 @@ const productService = require("../services/product.service");
 const { sendMail } = require("../utils/utils");
 const prisma = require("../config/prisma");
 const path = require("path");
+
+const hasMoreThanTwoDecimals = (value) => {
+  if (!value || value === "") return false;
+  const str = value.toString();
+  const decimalIndex = str.indexOf(".");
+  if (decimalIndex === -1) return false;
+  const decimalPart = str.substring(decimalIndex + 1);
+  return decimalPart.length > 2;
+};
+
 // Lấy tất cả sản phẩm
 const getProducts = async (req, res) => {
   try {
@@ -424,13 +434,13 @@ const answerQuestion = async (req, res) => {
       // Gửi tất cả email (không cần đợi)
       Promise.all(emailPromises).then(() => {
         console.log(
-          `[Email] Sent notifications to ${emailSet.size} recipient(s)`,
+          `[Email] Sent notifications to ${emailSet.size} recipient(s)`
         );
       });
     } catch (emailError) {
       console.error(
         "[Email Error] Failed to send notifications:",
-        emailError.message,
+        emailError.message
       );
       // Không return error - API vẫn thành công, chỉ email fail
     }
@@ -550,6 +560,8 @@ const create = async (req, res) => {
     categoryId,
     endTime,
     autoRenew,
+    allowUnratedBidders,
+    allowLowRatingBidders,
   } = req.body;
 
   // Lấy mảng tệp đã được Multer xử lý
@@ -579,6 +591,17 @@ const create = async (req, res) => {
   if (Number(startPrice) <= 0 || Number(stepPrice) <= 0) {
     if (files) deleteLocalFiles(files);
     return res.status(400).json({ message: "Prices must be positive numbers" });
+  }
+
+  if (
+    hasMoreThanTwoDecimals(startPrice) ||
+    hasMoreThanTwoDecimals(stepPrice) ||
+    hasMoreThanTwoDecimals(buyNowPrice)
+  ) {
+    if (files) deleteLocalFiles(files);
+    return res
+      .status(400)
+      .json({ message: "Prices cannot have more than 2 decimal places" });
   }
 
   if (new Date(endTime) <= new Date()) {
@@ -625,6 +648,8 @@ const create = async (req, res) => {
       categoryId: Number(categoryId), // Đảm bảo là số
       endTime,
       autoRenew: autoRenew === "true", // Chuyển chuỗi sang boolean
+      allowUnratedBidders: allowUnratedBidders === "true", // Chuyển chuỗi sang boolean
+      allowLowRatingBidders: allowLowRatingBidders !== "false", // Default to true unless explicitly set to "false"
     };
 
     const newProduct = await productService.createProduct(
@@ -660,6 +685,8 @@ const update = async (req, res) => {
     categoryId,
     endTime,
     autoRenew,
+    allowUnratedBidders,
+    allowLowRatingBidders,
     oldImages, // Array of URLs to keep
   } = req.body;
 
@@ -713,6 +740,16 @@ const update = async (req, res) => {
       return res.status(400).json({ message: "Prices must be positive" });
     }
 
+    if (
+      hasMoreThanTwoDecimals(startPrice) ||
+      hasMoreThanTwoDecimals(stepPrice) ||
+      hasMoreThanTwoDecimals(buyNowPrice)
+    ) {
+      return res
+        .status(400)
+        .json({ message: "Prices cannot have more than 2 decimal places" });
+    }
+
     // Validate EndTime
     if (new Date(endTime) <= new Date()) {
       return res
@@ -733,6 +770,10 @@ const update = async (req, res) => {
         categoryId: Number(categoryId),
         endTime: new Date(endTime),
         autoRenew: autoRenew === "true" || autoRenew === true,
+        allowUnratedBidders:
+          allowUnratedBidders === "true" || allowUnratedBidders === true,
+        allowLowRatingBidders:
+          allowLowRatingBidders !== "false" && allowLowRatingBidders !== false,
       }
     );
 
@@ -909,6 +950,16 @@ const updateProductAdmin = async (req, res) => {
     return res.status(400).json({ message: "Prices must be positive numbers" });
   }
 
+  if (
+    hasMoreThanTwoDecimals(startPrice) ||
+    hasMoreThanTwoDecimals(stepPrice) ||
+    hasMoreThanTwoDecimals(buyNowPrice)
+  ) {
+    return res
+      .status(400)
+      .json({ message: "Prices cannot have more than 2 decimal places" });
+  }
+
   // Validate EndTime (nếu có)
   if (endTime && new Date(endTime) <= new Date()) {
     return res.status(400).json({ message: "End time must be in the future" });
@@ -968,6 +1019,45 @@ const deleteProductAdmin = async (req, res) => {
   }
 };
 
+// Buy Now
+const buyNow = async (req, res) => {
+  try {
+    const productId = parseInt(req.params.id);
+    const userId = req.user.id;
+
+    if (isNaN(productId) || productId <= 0) {
+      return res.status(400).json({ message: "Invalid product ID" });
+    }
+
+    const start = Date.now();
+    const result = await productService.buyNow(productId, userId);
+
+    console.log(
+      `[BuyNow] Product ${productId} bought by User ${userId} in ${
+        Date.now() - start
+      }ms`
+    );
+
+    // Send email notification (async)
+    const { sendMail } = require("../utils/utils");
+    if (result.seller && result.seller.email) {
+      sendMail({
+        to: result.seller.email,
+        subject: `Your product "${result.name}" has been sold via Buy Now!`,
+        text: `Congratulations! Your product "${result.name}" has been purchased instantly by ${result.current_bidder.full_name} for ${result.current_price}. Please proceed to transaction details.`,
+      }).catch((err) => console.error("BuyNow email error:", err));
+    }
+
+    return res.status(200).json({
+      message: "Product purchased successfully!",
+      data: result,
+    });
+  } catch (error) {
+    console.error("Error in buyNow:", error);
+    return res.status(400).json({ message: error.message });
+  }
+};
+
 module.exports = {
   getProducts,
   getProductById,
@@ -986,4 +1076,5 @@ module.exports = {
   getProductByIdAdmin,
   updateProductAdmin,
   deleteProductAdmin,
+  buyNow,
 };

@@ -214,7 +214,7 @@ const getProductById = async (productId) => {
 
   // Tạo Set các bidder_id bị ban để filter nhanh
   const bannedBidderIds = new Set(
-    product.banned_bidders.map((banned) => banned.bidder_id),
+    product.banned_bidders.map((banned) => banned.bidder_id)
   );
 
   // Transform data để khớp với Frontend format
@@ -237,6 +237,8 @@ const getProductById = async (productId) => {
     bidCount: product.bid_count,
     status: product.status,
     autoRenew: product.auto_renew,
+    allowUnratedBidders: product.allow_no_rating_bid,
+    allowLowRatingBidders: product.allow_low_rating_bid,
 
     // Thông tin người bán
     seller: {
@@ -419,6 +421,8 @@ const createProduct = async (sellerId, data) => {
     categoryId,
     endTime,
     autoRenew,
+    allowUnratedBidders,
+    allowLowRatingBidders,
   } = data;
 
   // Chuyển đổi dữ liệu tiền tệ sang Number
@@ -444,6 +448,10 @@ const createProduct = async (sellerId, data) => {
       current_price: 0,
 
       auto_renew: autoRenew || false,
+      allow_no_rating_bid:
+        allowUnratedBidders !== undefined ? allowUnratedBidders : true,
+      allow_low_rating_bid:
+        allowLowRatingBidders !== undefined ? allowLowRatingBidders : true,
       status: "Active",
 
       seller_id: sellerId,
@@ -504,6 +512,14 @@ const updateProduct = async (productId, sellerId, data) => {
       category_id: data.categoryId,
       end_time: data.endTime,
       auto_renew: data.autoRenew,
+      allow_no_rating_bid:
+        data.allowUnratedBidders !== undefined
+          ? data.allowUnratedBidders
+          : product.allow_no_rating_bid,
+      allow_low_rating_bid:
+        data.allowLowRatingBidders !== undefined
+          ? data.allowLowRatingBidders
+          : product.allow_low_rating_bid,
     },
   });
 
@@ -788,6 +804,85 @@ const getProductsBySellerId = async ({
   return response;
 };
 
+/**
+ * Buy Now functionality
+ * @param {Int} productId
+ * @param {Int} userId
+ */
+const buyNow = async (productId, userId) => {
+  // 1. Get product details
+  const product = await prisma.product.findUnique({
+    where: { id: productId },
+    include: {
+      seller: true,
+    },
+  });
+
+  if (!product) {
+    throw new Error("Product not found");
+  }
+
+  // 2. Validations
+  if (product.status !== "Active") {
+    throw new Error("Product is not active");
+  }
+
+  if (new Date(product.end_time) <= new Date()) {
+    throw new Error("Auction has already ended");
+  }
+
+  if (!product.buy_now_price) {
+    throw new Error("This product does not have a Buy Now price");
+  }
+
+  if (product.seller_id === userId) {
+    throw new Error("Seller cannot buy their own product");
+  }
+
+  // Check if user is banned from this product (re-using logic if needed, or simple check)
+  const isBanned = await prisma.bannedBidder.findUnique({
+    where: {
+      product_id_bidder_id: {
+        product_id: productId,
+        bidder_id: userId,
+      },
+    },
+  });
+
+  if (isBanned) {
+    throw new Error("You are banned from this product");
+  }
+
+  // 3. Execute Buy Now
+  // Update product: Set current_price = buy_now_price, current_bidder = userId, end_time = NOW
+  const now = new Date();
+
+  const updatedProduct = await prisma.product.update({
+    where: { id: productId },
+    data: {
+      current_price: product.buy_now_price,
+      current_bidder_id: userId,
+      end_time: now, // End auction immediately
+      bid_count: { increment: 1 }, // Count this as a bid/action
+    },
+    include: {
+      seller: { select: { id: true, full_name: true, email: true } },
+      current_bidder: { select: { id: true, full_name: true, email: true } },
+    },
+  });
+
+  // 4. Create BidHistory entry for the record
+  await prisma.bidHistory.create({
+    data: {
+      product_id: productId,
+      user_id: userId,
+      bid_price: product.buy_now_price,
+    },
+  });
+
+  return updatedProduct;
+};
+
 // ========== ADMIN SERVICES ==========
 
 // Lấy tất cả sản phẩm (Admin only - bao gồm tất cả status)
@@ -1048,10 +1143,10 @@ const updateExpiredProducts = async () => {
 
     // Phân loại sản phẩm theo có người thắng hay không
     const wonProducts = expiredProducts.filter(
-      (p) => p.current_bidder_id !== null,
+      (p) => p.current_bidder_id !== null
     );
     const expiredNoWinner = expiredProducts.filter(
-      (p) => p.current_bidder_id === null,
+      (p) => p.current_bidder_id === null
     );
 
     // Cập nhật sản phẩm có người thắng thành Won
@@ -1081,18 +1176,18 @@ const updateExpiredProducts = async () => {
         : { count: 0 };
 
     console.log(
-      `[Product Service] Updated ${wonResult.count} products to Won status, ${expiredResult.count} to Expired status`,
+      `[Product Service] Updated ${wonResult.count} products to Won status, ${expiredResult.count} to Expired status`
     );
 
     // Log chi tiết
     wonProducts.forEach((product) => {
       console.log(
-        `  - Won: Product ID ${product.id} (${product.name}) - Winner ID: ${product.current_bidder_id}`,
+        `  - Won: Product ID ${product.id} (${product.name}) - Winner ID: ${product.current_bidder_id}`
       );
     });
     expiredNoWinner.forEach((product) => {
       console.log(
-        `  - Expired: Product ID ${product.id} (${product.name}) - No winner`,
+        `  - Expired: Product ID ${product.id} (${product.name}) - No winner`
       );
     });
 
@@ -1118,20 +1213,27 @@ const ensureProductStatusIsValid = async (productId) => {
   try {
     const product = await prisma.product.findUnique({
       where: { id: productId },
-      select: { id: true, status: true, end_time: true },
+      select: {
+        id: true,
+        status: true,
+        end_time: true,
+        current_bidder_id: true,
+      },
     });
 
     if (!product) return null;
 
     // Nếu sản phẩm đang Active nhưng đã qua end_time thì cập nhật
     if (product.status === "Active" && product.end_time < new Date()) {
+      const newStatus = product.current_bidder_id ? "Won" : "Expired";
+
       const updatedProduct = await prisma.product.update({
         where: { id: productId },
-        data: { status: "Expired" },
+        data: { status: newStatus },
       });
 
       console.log(
-        `[Product Service] Updated product ${productId} to Expired status (real-time)`,
+        `[Product Service] Updated product ${productId} to ${newStatus} status (real-time)`
       );
       return updatedProduct;
     }
@@ -1159,6 +1261,7 @@ module.exports = {
   getProductsBySellerId,
   appendDescription,
   getAllProductsAdmin,
+  buyNow,
   updateProductAdmin,
   deleteProductAdmin,
   updateExpiredProducts,
