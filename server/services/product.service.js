@@ -214,7 +214,7 @@ const getProductById = async (productId) => {
 
   // Tạo Set các bidder_id bị ban để filter nhanh
   const bannedBidderIds = new Set(
-    product.banned_bidders.map((banned) => banned.bidder_id)
+    product.banned_bidders.map((banned) => banned.bidder_id),
   );
 
   // Transform data để khớp với Frontend format
@@ -696,14 +696,7 @@ const getProductsBySellerId = async ({
 
   // Filter theo status nếu có (mặc định lấy tất cả)
   if (status) {
-    // Nếu status là "Won", filter các sản phẩm có người thắng đấu giá
-    if (status === "Won") {
-      where.current_bidder_id = { not: null }; // Có người thắng
-      where.end_time = { lte: new Date() }; // Đã hết hạn
-      where.status = { not: "Removed" }; // Loại trừ sản phẩm đã bị gỡ
-    } else {
-      where.status = status;
-    }
+    where.status = status;
   }
 
   if (categoryId) {
@@ -1143,10 +1136,10 @@ const updateExpiredProducts = async () => {
 
     // Phân loại sản phẩm theo có người thắng hay không
     const wonProducts = expiredProducts.filter(
-      (p) => p.current_bidder_id !== null
+      (p) => p.current_bidder_id !== null,
     );
     const expiredNoWinner = expiredProducts.filter(
-      (p) => p.current_bidder_id === null
+      (p) => p.current_bidder_id === null,
     );
 
     // Cập nhật sản phẩm có người thắng thành Won
@@ -1176,18 +1169,18 @@ const updateExpiredProducts = async () => {
         : { count: 0 };
 
     console.log(
-      `[Product Service] Updated ${wonResult.count} products to Won status, ${expiredResult.count} to Expired status`
+      `[Product Service] Updated ${wonResult.count} products to Won status, ${expiredResult.count} to Expired status`,
     );
 
     // Log chi tiết
     wonProducts.forEach((product) => {
       console.log(
-        `  - Won: Product ID ${product.id} (${product.name}) - Winner ID: ${product.current_bidder_id}`
+        `  - Won: Product ID ${product.id} (${product.name}) - Winner ID: ${product.current_bidder_id}`,
       );
     });
     expiredNoWinner.forEach((product) => {
       console.log(
-        `  - Expired: Product ID ${product.id} (${product.name}) - No winner`
+        `  - Expired: Product ID ${product.id} (${product.name}) - No winner`,
       );
     });
 
@@ -1233,7 +1226,7 @@ const ensureProductStatusIsValid = async (productId) => {
       });
 
       console.log(
-        `[Product Service] Updated product ${productId} to ${newStatus} status (real-time)`
+        `[Product Service] Updated product ${productId} to ${newStatus} status (real-time)`,
       );
       return updatedProduct;
     }

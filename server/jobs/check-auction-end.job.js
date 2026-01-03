@@ -29,7 +29,7 @@ const checkAndProcessEndedAuctions = async () => {
       // Case 1: No bids => Expired, email Seller
       if (!product.current_bidder_id) {
         console.log(
-          `[CRON] Product ${product.id} ended with no bids. Sending email to seller.`
+          `[CRON] Product ${product.id} ended with no bids. Sending email to seller.`,
         );
 
         // Update status to Expired
@@ -46,15 +46,29 @@ const checkAndProcessEndedAuctions = async () => {
           html: `<p>Hello <strong>${product.seller.full_name}</strong>,</p><p>Your auction for "<strong>${product.name}</strong>" has ended with no bids.</p><p>Regards,<br>GoBidder Team</p>`,
         });
       }
-      // Case 2: Has bids => Sold
+      // Case 2: Has bids => Won
       else {
         console.log(
-          `[CRON] Product ${product.id} ended with winner ${product.current_bidder_id}. Updating to Sold.`
+          `[CRON] Product ${product.id} ended with winner ${product.current_bidder_id}. Updating to Won.`,
         );
 
         await prisma.product.update({
           where: { id: product.id },
-          data: { status: "Sold" },
+          data: { status: "Won" },
+        });
+
+        await sendMail({
+          to: product.seller.email,
+          subject: "Auction Ended - There is a winner",
+          text: `Hello ${product.seller.full_name},\n\nYour auction for "${product.name}" has ended with winner ${product.current_bidder.full_name}.\n\nRegards,\nGoBidder Team`,
+          html: `<p>Hello <strong>${product.seller.full_name}</strong>,</p><p>Your auction for "<strong>${product.name}</strong>" has ended with winner ${product.current_bidder.full_name}.</p><p>Regards,<br>GoBidder Team</p>`,
+        });
+
+        await sendMail({
+          to: product.current_bidder.email,
+          subject: "Auction Ended - You are the winner",
+          text: `Hello ${product.current_bidder.full_name},\n\nYour auction for "${product.name}" has ended and you are the winner.\n\nRegards,\nGoBidder Team`,
+          html: `<p>Hello <strong>${product.current_bidder.full_name}</strong>,</p><p>Your auction for "<strong>${product.name}</strong>" has ended and you are the winner.</p><p>Regards,<br>GoBidder Team</p>`,
         });
       }
     }

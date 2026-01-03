@@ -19,21 +19,21 @@ export default function ProductForm({
   // Khởi tạo state dựa trên initialValues (cho Edit) hoặc mặc định (cho Create)
   const [name, setName] = useState(initialValues.name || "");
   const [description, setDescription] = useState(
-    initialValues.description || ""
+    initialValues.description || "",
   );
   const [startPrice, setStartPrice] = useState(initialValues.startPrice || "");
   const [stepPrice, setStepPrice] = useState(initialValues.stepPrice || "");
   const [buyNowPrice, setBuyNowPrice] = useState(
-    initialValues.buyNowPrice || ""
+    initialValues.buyNowPrice || "",
   );
   const [categoryId, setCategoryId] = useState(initialValues.categoryId || "");
   const [endTime, setEndTime] = useState(initialValues.endTime || "");
   const [autoRenew, setAutoRenew] = useState(initialValues.autoRenew || false);
   const [allowUnratedBidders, setAllowUnratedBidders] = useState(
-    initialValues.allowUnratedBidders || false
+    initialValues.allowUnratedBidders || false,
   );
   const [allowLowRatingBidders, setAllowLowRatingBidders] = useState(
-    initialValues.allowLowRatingBidders !== false
+    initialValues.allowLowRatingBidders !== false,
   );
 
   // Image handling
@@ -124,7 +124,7 @@ export default function ProductForm({
       setFileLabel(
         next.length > 0
           ? `${next.length} file${next.length > 1 ? "s" : ""} selected`
-          : "No files selected"
+          : "No files selected",
       );
       return next;
     });
@@ -146,7 +146,7 @@ export default function ProductForm({
       setFileLabel(
         next.length > 0
           ? `${next.length} file${next.length > 1 ? "s" : ""} selected`
-          : "No files selected"
+          : "No files selected",
       );
       return next;
     });
@@ -327,7 +327,7 @@ export default function ProductForm({
             description.
           </p>
         )}
-        <div className="flex gap-2">
+        {/* <div className="flex gap-2">
           <input
             type="text"
             placeholder="Paste URL..."
@@ -344,7 +344,7 @@ export default function ProductForm({
           >
             Add
           </Button>
-        </div>
+        </div> */}
         <div className="flex items-center gap-3">
           <input
             id="product-file-input"

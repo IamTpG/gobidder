@@ -227,7 +227,7 @@ const ProductSection = ({
                 WebkitOverflowScrolling: "touch", // iOS momentum scrolling
               }}
             >
-              <div className="flex gap-3 sm:gap-4 md:gap-6">
+              <div className="flex gap-3 p-2 sm:gap-4 md:gap-6">
                 {items.map((item) => (
                   <div
                     key={item.id}
