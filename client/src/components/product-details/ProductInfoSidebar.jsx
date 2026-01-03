@@ -48,6 +48,7 @@ const ProductInfoSidebar = ({
 
   const [showConfirm, setShowConfirm] = React.useState(false);
   const [showBuyNowConfirm, setShowBuyNowConfirm] = React.useState(false);
+  const [showBuyNowSuggestion, setShowBuyNowSuggestion] = React.useState(false);
   const [isBuying, setIsBuying] = React.useState(false);
 
   // Helper render User Card (Seller/Bidder)
@@ -301,7 +302,16 @@ const ProductInfoSidebar = ({
                           startPrice={Number(product.startPrice)}
                           bidAmount={bidAmount}
                           onBidChange={onBidChange}
-                          onBid={() => setShowConfirm(true)}
+                          onBid={() => {
+                            if (
+                              product.buyNowPrice &&
+                              Number(bidAmount) >= Number(product.buyNowPrice)
+                            ) {
+                              setShowBuyNowSuggestion(true);
+                            } else {
+                              setShowConfirm(true);
+                            }
+                          }}
                           minBidIncrement={Number(product.stepPrice)}
                           disabled={isBidding || isBanned || isCheckingBan}
                           isBidding={isBidding}
@@ -367,8 +377,23 @@ const ProductInfoSidebar = ({
         title="Confirm Buy Now"
         message={`Are you sure you want to buy this product immediately for ${formatPrice(product.buyNowPrice)}?`}
         confirmText="Buy Now"
-        confirmVariant="primary"
         isLoading={isBuying}
+      />
+
+      {/* Suggest Buy Now Dialog */}
+      <ConfirmDialog
+        isOpen={showBuyNowSuggestion}
+        onClose={() => setShowBuyNowSuggestion(false)}
+        onConfirm={() => {
+          setShowBuyNowSuggestion(false);
+          // Directly trigger buy now
+          handleConfirmBuyNow();
+        }}
+        title="Suggestion"
+        message="You are placing a bid higher than the Buy Now price. Do you want to buy it immediately?"
+        confirmText="Yes, Buy Now"
+        cancelText="No, cancel"
+        confirmVariant="primary"
       />
     </div>
   );
