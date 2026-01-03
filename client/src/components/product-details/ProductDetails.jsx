@@ -213,7 +213,7 @@ const ProductDetails = ({ product, onRefresh }) => {
       </div>
 
       {/* Transaction Rating Section */}
-      {product?.transaction && (
+      {product?.transaction && product.transaction.status === "Completed" && (
         <TransactionRating
           transaction={product.transaction}
           user={user}
