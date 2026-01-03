@@ -61,11 +61,10 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     // Only save to localStorage if user has rating fields (complete data from API)
     // This prevents saving incomplete cached data
-    if (
-      user &&
-      user.ratingPlus !== undefined &&
-      user.ratingMinus !== undefined
-    ) {
+    const ratingPlus = user?.rating_plus ?? user?.ratingPlus;
+    const ratingMinus = user?.rating_minus ?? user?.ratingMinus;
+
+    if (user && ratingPlus !== undefined && ratingMinus !== undefined) {
       localStorage.setItem("auth:user", JSON.stringify(user));
     } else if (!user) {
       localStorage.removeItem("auth:user");

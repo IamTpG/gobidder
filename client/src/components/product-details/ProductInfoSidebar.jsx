@@ -200,7 +200,8 @@ const ProductInfoSidebar = ({
             <div className="space-y-3">
               {isBanned && (
                 <div className="p-4 text-sm text-red-800 bg-red-50 border border-red-300 rounded-lg font-medium">
-                  You have been banned from bidding on this product by the seller.
+                  You have been banned from bidding on this product by the
+                  seller.
                 </div>
               )}
               {bidError && (
@@ -221,14 +222,19 @@ const ProductInfoSidebar = ({
                 }
 
                 // Check if user rating data is loaded.
-                const totalRatings =
-                  (user?.ratingPlus || 0) + (user?.ratingMinus || 0);
+                // Check if user rating data is loaded.
+                // Backend reverted to snake_case (rating_plus), so we need to handle that.
+                const userRatingPlus =
+                  user?.rating_plus ?? user?.ratingPlus ?? 0;
+                const userRatingMinus =
+                  user?.rating_minus ?? user?.ratingMinus ?? 0;
+
+                const totalRatings = userRatingPlus + userRatingMinus;
                 const ratingPercentage =
                   totalRatings > 0
-                    ? ((user?.ratingPlus || 0) / totalRatings) * 100
+                    ? (userRatingPlus / totalRatings) * 100
                     : 100;
-                const isUnratedUser =
-                  (user.ratingPlus || 0) === 0 && (user.ratingMinus || 0) === 0;
+                const isUnratedUser = totalRatings === 0;
                 const productDisallowsUnrated =
                   product.allowUnratedBidders === false;
                 const shouldBlockUnrated =
@@ -245,8 +251,9 @@ const ProductInfoSidebar = ({
                 // DEBUG LOG
                 console.log("🔍 RATING CHECK:", {
                   user: {
-                    ratingPlus: user.ratingPlus,
-                    ratingMinus: user.ratingMinus,
+                    ratingPlus: userRatingPlus,
+                    ratingMinus: userRatingMinus,
+                    original: user,
                   },
                   product: {
                     allowUnratedBidders: product.allowUnratedBidders,

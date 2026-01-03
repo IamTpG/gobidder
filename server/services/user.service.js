@@ -31,33 +31,21 @@ const getMyProfile = async (userId) => {
     throw new Error("User not found");
   }
 
-  const {
-    password_hash,
-    google_id,
-    rating_plus,
-    rating_minus,
-    full_name,
-    created_at,
-    ...rest
-  } = user;
+  const { password_hash, google_id, ...rest } = user;
 
   // Tính toán rating score tổng hợp
-  const totalRatings = rating_plus + rating_minus;
+  const totalRatings = user.rating_plus + user.rating_minus;
   const ratingScore =
-    totalRatings > 0 ? ((rating_plus / totalRatings) * 100).toFixed(1) : 0;
-  const ratingDifference = rating_plus - rating_minus;
+    totalRatings > 0 ? ((user.rating_plus / totalRatings) * 100).toFixed(1) : 0;
+  const ratingDifference = user.rating_plus - user.rating_minus;
 
   return {
     ...rest,
-    fullName: full_name, // Transform to camelCase
-    createdAt: created_at, // Transform to camelCase
-    authProvider: google_id ? "google" : "local", // Transform to camelCase
-    canChangeCredentials: Boolean(password_hash), // Transform to camelCase
-    ratingPlus: rating_plus, // Transform to camelCase
-    ratingMinus: rating_minus, // Transform to camelCase
+    auth_provider: google_id ? "google" : "local",
+    can_change_credentials: Boolean(password_hash),
     rating: {
-      positive: rating_plus,
-      negative: rating_minus,
+      positive: user.rating_plus,
+      negative: user.rating_minus,
       total: totalRatings,
       score: parseFloat(ratingScore),
       difference: ratingDifference,
