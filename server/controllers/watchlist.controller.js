@@ -67,7 +67,10 @@ const removeFromWatchlist = async (req, res) => {
       return res.status(400).json({ message: "Invalid product ID" });
     }
 
-    const result = await watchlistService.removeFromWatchlist(userId, productId);
+    const result = await watchlistService.removeFromWatchlist(
+      userId,
+      productId,
+    );
 
     return res.status(200).json({
       message: result.message,
@@ -95,7 +98,10 @@ const checkWatchlist = async (req, res) => {
       return res.status(400).json({ message: "Invalid product ID" });
     }
 
-    const isInWatchlist = await watchlistService.isInWatchlist(userId, productId);
+    const isInWatchlist = await watchlistService.isInWatchlist(
+      userId,
+      productId,
+    );
 
     return res.status(200).json({
       isInWatchlist,

@@ -253,7 +253,6 @@ enum ProductStatus {
   Won
   Expired
   Removed
-  Won
 }
 
 enum RequestStatus {

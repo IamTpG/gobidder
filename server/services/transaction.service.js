@@ -114,7 +114,7 @@ const getTransactionById = async (id, userId, userRole) => {
 const buyerUploadPayment = async (
   transactionId,
   buyerId,
-  { shippingAddress, paymentInvoiceUrl }
+  { shippingAddress, paymentInvoiceUrl },
 ) => {
   const tx = await prisma.transaction.findUnique({
     where: { id: transactionId },
@@ -141,7 +141,7 @@ const buyerUploadPayment = async (
 const sellerConfirmShipping = async (
   transactionId,
   sellerId,
-  { shippingInvoiceUrl }
+  { shippingInvoiceUrl },
 ) => {
   const tx = await prisma.transaction.findUnique({
     where: { id: transactionId },
@@ -180,6 +180,12 @@ const buyerConfirmReceipt = async (transactionId, buyerId) => {
     data: {
       buyer_confirmed_at: new Date(),
       status: "Completed",
+
+      product: {
+        update: {
+          status: "Sold",
+        },
+      },
     },
   });
 
