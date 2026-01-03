@@ -1121,20 +1121,27 @@ const ensureProductStatusIsValid = async (productId) => {
   try {
     const product = await prisma.product.findUnique({
       where: { id: productId },
-      select: { id: true, status: true, end_time: true },
+      select: {
+        id: true,
+        status: true,
+        end_time: true,
+        current_bidder_id: true,
+      },
     });
 
     if (!product) return null;
 
     // Nếu sản phẩm đang Active nhưng đã qua end_time thì cập nhật
     if (product.status === "Active" && product.end_time < new Date()) {
+      const newStatus = product.current_bidder_id ? "Won" : "Expired";
+
       const updatedProduct = await prisma.product.update({
         where: { id: productId },
-        data: { status: "Expired" },
+        data: { status: newStatus },
       });
 
       console.log(
-        `[Product Service] Updated product ${productId} to Expired status (real-time)`
+        `[Product Service] Updated product ${productId} to ${newStatus} status (real-time)`
       );
       return updatedProduct;
     }

@@ -85,10 +85,64 @@ const placeAutoBid = async (userId, productId, inputMaxPrice) => {
       );
     }
 
+    // Check for correct price increment constraint (standard check)
+    // However, if it is a Buy Now (>= buy_now_price), we might skip step check?
+    // Usually Buy Now >= Start Price + steps? No, Buy Now is just a fixed price.
+    // But if they bid >= Buy Now, they are willing to pay Buy Now price.
+
+    // START: Buy Now Logic Upgrade
+    if (product.buy_now_price && maxPrice >= product.buy_now_price) {
+      const now = new Date();
+
+      // Update product to end immediately with Buy Now price
+      await tx.product.update({
+        where: { id: parseInt(productId) },
+        data: {
+          current_price: product.buy_now_price,
+          current_bidder_id: userId,
+          end_time: now, // End auction immediately
+          bid_count: { increment: 1 },
+        },
+      });
+
+      // Create history entry
+      await tx.bidHistory.create({
+        data: {
+          product_id: parseInt(productId),
+          user_id: userId,
+          bid_price: product.buy_now_price,
+        },
+      });
+
+      // Prepare return data
+      const previousBidder = product.current_bidder;
+
+      return {
+        message: "Buy Now successful",
+        currentPrice: product.buy_now_price.toString(),
+        winnerId: userId,
+        isExtended: false,
+        emailData: {
+          shouldSend: true,
+          productName: product.name,
+          sellerEmail: product.seller.email,
+          sellerName: product.seller.full_name,
+          bidderEmail: bidder.email,
+          bidderName: bidder.full_name,
+          newPrice: product.buy_now_price.toString(),
+          previousBidderEmail: previousBidder?.email,
+          previousBidderName: previousBidder?.full_name,
+          previousBidderId: previousBidder?.id,
+          newWinnerId: userId,
+        },
+      };
+    }
+    // END: Buy Now Logic
+
     // Kiểm tra giá sàn hợp lệ (Phải lớn hơn giá hiện tại + bước giá)
     // Lưu ý: Nếu chưa có ai đặt, giá phải >= giá khởi điểm
     const minRequiredPrice =
-      product.current_price === 0n
+      product.current_price === 0
         ? product.start_price
         : product.current_price + product.step_price;
 
