@@ -200,8 +200,7 @@ const ProductInfoSidebar = ({
             <div className="space-y-3">
               {isBanned && (
                 <div className="p-4 text-sm text-red-800 bg-red-50 border border-red-300 rounded-lg font-medium">
-                  ⚠️ You have been banned from bidding on this product by the
-                  seller.
+                  You have been banned from bidding on this product by the seller.
                 </div>
               )}
               {bidError && (
