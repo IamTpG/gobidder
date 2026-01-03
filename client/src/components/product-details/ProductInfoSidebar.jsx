@@ -137,7 +137,7 @@ const ProductInfoSidebar = ({
               ...product.currentBidder,
               name: maskUserName(product.currentBidder.name),
             }}
-            isHighlight={true}
+            isHighlight={isWinner}
           />
         )}
         {myAutoBidPrice > 0 && (
