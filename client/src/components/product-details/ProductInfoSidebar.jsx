@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 
 import BidControls from "./BidControls";
 import {
@@ -52,31 +53,52 @@ const ProductInfoSidebar = ({
   const [isBuying, setIsBuying] = React.useState(false);
 
   // Helper render User Card (Seller/Bidder)
-  const UserInfoCard = ({ title, data, isHighlight = false }) => (
-    <div
-      className={`rounded-xl px-4 py-3 border transition-all duration-300 ${
-        isHighlight
-          ? "bg-primary/5 border-primary shadow-sm"
-          : "bg-gray-50 border-gray-200"
-      }`}
-    >
-      <div className="flex justify-between items-start mb-2">
-        <p
-          className={`text-[10px] font-bold uppercase tracking-wider ${isHighlight ? "text-primary" : "text-gray-500"}`}
-        >
-          {title}
-        </p>
-        <Badge variant={isHighlight ? "success" : "lightPrimary"} size="xs">
-          Rating: {calculateRating(data.ratingPlus || 0, data.ratingMinus || 0)}
-        </Badge>
-      </div>
-      <p
-        className={`text-sm font-bold ${isHighlight ? "text-primary-dark" : "text-gray-900"}`}
+  const UserInfoCard = ({
+    title,
+    data,
+    isHighlight = false,
+    userId,
+    showLink = false,
+  }) => {
+    const nameContent = isHighlight ? "You (Current Leader)" : data.name;
+    const nameElement = showLink ? (
+      <Link
+        to={`/users/${userId}/ratings`}
+        className="hover:underline hover:text-primary transition-colors"
       >
-        {isHighlight ? "You (Current Leader)" : data.name}
-      </p>
-    </div>
-  );
+        {nameContent}
+      </Link>
+    ) : (
+      <span>{nameContent}</span>
+    );
+
+    return (
+      <div
+        className={`rounded-xl px-4 py-3 border transition-all duration-300 ${
+          isHighlight
+            ? "bg-primary/5 border-primary shadow-sm"
+            : "bg-gray-50 border-gray-200"
+        }`}
+      >
+        <div className="flex justify-between items-start mb-2">
+          <p
+            className={`text-[10px] font-bold uppercase tracking-wider ${isHighlight ? "text-primary" : "text-gray-500"}`}
+          >
+            {title}
+          </p>
+          <Badge variant={isHighlight ? "success" : "lightPrimary"} size="xs">
+            Rating:{" "}
+            {calculateRating(data.ratingPlus || 0, data.ratingMinus || 0)}
+          </Badge>
+        </div>
+        <p
+          className={`text-sm font-bold ${isHighlight ? "text-primary-dark" : "text-gray-900"}`}
+        >
+          {nameElement}
+        </p>
+      </div>
+    );
+  };
 
   const handleConfirmBid = () => {
     setShowConfirm(false);
@@ -128,16 +150,25 @@ const ProductInfoSidebar = ({
       {/* Meta Info (Date, Seller, Winner) */}
       <div className="space-y-2">
         {product.seller && (
-          <UserInfoCard title="Seller" data={product.seller} />
+          <UserInfoCard
+            title="Seller"
+            data={product.seller}
+            userId={product.seller.id}
+            showLink={true}
+          />
         )}
         {product.currentBidder && (
           <UserInfoCard
             title={isWinner ? "You are winning!" : "Current Highest Bidder"}
             data={{
               ...product.currentBidder,
-              name: maskUserName(product.currentBidder.name),
+              name: isSeller
+                ? product.currentBidder.name
+                : maskUserName(product.currentBidder.name),
             }}
             isHighlight={isWinner}
+            userId={product.currentBidder.id}
+            showLink={isSeller}
           />
         )}
         {myAutoBidPrice > 0 && (

@@ -13,6 +13,7 @@ import ProfilePage from "../pages/ProfilePage";
 import ProductsPage from "../pages/ProductsPage";
 import CreateProductPage from "../pages/CreateProductPage";
 import EditProductPage from "../pages/EditProductPage";
+import UserRatingsPage from "../pages/UserRatingsPage";
 import ProtectedRoute from "../components/routes/ProtectedRoute";
 import AdminRoute from "../components/routes/AdminRoute";
 import SellerRoute from "../components/routes/SellerRoute";
@@ -32,6 +33,7 @@ const AppRouter = () => {
         <Route path="products" element={<ProductsPage />} />
         <Route path="products/:id" element={<ProductDetailsPage />} />
         <Route path="transactions/:id" element={<TransactionPage />} />
+        <Route path="users/:userId/ratings" element={<UserRatingsPage />} />
 
         {/* Authentication Pages - Only accessible when not logged in */}
         <Route
