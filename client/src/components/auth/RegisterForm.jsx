@@ -39,7 +39,11 @@ const RegisterForm = () => {
     const newErrors = {};
     if (!form.name.trim()) newErrors.name = "Name is required";
     if (!form.email.trim()) newErrors.email = "Email is required";
-    if (!form.password) newErrors.password = "Password is required";
+    if (!form.password) {
+      newErrors.password = "Password is required";
+    } else if (form.password.length < 8) {
+      newErrors.password = "Password must be at least 8 characters";
+    }
     if (form.password !== form.confirmPassword)
       newErrors.confirmPassword = "Passwords do not match";
     if (!form.address.trim()) newErrors.address = "Address is required";
