@@ -60,6 +60,26 @@ const UserManagementPage = () => {
     fetchUsers();
   };
 
+  const handleResetPassword = async () => {
+    try {
+      const response = await api.post(
+        `/users/${selectedUser.id}/reset-password`
+      );
+      showNotification(
+        response.data?.message || "Password reset successfully and email sent",
+        "success"
+      );
+      return true;
+    } catch (error) {
+      console.error("Error resetting password:", error);
+      showNotification(
+        error.response?.data?.message || "Failed to reset password",
+        "error"
+      );
+      return false;
+    }
+  };
+
   // Delete Confirmation State
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
@@ -317,6 +337,7 @@ const UserManagementPage = () => {
           user={selectedUser}
           onClose={() => setIsModalOpen(false)}
           onSave={selectedUser ? handleUpdateUser : handleCreateUser}
+          onResetPassword={handleResetPassword}
         />
       )}
 
@@ -340,5 +361,4 @@ const UserManagementPage = () => {
     </div>
   );
 };
-
 export default UserManagementPage;

@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { X, Eye, EyeOff } from "lucide-react";
+import { X, Eye, EyeOff, RotateCcw } from "lucide-react";
 
 import Spinner from "../common/Spinner";
 import ConfirmDialog from "../common/ConfirmDialog";
 import Button from "../common/Button";
 
-const UserForm = ({ user, onClose, onSave }) => {
+const UserForm = ({ user, onClose, onSave, onResetPassword }) => {
   const [formData, setFormData] = useState({
     full_name: "",
     email: "",
@@ -18,6 +18,8 @@ const UserForm = ({ user, onClose, onSave }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showBanConfirm, setShowBanConfirm] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
 
   const isEditMode = !!user;
 
@@ -82,6 +84,12 @@ const UserForm = ({ user, onClose, onSave }) => {
         {error && (
           <div className="mb-4 rounded bg-red-100 p-2 text-red-700">
             {error}
+          </div>
+        )}
+
+        {successMessage && (
+          <div className="mb-4 rounded bg-green-100 p-2 text-green-700">
+            {successMessage}
           </div>
         )}
 
@@ -187,6 +195,17 @@ const UserForm = ({ user, onClose, onSave }) => {
           </div>
 
           <div className="flex justify-end gap-2">
+            {isEditMode && user.role !== "Banned" && (
+              <button
+                type="button"
+                onClick={() => setShowResetConfirm(true)}
+                className="mr-auto flex items-center gap-1 rounded px-3 py-2 text-yellow-600 hover:bg-yellow-50"
+                title="Reset Password"
+              >
+                <RotateCcw size={18} />
+                <span className="text-sm font-medium">Reset Password</span>
+              </button>
+            )}
             <button
               type="button"
               onClick={onClose}
@@ -210,6 +229,26 @@ const UserForm = ({ user, onClose, onSave }) => {
         message="Are you sure you want to ban this user? They will not be able to log in or perform any actions."
         confirmText="Yes, Ban User"
         confirmVariant="danger"
+        isLoading={loading}
+      />
+
+      <ConfirmDialog
+        isOpen={showResetConfirm}
+        onClose={() => setShowResetConfirm(false)}
+        onConfirm={async () => {
+          setLoading(true);
+          const success = await onResetPassword();
+          setLoading(false);
+          setShowResetConfirm(false);
+          if (success) {
+            setSuccessMessage("Password reset successfully and email sent.");
+            setTimeout(() => setSuccessMessage(""), 5000);
+          }
+        }}
+        title="Reset Password"
+        message="Are you sure you want to reset this user's password? A new random password will be generated and sent to their email."
+        confirmText="Yes, Reset Password"
+        confirmVariant="warning"
         isLoading={loading}
       />
     </div>

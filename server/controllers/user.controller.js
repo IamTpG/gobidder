@@ -107,7 +107,7 @@ const confirmEmailChange = async (req, res) => {
       {
         newEmail,
         otp,
-      },
+      }
     );
 
     res.clearCookie("reset_token", {
@@ -125,7 +125,7 @@ const confirmEmailChange = async (req, res) => {
         role: result.user.role,
       },
       "access_token",
-      "1d",
+      "1d"
     );
 
     return res.json(result);
@@ -402,6 +402,20 @@ const deleteUser = async (req, res) => {
   }
 };
 
+const adminResetUserPassword = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const result = await userService.adminResetUserPassword(id);
+    return res.json(result);
+  } catch (err) {
+    if (err.message === "User not found") {
+      return res.status(404).json({ message: err.message });
+    }
+    console.error(err);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
 // Lấy tất cả ratings mà user nhận được
 const getMyRatings = async (req, res) => {
   try {
@@ -435,4 +449,5 @@ module.exports = {
   updateUser,
   deleteUser,
   getMyRatings,
+  adminResetUserPassword,
 };
