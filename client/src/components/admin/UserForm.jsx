@@ -19,6 +19,7 @@ const UserForm = ({ user, onClose, onSave, onResetPassword }) => {
   const [error, setError] = useState("");
   const [showBanConfirm, setShowBanConfirm] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
 
   const isEditMode = !!user;
 
@@ -83,6 +84,12 @@ const UserForm = ({ user, onClose, onSave, onResetPassword }) => {
         {error && (
           <div className="mb-4 rounded bg-red-100 p-2 text-red-700">
             {error}
+          </div>
+        )}
+
+        {successMessage && (
+          <div className="mb-4 rounded bg-green-100 p-2 text-green-700">
+            {successMessage}
           </div>
         )}
 
@@ -230,9 +237,13 @@ const UserForm = ({ user, onClose, onSave, onResetPassword }) => {
         onClose={() => setShowResetConfirm(false)}
         onConfirm={async () => {
           setLoading(true);
-          await onResetPassword();
+          const success = await onResetPassword();
           setLoading(false);
           setShowResetConfirm(false);
+          if (success) {
+            setSuccessMessage("Password reset successfully and email sent.");
+            setTimeout(() => setSuccessMessage(""), 5000);
+          }
         }}
         title="Reset Password"
         message="Are you sure you want to reset this user's password? A new random password will be generated and sent to their email."

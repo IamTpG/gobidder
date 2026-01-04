@@ -69,12 +69,14 @@ const UserManagementPage = () => {
         response.data?.message || "Password reset successfully and email sent",
         "success"
       );
+      return true;
     } catch (error) {
       console.error("Error resetting password:", error);
       showNotification(
         error.response?.data?.message || "Failed to reset password",
         "error"
       );
+      return false;
     }
   };
 
