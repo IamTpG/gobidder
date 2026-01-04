@@ -98,6 +98,7 @@ export const AuthProvider = ({ children }) => {
       return data;
     } catch (error) {
       let errorMsg = "Unknown login error.";
+
       if (error.response) {
         if (typeof error.response.data === "string") {
           errorMsg = error.response.data;
@@ -108,8 +109,6 @@ export const AuthProvider = ({ children }) => {
         }
       }
 
-      if (errorMsg === "Unauthorized")
-        errorMsg = "Incorrect email or password.";
       throw new Error(errorMsg);
     }
   };
