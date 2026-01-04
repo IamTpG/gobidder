@@ -60,6 +60,26 @@ const UserManagementPage = () => {
     fetchUsers();
   };
 
+  const handleResetPassword = async () => {
+    try {
+      const response = await api.post(
+        `/users/${selectedUser.id}/reset-password`,
+      );
+      showNotification(
+        response.data?.message || "Password reset successfully and email sent",
+        "success",
+      );
+      return true;
+    } catch (error) {
+      console.error("Error resetting password:", error);
+      showNotification(
+        error.response?.data?.message || "Failed to reset password",
+        "error",
+      );
+      return false;
+    }
+  };
+
   // Delete Confirmation State
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
@@ -85,7 +105,7 @@ const UserManagementPage = () => {
       console.error("Error deleting user:", error);
       showNotification(
         error.response?.data?.message || "Failed to ban/delete user",
-        "error"
+        "error",
       );
     } finally {
       closeDeleteConfirm();
@@ -235,7 +255,7 @@ const UserManagementPage = () => {
                       <td className="px-6 py-4">
                         <span
                           className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${getRoleBadgeColor(
-                            user.role
+                            user.role,
                           )}`}
                         >
                           {user.role}
@@ -317,6 +337,7 @@ const UserManagementPage = () => {
           user={selectedUser}
           onClose={() => setIsModalOpen(false)}
           onSave={selectedUser ? handleUpdateUser : handleCreateUser}
+          onResetPassword={handleResetPassword}
         />
       )}
 
@@ -340,5 +361,4 @@ const UserManagementPage = () => {
     </div>
   );
 };
-
 export default UserManagementPage;

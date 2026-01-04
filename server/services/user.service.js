@@ -816,6 +816,41 @@ const getUserRatings = async (userId) => {
   };
 };
 
+// Admin reset password cho user
+const adminResetUserPassword = async (targetUserId) => {
+  const user = await prisma.user.findUnique({
+    where: { id: parseInt(targetUserId) },
+  });
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  // Generate random password (6 chars, alphanumeric)
+  const chars =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let newPassword = "";
+  for (let i = 0; i < 6; i++) {
+    newPassword += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+  await prisma.user.update({
+    where: { id: parseInt(targetUserId) },
+    data: { password_hash: hashedPassword },
+  });
+
+  const { sendMail } = require("../utils/utils");
+  await sendMail({
+    to: user.email,
+    subject: "Your GoBidder Password Has Been Reset",
+    text: `Your password has been reset by an administrator.\n\nYour new password is: ${newPassword}\n\nPlease login and change your password immediately.`,
+  });
+
+  return { message: "Password reset successfully and email sent to user." };
+};
+
 module.exports = {
   getMyProfile,
   getAllUsers,
@@ -836,4 +871,5 @@ module.exports = {
   deleteUser,
   getMyRatings,
   getUserRatings,
+  adminResetUserPassword,
 };

@@ -158,4 +158,12 @@ router.put(
   userController.updateUser,
 );
 
+// Reset mật khẩu người dùng (Admin)
+router.post(
+  "/:id/reset-password",
+  passport.authenticate("jwt", { session: false }),
+  authorizeRoles("Admin"),
+  userController.adminResetUserPassword,
+);
+
 module.exports = router;

@@ -97,7 +97,17 @@ export const AuthProvider = ({ children }) => {
       setUser(data);
       return data;
     } catch (error) {
-      let errorMsg = error.response?.data?.message || "Unknown login error.";
+      let errorMsg = "Unknown login error.";
+      if (error.response) {
+        if (typeof error.response.data === "string") {
+          errorMsg = error.response.data;
+        } else if (error.response.data?.message) {
+          errorMsg = error.response.data.message;
+        } else {
+          errorMsg = error.response.statusText || "Unknown login error.";
+        }
+      }
+
       if (errorMsg === "Unauthorized")
         errorMsg = "Incorrect email or password.";
       throw new Error(errorMsg);
@@ -166,7 +176,7 @@ export const AuthProvider = ({ children }) => {
 
   const value = useMemo(
     () => ({ user, loading, login, register, logout, verifyOtp, refreshUser }),
-    [user, loading]
+    [user, loading],
   );
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

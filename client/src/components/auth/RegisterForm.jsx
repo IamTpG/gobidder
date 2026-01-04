@@ -23,23 +23,44 @@ const RegisterForm = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [errors, setErrors] = useState({});
   const [captchaToken, setCaptchaToken] = useState("");
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
+    // Clear error for this field
+    if (errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: null }));
+    }
+  };
+
+  const validate = () => {
+    const newErrors = {};
+    if (!form.name.trim()) newErrors.name = "Name is required";
+    if (!form.email.trim()) newErrors.email = "Email is required";
+    if (!form.password) {
+      newErrors.password = "Password is required";
+    } else if (form.password.length < 8) {
+      newErrors.password = "Password must be at least 8 characters";
+    }
+    if (form.password !== form.confirmPassword)
+      newErrors.confirmPassword = "Passwords do not match";
+    if (!form.address.trim()) newErrors.address = "Address is required";
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    setErrors({});
+
+    if (!validate()) return;
 
     if (!captchaToken) {
       setError("Please verify that you are not a robot.");
-      return;
-    }
-    if (form.password !== form.confirmPassword) {
-      setError("Passwords do not match.");
       return;
     }
 
@@ -89,7 +110,7 @@ const RegisterForm = () => {
       </h2>
       <div className="w-20 h-1 bg-slate-300 mx-auto mb-6 rounded-full"></div>
 
-      <form onSubmit={handleSubmit} className="space-y-5">
+      <form onSubmit={handleSubmit} className="space-y-5" noValidate>
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-2">
             Name <span className="text-red-500">*</span>
@@ -99,10 +120,16 @@ const RegisterForm = () => {
             name="name"
             value={form.name}
             onChange={handleChange}
-            required
             placeholder="Enter your name"
-            className="w-full px-4 py-2.5 border-2 border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-300 text-sm"
+            className={`w-full px-4 py-2.5 border-2 rounded-lg focus:outline-none focus:ring-2 transition-all duration-300 text-sm ${
+              errors.name
+                ? "border-red-500 focus:ring-red-200 focus:border-red-500"
+                : "border-slate-200 focus:ring-primary focus:border-primary"
+            }`}
           />
+          {errors.name && (
+            <p className="mt-1 text-sm text-red-500">{errors.name}</p>
+          )}
         </div>
 
         <div>
@@ -114,10 +141,16 @@ const RegisterForm = () => {
             name="email"
             value={form.email}
             onChange={handleChange}
-            required
             placeholder="Enter your email"
-            className="w-full px-4 py-2.5 border-2 border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-300 text-sm"
+            className={`w-full px-4 py-2.5 border-2 rounded-lg focus:outline-none focus:ring-2 transition-all duration-300 text-sm ${
+              errors.email
+                ? "border-red-500 focus:ring-red-200 focus:border-red-500"
+                : "border-slate-200 focus:ring-primary focus:border-primary"
+            }`}
           />
+          {errors.email && (
+            <p className="mt-1 text-sm text-red-500">{errors.email}</p>
+          )}
         </div>
 
         <div>
@@ -130,9 +163,12 @@ const RegisterForm = () => {
               name="password"
               value={form.password}
               onChange={handleChange}
-              required
               placeholder="Enter your password"
-              className="w-full px-4 py-2.5 pr-12 border-2 border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-300 text-sm"
+              className={`w-full px-4 py-2.5 pr-12 border-2 rounded-lg focus:outline-none focus:ring-2 transition-all duration-300 text-sm ${
+                errors.password
+                  ? "border-red-500 focus:ring-red-200 focus:border-red-500"
+                  : "border-slate-200 focus:ring-primary focus:border-primary"
+              }`}
             />
             <button
               type="button"
@@ -142,6 +178,9 @@ const RegisterForm = () => {
               {showPassword ? <EyeOffIcon /> : <EyeIcon />}
             </button>
           </div>
+          {errors.password && (
+            <p className="mt-1 text-sm text-red-500">{errors.password}</p>
+          )}
         </div>
 
         <div>
@@ -154,9 +193,12 @@ const RegisterForm = () => {
               name="confirmPassword"
               value={form.confirmPassword}
               onChange={handleChange}
-              required
               placeholder="Re-enter your password"
-              className="w-full px-4 py-2.5 pr-12 border-2 border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-300 text-sm"
+              className={`w-full px-4 py-2.5 pr-12 border-2 rounded-lg focus:outline-none focus:ring-2 transition-all duration-300 text-sm ${
+                errors.confirmPassword
+                  ? "border-red-500 focus:ring-red-200 focus:border-red-500"
+                  : "border-slate-200 focus:ring-primary focus:border-primary"
+              }`}
             />
             <button
               type="button"
@@ -166,6 +208,11 @@ const RegisterForm = () => {
               {showConfirmPassword ? <EyeOffIcon /> : <EyeIcon />}
             </button>
           </div>
+          {errors.confirmPassword && (
+            <p className="mt-1 text-sm text-red-500">
+              {errors.confirmPassword}
+            </p>
+          )}
         </div>
 
         <div>
@@ -177,10 +224,16 @@ const RegisterForm = () => {
             name="address"
             value={form.address}
             onChange={handleChange}
-            required
             placeholder="Enter your address"
-            className="w-full px-4 py-2.5 border-2 border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-300 text-sm"
+            className={`w-full px-4 py-2.5 border-2 rounded-lg focus:outline-none focus:ring-2 transition-all duration-300 text-sm ${
+              errors.address
+                ? "border-red-500 focus:ring-red-200 focus:border-red-500"
+                : "border-slate-200 focus:ring-primary focus:border-primary"
+            }`}
           />
+          {errors.address && (
+            <p className="mt-1 text-sm text-red-500">{errors.address}</p>
+          )}
         </div>
 
         <ReCAPTCHA
