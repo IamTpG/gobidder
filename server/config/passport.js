@@ -36,9 +36,9 @@ passport.use(
       } catch (error) {
         return done(error, false);
       }
-    }
-  )
-)
+    },
+  ),
+);
 passport.use(
   new LocalStrategy(
     {
@@ -51,24 +51,28 @@ passport.use(
           where: { email: email.toLowerCase() },
         });
 
+        console.log(user);
+
         if (!user) {
-          return done(null, false, { message: "Email không tồn tại." });
+          return done(null, false, {
+            message: "Email address does not exist.",
+          });
         }
 
         const isMatch = await bcrypt.compare(password, user.password_hash);
         if (!isMatch) {
-          return done(null, false, { message: "Mật khẩu không chính xác." });
+          return done(null, false, { message: "Incorrect password." });
         }
 
         if (!user.is_email_verified) {
           return done(null, false, {
-            message: "Tài khoản chưa được xác thực OTP.",
+            message: "The account has not been verified with OTP.",
           });
         }
 
         if (user.role === "Banned") {
           return done(null, false, {
-            message: "Tài khoản của bạn đã bị khóa.",
+            message: "Your account has been banned.",
           });
         }
 
@@ -76,8 +80,8 @@ passport.use(
       } catch (error) {
         return done(error);
       }
-    }
-  )
+    },
+  ),
 );
 
 passport.use(
@@ -100,7 +104,7 @@ passport.use(
         if (existingUser) {
           if (existingUser.role === "Banned") {
             return done(null, false, {
-              message: "Your account has been banned.",
+              message: "banned",
             });
           }
           if (!existingUser.google_id) {
@@ -127,6 +131,6 @@ passport.use(
       } catch (error) {
         return done(error);
       }
-    }
-  )
+    },
+  ),
 );

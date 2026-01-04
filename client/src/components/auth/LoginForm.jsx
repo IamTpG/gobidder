@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { useAuth } from "../../contexts/AuthContext";
 import Button from "../common/Button";
@@ -11,12 +11,25 @@ const LoginForm = () => {
   const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [searchParams] = useSearchParams();
+  const errorParam = searchParams.get("error");
   const [error, setError] = useState(null);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   // const [remember, setRemember] = useState(false);
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (errorParam === "banned") {
+      setError("Your account has been banned.");
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+    if (errorParam === "server_error") {
+      setError("Unknown Error.");
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, [error]);
 
   const validate = () => {
     const newErrors = {};

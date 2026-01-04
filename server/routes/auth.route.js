@@ -14,7 +14,23 @@ router.post("/verify-otp", authController.verifyRegistrationOtp);
 // Đăng nhập Local
 router.post(
   "/login",
-  passport.authenticate("local", { session: false }),
+  (req, res, next) => {
+    passport.authenticate("local", { session: false }, (err, user, info) => {
+      if (err) {
+        return next(err);
+      }
+
+      if (!user) {
+        return res.status(401).json({
+          success: false,
+          message: info.message,
+        });
+      }
+
+      req.user = user;
+      next();
+    })(req, res, next);
+  },
   authController.loginCallback,
 );
 
@@ -30,10 +46,20 @@ router.get(
 // Đăng nhập Google (Callback)
 router.get(
   "/google/callback",
-  passport.authenticate("google", {
-    session: false,
-    failureRedirect: "/auth",
-  }),
+  (req, res, next) => {
+    passport.authenticate("google", { session: false }, (err, user, info) => {
+      const FE_URL = process.env.FE_URL || "http://localhost:3000";
+      if (err) {
+        return res.redirect(`${FE_URL}/auth?error=server_error`);
+      }
+      if (!user) {
+        return res.redirect(`${FE_URL}/auth?error=${info.message}`);
+      }
+
+      req.user = user;
+      next();
+    })(req, res, next);
+  },
   authController.googleCallback,
 );
 
