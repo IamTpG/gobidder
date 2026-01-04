@@ -63,18 +63,18 @@ const UserManagementPage = () => {
   const handleResetPassword = async () => {
     try {
       const response = await api.post(
-        `/users/${selectedUser.id}/reset-password`
+        `/users/${selectedUser.id}/reset-password`,
       );
       showNotification(
         response.data?.message || "Password reset successfully and email sent",
-        "success"
+        "success",
       );
       return true;
     } catch (error) {
       console.error("Error resetting password:", error);
       showNotification(
         error.response?.data?.message || "Failed to reset password",
-        "error"
+        "error",
       );
       return false;
     }
@@ -105,7 +105,7 @@ const UserManagementPage = () => {
       console.error("Error deleting user:", error);
       showNotification(
         error.response?.data?.message || "Failed to ban/delete user",
-        "error"
+        "error",
       );
     } finally {
       closeDeleteConfirm();
@@ -255,7 +255,7 @@ const UserManagementPage = () => {
                       <td className="px-6 py-4">
                         <span
                           className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${getRoleBadgeColor(
-                            user.role
+                            user.role,
                           )}`}
                         >
                           {user.role}

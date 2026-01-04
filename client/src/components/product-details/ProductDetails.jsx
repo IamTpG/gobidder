@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, Link } from "react-router-dom";
 
 import useRelatedProducts from "../../hooks/useRelatedProducts";
 import useBanBidder from "../../hooks/useBanBidder";
@@ -47,7 +47,7 @@ const ProductDetails = ({ product, onRefresh }) => {
   const { banBidder, isLoading: isBanning, error: banError } = useBanBidder();
   const { isBanned, isLoading: isCheckingBan } = useBannedStatus(
     product?.id,
-    !!user && !isSeller
+    !!user && !isSeller,
   );
 
   // Hooks
@@ -297,7 +297,16 @@ const ProductDetails = ({ product, onRefresh }) => {
                         {formatPrice(bid.amount)}
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-500">
-                        {isSeller ? bid.user : maskUserName(bid.user)}
+                        {isSeller ? (
+                          <Link
+                            to={`/users/${bid.userId}/ratings`}
+                            className="hover:underline hover:text-primary transition-colors"
+                          >
+                            {bid.user}
+                          </Link>
+                        ) : (
+                          maskUserName(bid.user)
+                        )}
                       </td>
                       {isSeller && (
                         <td className="px-6 py-4 text-sm text-right">
