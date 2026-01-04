@@ -12,14 +12,27 @@ const LoginForm = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState(null);
+  const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   // const [remember, setRemember] = useState(false);
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const navigate = useNavigate();
 
+  const validate = () => {
+    const newErrors = {};
+    if (!email) newErrors.email = "Email is required";
+    if (!password) newErrors.password = "Password is required";
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
+    setErrors({});
+
+    if (!validate()) return;
+
     setLoading(true);
 
     try {
@@ -46,7 +59,7 @@ const LoginForm = () => {
       </h2>
       <div className="w-20 h-1 bg-slate-300 mx-auto mb-6 rounded-full"></div>
 
-      <form onSubmit={handleSubmit} className="space-y-5">
+      <form onSubmit={handleSubmit} className="space-y-5" noValidate>
         {/* Email */}
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-2">
@@ -56,11 +69,20 @@ const LoginForm = () => {
             type="text"
             name="email"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            className="w-full px-4 py-2.5 border-2 border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-300 text-sm"
+            onChange={(e) => {
+              setEmail(e.target.value);
+              if (errors.email) setErrors({ ...errors, email: null });
+            }}
+            className={`w-full px-4 py-2.5 border-2 rounded-lg focus:outline-none focus:ring-2 transition-all duration-300 text-sm ${
+              errors.email
+                ? "border-red-500 focus:ring-red-200 focus:border-red-500"
+                : "border-slate-200 focus:ring-primary focus:border-primary"
+            }`}
             placeholder="Enter your email"
           />
+          {errors.email && (
+            <p className="mt-1 text-sm text-red-500">{errors.email}</p>
+          )}
         </div>
 
         {/* Password */}
@@ -73,9 +95,15 @@ const LoginForm = () => {
               type={showLoginPassword ? "text" : "password"}
               name="password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="w-full px-4 py-2.5 pr-12 border-2 border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-300 text-sm"
+              onChange={(e) => {
+                setPassword(e.target.value);
+                if (errors.password) setErrors({ ...errors, password: null });
+              }}
+              className={`w-full px-4 py-2.5 pr-12 border-2 rounded-lg focus:outline-none focus:ring-2 transition-all duration-300 text-sm ${
+                errors.password
+                  ? "border-red-500 focus:ring-red-200 focus:border-red-500"
+                  : "border-slate-200 focus:ring-primary focus:border-primary"
+              }`}
               placeholder="Enter your password"
             />
             <button
@@ -86,6 +114,9 @@ const LoginForm = () => {
               {showLoginPassword ? <EyeOffIcon /> : <EyeIcon />}
             </button>
           </div>
+          {errors.password && (
+            <p className="mt-1 text-sm text-red-500">{errors.password}</p>
+          )}
         </div>
 
         {/* Showing Error */}
