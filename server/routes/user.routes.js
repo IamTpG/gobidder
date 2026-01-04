@@ -99,6 +99,9 @@ router.get(
   userController.getMyRatings,
 );
 
+// Lấy ratings của một user cụ thể (public, không cần auth)
+router.get("/:userId/ratings", userController.getUserRatings);
+
 // Lấy tất cả seller requests (Admin)
 router.get(
   "/admin/seller-requests",

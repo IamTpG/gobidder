@@ -112,7 +112,7 @@ const changeUserPassword = async (userId, { currentPassword, newPassword }) => {
 
   if (!user || !user.password_hash) {
     throw new Error(
-      "Password change is only available for email/password accounts"
+      "Password change is only available for email/password accounts",
     );
   }
 
@@ -149,7 +149,7 @@ const requestEmailChangeService = async (userId, { newEmail, password }) => {
 
   if (!user || !user.password_hash) {
     throw new Error(
-      "Email change is only available for email/password accounts"
+      "Email change is only available for email/password accounts",
     );
   }
 
@@ -204,7 +204,7 @@ const requestEmailChangeService = async (userId, { newEmail, password }) => {
 const confirmEmailChangeService = async (
   userId,
   currentEmail,
-  { newEmail, otp }
+  { newEmail, otp },
 ) => {
   const normalizedEmail = normalizeEmail(newEmail);
 
@@ -352,7 +352,7 @@ const requestSellerUpgrade = async (userId) => {
 
   if (user.role === "ExpiredSeller") {
     throw new Error(
-      "Please wait until all your products are sold/expired before requesting seller upgrade again"
+      "Please wait until all your products are sold/expired before requesting seller upgrade again",
     );
   }
 
@@ -498,7 +498,7 @@ const revertExpiredSellers = async () => {
         console.error(`Failed to process seller ${seller.id}:`, error);
         return { id: seller.id, success: false, error: error.message };
       }
-    })
+    }),
   );
 
   // Also check ExpiredSellers without products and downgrade them
@@ -530,7 +530,7 @@ const revertExpiredSellers = async () => {
         console.error(`Failed to cleanup ExpiredSeller ${user.id}:`, error);
         return { id: user.id, success: false, error: error.message };
       }
-    })
+    }),
   );
 
   const successCount = results.filter((r) => r.success).length;
@@ -588,7 +588,7 @@ const createUser = async ({ full_name, email, password, role }) => {
 
 const updateUser = async (
   id,
-  { full_name, email, role, password, address, birthdate }
+  { full_name, email, role, password, address, birthdate },
 ) => {
   const userId = parseInt(id);
   const user = await prisma.user.findUnique({ where: { id: userId } });
@@ -721,6 +721,101 @@ const getMyRatings = async (userId) => {
   }));
 };
 
+// Lấy ratings của một user cụ thể (public)
+const getUserRatings = async (userId) => {
+  const userIdInt = parseInt(userId, 10);
+  if (isNaN(userIdInt)) {
+    throw new Error("Invalid user ID");
+  }
+
+  // Kiểm tra user có tồn tại không
+  const user = await prisma.user.findUnique({
+    where: { id: userIdInt },
+    select: {
+      id: true,
+      full_name: true,
+      rating_plus: true,
+      rating_minus: true,
+    },
+  });
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  const ratings = await prisma.rating.findMany({
+    where: {
+      rated_user_id: userIdInt,
+    },
+    include: {
+      rater: {
+        select: {
+          id: true,
+          full_name: true,
+          email: true,
+        },
+      },
+      transaction: {
+        include: {
+          product: {
+            select: {
+              id: true,
+              name: true,
+              images: true,
+            },
+          },
+        },
+      },
+    },
+    orderBy: {
+      created_at: "desc",
+    },
+  });
+
+  // Tính toán rating tổng hợp
+  const totalRatings = user.rating_plus + user.rating_minus;
+  const ratingScore =
+    totalRatings > 0 ? ((user.rating_plus / totalRatings) * 100).toFixed(1) : 0;
+  const ratingDifference = user.rating_plus - user.rating_minus;
+
+  return {
+    user: {
+      id: user.id,
+      fullName: user.full_name,
+      rating: {
+        positive: user.rating_plus,
+        negative: user.rating_minus,
+        total: totalRatings,
+        score: parseFloat(ratingScore),
+        difference: ratingDifference,
+      },
+    },
+    ratings: ratings.map((rating) => ({
+      id: rating.id,
+      score: rating.score,
+      comment: rating.comment,
+      createdAt: rating.created_at,
+      rater: {
+        id: rating.rater.id,
+        fullName: rating.rater.full_name,
+        email: rating.rater.email,
+      },
+      transaction: {
+        id: rating.transaction.id,
+        product: {
+          id: rating.transaction.product.id,
+          name: rating.transaction.product.name,
+          images: Array.isArray(rating.transaction.product.images)
+            ? rating.transaction.product.images
+            : typeof rating.transaction.product.images === "string"
+              ? JSON.parse(rating.transaction.product.images)
+              : [],
+        },
+      },
+    })),
+  };
+};
+
 module.exports = {
   getMyProfile,
   getAllUsers,
@@ -740,4 +835,5 @@ module.exports = {
   updateUser,
   deleteUser,
   getMyRatings,
+  getUserRatings,
 };

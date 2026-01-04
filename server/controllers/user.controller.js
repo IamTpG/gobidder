@@ -413,6 +413,21 @@ const getMyRatings = async (req, res) => {
   }
 };
 
+// Lấy ratings của một user cụ thể (public)
+const getUserRatings = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const data = await userService.getUserRatings(userId);
+    return res.json(data);
+  } catch (err) {
+    console.error(err);
+    if (err.message === "User not found") {
+      return res.status(404).json({ message: "User not found" });
+    }
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
 module.exports = {
   getMe,
   getUsers,
@@ -435,4 +450,5 @@ module.exports = {
   updateUser,
   deleteUser,
   getMyRatings,
+  getUserRatings,
 };
