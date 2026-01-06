@@ -306,7 +306,9 @@ const placeAutoBid = async (userId, productId, inputMaxPrice) => {
             previousBidderEmail: previousBidder?.email,
             previousBidderName: previousBidder?.full_name,
             previousBidderId: previousBidder?.id,
+            previousBidderId: previousBidder?.id,
             newWinnerId: winnerId,
+            productId: parseInt(productId),
           }
         : null,
     };
@@ -325,7 +327,10 @@ const placeAutoBid = async (userId, productId, inputMaxPrice) => {
       previousBidderName,
       previousBidderId,
       newWinnerId,
+      productId,
     } = result.emailData;
+
+    const productLink = `${process.env.CLIENT_URL || "http://localhost:3000"}/products/${productId}`;
 
     // 1. Send email to Seller
     sendMail({
@@ -351,7 +356,8 @@ const placeAutoBid = async (userId, productId, inputMaxPrice) => {
         to: previousBidderEmail,
         subject: `You have been outbid on "${productName}"`,
         text: `Hello ${previousBidderName},\n\nSomeone has placed a higher bid on "${productName}".\nCurrent Price: ${newPrice}\n\nPlace a new bid to reclaim your potential win!`,
-        html: `<p>Hello <strong>${previousBidderName}</strong>,</p><p>Someone has placed a higher bid on "<strong>${productName}</strong>".</p><p>Current Price: <strong>${newPrice}</strong></p><p><a href="${process.env.CLIENT_URL || "#"}">Place a new bid now!</a></p>`,
+        text: `Hello ${previousBidderName},\n\nSomeone has placed a higher bid on "${productName}".\nCurrent Price: ${newPrice}\n\nPlace a new bid to reclaim your potential win!\nLink: ${productLink}`,
+        html: `<p>Hello <strong>${previousBidderName}</strong>,</p><p>Someone has placed a higher bid on "<strong>${productName}</strong>".</p><p>Current Price: <strong>${newPrice}</strong></p><p><a href="${productLink}">Place a new bid now!</a></p>`,
       }).catch(console.error);
     }
   }

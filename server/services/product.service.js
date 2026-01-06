@@ -1,5 +1,6 @@
 const prisma = require("../config/prisma");
 const categoryService = require("./category.service");
+const { sendMail } = require("../utils/utils");
 
 // Helper function để xử lý searchTerm cho PostgreSQL full-text search
 // Chuyển đổi nhiều từ thành format tsquery (word1 & word2 & word3)
@@ -214,7 +215,7 @@ const getProductById = async (productId) => {
 
   // Tạo Set các bidder_id bị ban để filter nhanh
   const bannedBidderIds = new Set(
-    product.banned_bidders.map((banned) => banned.bidder_id),
+    product.banned_bidders.map((banned) => banned.bidder_id)
   );
 
   // Transform data để khớp với Frontend format
@@ -522,6 +523,42 @@ const updateProduct = async (productId, sellerId, data) => {
           : product.allow_low_rating_bid,
     },
   });
+
+  // 4. Send Emails if description was updated
+  if (data.description && data.description.trim() !== "") {
+    const distinctBidders = await prisma.bidHistory.findMany({
+      where: { product_id: parseInt(productId) },
+      distinct: ["user_id"],
+      select: {
+        user: {
+          select: {
+            email: true,
+            full_name: true,
+          },
+        },
+      },
+    });
+
+    const productLink = `${
+      process.env.CLIENT_URL || "http://localhost:3000"
+    }/products/${productId}`;
+
+    // Send email to all bidders
+    const emailPromises = distinctBidders.map((bidder) =>
+      sendMail({
+        to: bidder.user.email,
+        subject: `Product Description Updated: "${product.name}"`,
+        text: `Hello ${bidder.user.full_name},\n\nThe description for the product "${product.name}" has been updated.\n\nPlease visit the product page to see the new details: ${productLink}`,
+        html: `<p>Hello <strong>${bidder.user.full_name}</strong>,</p>
+               <p>The description for the product "<strong>${product.name}</strong>" has been updated.</p>
+               <p><a href="${productLink}">Click here to view the updated details</a></p>`,
+      }).catch((err) =>
+        console.error(`Failed to send email to ${bidder.user.email}:`, err)
+      )
+    );
+
+    await Promise.all(emailPromises);
+  }
 
   return updatedProduct;
 };
@@ -1136,10 +1173,10 @@ const updateExpiredProducts = async () => {
 
     // Phân loại sản phẩm theo có người thắng hay không
     const wonProducts = expiredProducts.filter(
-      (p) => p.current_bidder_id !== null,
+      (p) => p.current_bidder_id !== null
     );
     const expiredNoWinner = expiredProducts.filter(
-      (p) => p.current_bidder_id === null,
+      (p) => p.current_bidder_id === null
     );
 
     // Cập nhật sản phẩm có người thắng thành Won
@@ -1169,18 +1206,18 @@ const updateExpiredProducts = async () => {
         : { count: 0 };
 
     console.log(
-      `[Product Service] Updated ${wonResult.count} products to Won status, ${expiredResult.count} to Expired status`,
+      `[Product Service] Updated ${wonResult.count} products to Won status, ${expiredResult.count} to Expired status`
     );
 
     // Log chi tiết
     wonProducts.forEach((product) => {
       console.log(
-        `  - Won: Product ID ${product.id} (${product.name}) - Winner ID: ${product.current_bidder_id}`,
+        `  - Won: Product ID ${product.id} (${product.name}) - Winner ID: ${product.current_bidder_id}`
       );
     });
     expiredNoWinner.forEach((product) => {
       console.log(
-        `  - Expired: Product ID ${product.id} (${product.name}) - No winner`,
+        `  - Expired: Product ID ${product.id} (${product.name}) - No winner`
       );
     });
 
@@ -1226,7 +1263,7 @@ const ensureProductStatusIsValid = async (productId) => {
       });
 
       console.log(
-        `[Product Service] Updated product ${productId} to ${newStatus} status (real-time)`,
+        `[Product Service] Updated product ${productId} to ${newStatus} status (real-time)`
       );
       return updatedProduct;
     }
